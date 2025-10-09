@@ -5,8 +5,8 @@ from locust import HttpUser, task, between
 import json
 
 
-class Pyserv User(HttpUser):
-    """Load test user for Pyserv  application"""
+class Pydance User(HttpUser):
+    """Load test user for Pydance  application"""
 
     wait_time = between(1, 3)
 
@@ -84,7 +84,7 @@ class Pyserv User(HttpUser):
                 response.failure(f"WebSocket connection failed: {response.status_code}")
 
 
-class StressTestUser(Pyserv User):
+class StressTestUser(Pydance User):
     """Stress test user with more aggressive load"""
 
     wait_time = between(0.1, 0.5)  # Much faster requests
@@ -113,7 +113,7 @@ class StressTestUser(Pyserv User):
                 response.failure(f"Large payload test failed: {response.status_code}")
 
 
-class SpikeTestUser(Pyserv User):
+class SpikeTestUser(Pydance User):
     """Spike test user for sudden load increases"""
 
     wait_time = between(0.01, 0.1)  # Very fast requests

@@ -1,7 +1,7 @@
 # tests/test_lean_templates.py
 import pytest
 from pathlib import Path
-from pyserv.templating.languages.lean import LeanTemplateEngine
+from pydance.templating.languages.lean import LeanTemplateEngine
 
 @pytest.fixture
 def template_engine(tmp_path):

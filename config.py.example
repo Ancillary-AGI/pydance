@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Pyserv  Configuration Example
+Pydance  Configuration Example
 Copy this file to config.py and modify as needed
 """
-from pyserv import AppConfig
+from pydance import AppConfig
 
 # Application configuration
 config = AppConfig(

@@ -1,15 +1,15 @@
-# Pyserv Framework
+# Pydance Framework
 
-![Pyserv Logo](https://img.shields.io/badge/Pyserv-High--Performance-blue?style=for-the-badge)
+![Pydance Logo](https://img.shields.io/badge/Pydance-High--Performance-blue?style=for-the-badge)
 ![Python](https://img.shields.io/badge/Python-3.8+-green?style=flat-square)
 ![C/C++](https://img.shields.io/badge/C%2FC%2B%2B-Extensions-orange?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-red?style=flat-square)
 
-**Pyserv** is a modern, production-ready web framework with enterprise-grade features, advanced security, and comprehensive architecture. Built with performance, security, and developer experience in mind.
+**Pydance** is a modern, production-ready web framework with enterprise-grade features, advanced security, and comprehensive architecture. Built with performance, security, and developer experience in mind.
 
 ## 🎯 **Framework Status: Production Ready**
 
-The Pyserv framework has been completely refactored with a modern architecture that provides enterprise-grade features while maintaining simplicity and developer experience.
+The Pydance framework has been completely refactored with a modern architecture that provides enterprise-grade features while maintaining simplicity and developer experience.
 
 ### **✅ Complete Refactoring Achieved**
 
@@ -76,18 +76,18 @@ The Pyserv framework has been completely refactored with a modern architecture t
 
 ### Basic Installation
 ```bash
-pip install pyserv 
+pip install pydance 
 ```
 
 ### With All Features
 ```bash
-pip install pyserv [dev,security,performance,database,web3,monitoring]
+pip install pydance [dev,security,performance,database,web3,monitoring]
 ```
 
 ### From Source (with C extensions)
 ```bash
-git clone https://github.com/pyserv /pyserv .git
-cd pyserv 
+git clone https://github.com/pydance /pydance .git
+cd pydance 
 
 # Install build dependencies
 # Ubuntu/Debian
@@ -107,7 +107,7 @@ pip install -e .
 
 ### Basic HTTP Server
 ```python
-from pyserv.core.server_bindings import create_default_server
+from pydance.core.server_bindings import create_default_server
 
 # Create server with default routes
 server = create_default_server()
@@ -136,10 +136,10 @@ if __name__ == "__main__":
 
 ### MVC Application
 ```python
-from pyserv.controllers import Controller
-from pyserv.core.application import Application
-from pyserv.models import Model, Field
-from pyserv.views import TemplateView
+from pydance.controllers import Controller
+from pydance.core.application import Application
+from pydance.models import Model, Field
+from pydance.views import TemplateView
 
 # Define model
 class User(Model):
@@ -166,7 +166,7 @@ class HomeView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = 'Welcome to Pyserv '
+        context['title'] = 'Welcome to Pydance '
         return context
 
 # Create application
@@ -183,7 +183,7 @@ if __name__ == "__main__":
 
 ### Security Integration
 ```python
-from pyserv.security import (
+from pydance.security import (
     get_iam_system, get_crypto_manager,
     get_zero_trust_network, get_defense_in_depth
 )
@@ -208,7 +208,7 @@ app.add_middleware(zero_trust.authorize_request)
 
 ### Web3 Integration
 ```python
-from pyserv.security.web3 import get_web3_manager
+from pydance.security.web3 import get_web3_manager
 
 web3 = get_web3_manager()
 
@@ -235,7 +235,7 @@ tx = await web3.defi.supply_liquidity(wallet, "Uniswap", "ETH", Decimal("1.0"))
 ### Core Components
 
 ```
-Pyserv  Framework
+Pydance  Framework
 ├── Core Engine (C/C++)
 │   ├── HTTP Server (epoll/kqueue)
 │   ├── SSL/TLS Implementation
@@ -329,7 +329,7 @@ auth_result = await zero_trust.authorize_request(
 
 ### Quantum Security (Advanced)
 ```python
-from pyserv.security.quantum_security import (
+from pydance.security.quantum_security import (
     generate_quantum_keypair,
     establish_secure_channel,
     quantum_authenticate
@@ -350,7 +350,7 @@ print(f"Authenticated: {auth['identity']}")
 
 ### Distributed Consensus
 ```python
-from pyserv.microservices import RaftConsensus, DistributedLock
+from pydance.microservices import RaftConsensus, DistributedLock
 
 # Initialize consensus
 consensus = RaftConsensus("node1", ["node2", "node3"])
@@ -368,7 +368,7 @@ if await lock.acquire("node1"):
 
 ### Event Sourcing & CQRS
 ```python
-from pyserv.microservices import Event, EventStore, Aggregate, Repository
+from pydance.microservices import Event, EventStore, Aggregate, Repository
 
 class UserAggregate(Aggregate):
     async def handle_command(self, command):
@@ -393,7 +393,7 @@ await event_store.append_events(events)
 
 ### Real-time Metrics
 ```python
-from pyserv.monitoring import get_metrics_collector
+from pydance.monitoring import get_metrics_collector
 
 metrics = get_metrics_collector()
 
@@ -408,7 +408,7 @@ error_rate = metrics.create_counter("error_rate", "Application error rate")
 
 ### Structured Logging
 ```python
-from pyserv.monitoring import get_structured_logger
+from pydance.monitoring import get_structured_logger
 
 logger = get_structured_logger()
 
@@ -446,7 +446,7 @@ class ArticleController(Controller):
 
 ### GraphQL APIs
 ```python
-from pyserv.graphql import Schema, Query, ObjectType, Field
+from pydance.graphql import Schema, Query, ObjectType, Field
 
 class ArticleType(ObjectType):
     def __init__(self):
@@ -476,10 +476,10 @@ schema = Schema(query=QueryType())
 ## 🎨 Template Engine
 
 ### Lean Template Engine
-Pyserv  includes a high-performance template engine with C++ acceleration and GPU support:
+Pydance  includes a high-performance template engine with C++ acceleration and GPU support:
 
 ```python
-from pyserv.templating import TemplateEngine
+from pydance.templating import TemplateEngine
 
 # Create engine with C++ acceleration
 engine = TemplateEngine(template_dirs=['templates'])
@@ -539,7 +539,7 @@ result = await engine.render_string(template, context)
 ## 📧 Email Template Engine
 
 ### Overview
-The enhanced Email Template Engine for Pyserv  provides a comprehensive solution for creating and rendering email templates with support for multiple formats including plain text, HTML, and Markdown. It includes intelligent fallback mechanisms and a built-in markdown renderer for creating rich email content.
+The enhanced Email Template Engine for Pydance  provides a comprehensive solution for creating and rendering email templates with support for multiple formats including plain text, HTML, and Markdown. It includes intelligent fallback mechanisms and a built-in markdown renderer for creating rich email content.
 
 ### Features
 - ✅ **Multiple Template Formats**: Support for `.txt`, `.html`, and `.md` templates
@@ -553,8 +553,8 @@ The enhanced Email Template Engine for Pyserv  provides a comprehensive solution
 ### Quick Start
 
 ```python
-from pyserv.core.templating.engine import TemplateEngine
-from pyserv.contrib.email.templates import EmailTemplateEngine
+from pydance.core.templating.engine import TemplateEngine
+from pydance.contrib.email.templates import EmailTemplateEngine
 
 # Initialize the template engine
 template_engine = TemplateEngine()
@@ -735,7 +735,7 @@ except Exception as e:
 ## 🔐 Session Management
 
 ### Overview
-Pyserv provides a comprehensive session management system with enterprise-grade security, multiple storage backends, and automatic session handling through middleware.
+Pydance provides a comprehensive session management system with enterprise-grade security, multiple storage backends, and automatic session handling through middleware.
 
 ### Features
 - ✅ **Multiple Storage Backends**: Memory, Database, Redis, Filesystem
@@ -751,8 +751,8 @@ Pyserv provides a comprehensive session management system with enterprise-grade 
 ### Quick Start
 
 ```python
-from pyserv.server.application import Application
-from pyserv.server.session import SessionConfig, get_session_manager
+from pydance.server.application import Application
+from pydance.server.session import SessionConfig, get_session_manager
 
 # Create application
 app = Application()
@@ -770,7 +770,7 @@ session_config = SessionConfig(
 session_manager = get_session_manager(session_config)
 
 # Add session middleware
-from pyserv.server.session import SessionMiddleware
+from pydance.server.session import SessionMiddleware
 app.add_middleware(SessionMiddleware, session_manager=session_manager)
 ```
 
@@ -882,7 +882,7 @@ async def admin_sessions(request):
 
 #### Basic Configuration
 ```python
-from pyserv.server.session import SessionConfig
+from pydance.server.session import SessionConfig
 
 config = SessionConfig(
     secret_key='your-very-secure-secret-key-here',  # Required
@@ -917,7 +917,7 @@ config = SessionConfig(
 
 #### Memory Backend (Default)
 ```python
-from pyserv.server.session import SessionConfig, MemorySessionStore
+from pydance.server.session import SessionConfig, MemorySessionStore
 
 config = SessionConfig(
     secret_key='your-secret-key',
@@ -930,8 +930,8 @@ session_manager = SessionManager(config, store)
 
 #### Database Backend
 ```python
-from pyserv.server.session import SessionConfig, DatabaseSessionStore
-from pyserv.database import DatabaseConnection
+from pydance.server.session import SessionConfig, DatabaseSessionStore
+from pydance.database import DatabaseConnection
 
 # Create database connection
 db_connection = DatabaseConnection.get_instance(DatabaseConfig('sqlite:///sessions.db'))
@@ -948,7 +948,7 @@ session_manager = SessionManager(config, store)
 
 #### Redis Backend
 ```python
-from pyserv.server.session import SessionConfig, RedisSessionStore
+from pydance.server.session import SessionConfig, RedisSessionStore
 
 config = SessionConfig(
     secret_key='your-secret-key',
@@ -964,7 +964,7 @@ session_manager = SessionManager(config, store)
 
 #### Session Encryption
 ```python
-from pyserv.server.session import SessionCrypto
+from pydance.server.session import SessionCrypto
 
 crypto = SessionCrypto('your-secret-key')
 
@@ -1012,7 +1012,7 @@ async def login(request):
 
 #### Automatic Session Handling
 ```python
-from pyserv.server.session import SessionMiddleware
+from pydance.server.session import SessionMiddleware
 
 # Add session middleware to application
 app.add_middleware(SessionMiddleware, session_manager=session_manager)
@@ -1229,7 +1229,7 @@ class RateLimitedSessionMiddleware:
 #### JavaScript Session Management
 ```javascript
 class SessionManager {
-    constructor(sessionName = 'pyserv_session') {
+    constructor(sessionName = 'pydance_session') {
         this.sessionName = sessionName;
     }
 
@@ -1464,7 +1464,7 @@ function App() {
 
 ### ORM Usage
 ```python
-from pyserv.models import Model, Field
+from pydance.models import Model, Field
 
 class User(Model):
     __table__ = 'users'
@@ -1489,7 +1489,7 @@ user = await User.find(1)
 
 ### Migrations
 ```python
-from pyserv.migrations import get_migration_framework
+from pydance.migrations import get_migration_framework
 
 migrator = get_migration_framework()
 
@@ -1519,19 +1519,19 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 COPY . .
 
-# Install Pyserv  with C extensions
+# Install Pydance  with C extensions
 RUN pip install -e .
 
 # Expose port
 EXPOSE 8000
 
 # Run application
-CMD ["python", "-m", "pyserv .core.server_bindings"]
+CMD ["python", "-m", "pydance .core.server_bindings"]
 ```
 
 ### Production Configuration
 ```python
-from pyserv.core.server_bindings import PythonServerConfig
+from pydance.core.server_bindings import PythonServerConfig
 
 config = PythonServerConfig(
     host="0.0.0.0",
@@ -1551,7 +1551,7 @@ server.run()
 
 ### Project Structure
 ```
-pyserv /
+pydance /
 ├── core/                    # Core framework (C/C++ + Python)
 │   ├── server_core.c       # C HTTP server implementation
 │   ├── server_bindings.py  # Python bindings
@@ -1581,7 +1581,7 @@ pyserv /
 pytest
 
 # Run with coverage
-pytest --cov=pyserv  --cov-report=html
+pytest --cov=pydance  --cov-report=html
 
 # Run specific test categories
 pytest tests/unit/          # Unit tests
@@ -1609,8 +1609,8 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ### Development Setup
 ```bash
-git clone https://github.com/pyserv /pyserv .git
-cd pyserv 
+git clone https://github.com/pydance /pydance .git
+cd pydance 
 
 # Create virtual environment
 python -m venv venv
@@ -1623,7 +1623,7 @@ pip install -e .[dev]
 pytest
 
 # Start development server
-python -m pyserv .core.server_bindings
+python -m pydance .core.server_bindings
 ```
 
 ## 📄 License
@@ -1639,11 +1639,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Documentation**: [https://pyserv .dev/docs](https://pyserv .dev/docs)
-- **Issues**: [https://github.com/pyserv /pyserv /issues](https://github.com/pyserv /pyserv /issues)
-- **Discussions**: [https://github.com/pyserv /pyserv /discussions](https://github.com/pyserv /pyserv /discussions)
-- **Email**: team@pyserv .dev
+- **Documentation**: [https://pydance .dev/docs](https://pydance .dev/docs)
+- **Issues**: [https://github.com/pydance /pydance /issues](https://github.com/pydance /pydance /issues)
+- **Discussions**: [https://github.com/pydance /pydance /discussions](https://github.com/pydance /pydance /discussions)
+- **Email**: team@pydance .dev
 
 ---
 
-**Pyserv ** - Where Python meets C/C++ performance with enterprise-grade security! 🚀
+**Pydance ** - Where Python meets C/C++ performance with enterprise-grade security! 🚀

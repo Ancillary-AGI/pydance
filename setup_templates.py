@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Build script for Pyserv  Template Engine C++ extensions
+Build script for Pydance  Template Engine C++ extensions
 """
 
 import os
@@ -57,11 +57,11 @@ class CMakeBuild(build_ext):
 
 def main():
     """Main build function"""
-    template_dir = Path(__file__).parent / 'src' / 'pyserv ' / 'core' / 'templating'
+    template_dir = Path(__file__).parent / 'src' / 'pydance ' / 'core' / 'templating'
 
     # Create CMakeLists.txt for template engine
     cmake_content = f'''cmake_minimum_required(VERSION 3.15)
-project(pyserv _template_engine VERSION 1.0.0 LANGUAGES CXX)
+project(pydance _template_engine VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -79,32 +79,32 @@ set(SOURCES
 )
 
 # Create shared library
-add_library(pyserv _template_core SHARED ${{SOURCES}})
+add_library(pydance _template_core SHARED ${{SOURCES}})
 
 # Set library properties
-set_target_properties(pyserv _template_core PROPERTIES
+set_target_properties(pydance _template_core PROPERTIES
     PREFIX ""
     SUFFIX ".so"
 )
 
 if(WIN32)
-    set_target_properties(pyserv _template_core PROPERTIES
+    set_target_properties(pydance _template_core PROPERTIES
         SUFFIX ".dll"
     )
 endif()
 
 # Link libraries
-target_link_libraries(pyserv _template_core ${{Python3_LIBRARIES}})
+target_link_libraries(pydance _template_core ${{Python3_LIBRARIES}})
 
 # Compiler flags
 if(MSVC)
-    target_compile_options(pyserv _template_core PRIVATE /W4 /O2)
+    target_compile_options(pydance _template_core PRIVATE /W4 /O2)
 else()
-    target_compile_options(pyserv _template_core PRIVATE -Wall -Wextra -O3 -fPIC)
+    target_compile_options(pydance _template_core PRIVATE -Wall -Wextra -O3 -fPIC)
 endif()
 
 # Install
-install(TARGETS pyserv _template_core
+install(TARGETS pydance _template_core
     LIBRARY DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
     ARCHIVE DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
 )
@@ -118,11 +118,11 @@ install(TARGETS pyserv _template_core
 
     # Setup configuration
     setup(
-        name='pyserv -template-engine',
+        name='pydance -template-engine',
         version='1.0.0',
-        description='Ultra-fast C++ template engine for Pyserv ',
-        author='Pyserv  Team',
-        ext_modules=[CMakeExtension('pyserv _template_core', sourcedir=str(template_dir))],
+        description='Ultra-fast C++ template engine for Pydance ',
+        author='Pydance  Team',
+        ext_modules=[CMakeExtension('pydance _template_core', sourcedir=str(template_dir))],
         cmdclass=dict(build_ext=CMakeBuild),
         zip_safe=False,
     )

@@ -1,10 +1,10 @@
 """
-Unit tests for Pyserv  Rich Widgets
+Unit tests for Pydance  Rich Widgets
 """
 import pytest
 
-from pyserv.widgets.widgets import RichText, RichSelect, RichTitle
-from pyserv.widgets.widgets_extra import RichFile, RichDate, RichColor, RichRating
+from pydance.widgets.widgets import RichText, RichSelect, RichTitle
+from pydance.widgets.widgets_extra import RichFile, RichDate, RichColor, RichRating
 
 
 class TestRichTextWidget:

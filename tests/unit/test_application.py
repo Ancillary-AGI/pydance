@@ -1,12 +1,12 @@
 """
-Unit tests for Pyserv  Application
+Unit tests for Pydance  Application
 """
 from typing import Dict, Any, List
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from pyserv import Application, AppConfig
-from pyserv.exceptions import HTTPException
+from pydance import Application, AppConfig
+from pydance.exceptions import HTTPException
 
 
 class TestApplication:
@@ -31,7 +31,7 @@ class TestApplication:
     async def test_startup_shutdown(self, app: Application) -> None:
         """Test application startup and shutdown"""
         # Mock database connection
-        with patch('pyserv .core.database.DatabaseConnection') as mock_db:
+        with patch('pydance .core.database.DatabaseConnection') as mock_db:
             mock_instance = AsyncMock()
             mock_db.get_instance.return_value = mock_instance
 
@@ -98,7 +98,7 @@ class TestApplication:
             return {'message': 'test'}
 
         # Mock the response
-        with patch('pyserv .core.response.Response') as mock_response_class:
+        with patch('pydance .core.response.Response') as mock_response_class:
             mock_response = MagicMock()
             mock_response_class.return_value = mock_response
             mock_response.__call__ = AsyncMock()
@@ -124,7 +124,7 @@ class TestApplication:
             await websocket.accept()
 
         # Mock WebSocket
-        with patch('pyserv .core.websocket.WebSocket') as mock_ws_class:
+        with patch('pydance .core.websocket.WebSocket') as mock_ws_class:
             mock_ws = AsyncMock()
             mock_ws_class.return_value = mock_ws
 

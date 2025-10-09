@@ -1,0 +1,198 @@
+kind: pipeline
+type: docker
+name: pydance-ci-cd
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: code-quality
+  image: python:3.11
+  commands:
+  - python -m venv venv
+  - source venv/bin/activate
+  - pip install --upgrade pip
+  - pip install -r requirements.txt
+  - pip install black isort flake8 mypy bandit safety
+  - black --check src/ tests/
+  - isort --check-only src/ tests/
+  - flake8 src/ tests/
+  - mypy src/
+  - bandit -r src/ -f json -o bandit-report.json
+  - safety check --json --output safety-report.json
+
+- name: unit-tests
+  image: python:3.11
+  commands:
+  - python -m venv venv
+  - source venv/bin/activate
+  - pip install --upgrade pip
+  - pip install -r requirements.txt
+  - pip install pytest pytest-cov pytest-asyncio
+  - pytest tests/unit/ --cov=src/pydance --cov-report=xml --cov-report=html --junit-xml=unit-test-results.xml
+
+- name: integration-tests
+  image: python:3.11
+  commands:
+  - python -m venv venv
+  - source venv/bin/activate
+  - pip install --upgrade pip
+  - pip install -r requirements.txt
+  - pip install pytest pytest-asyncio
+  - pytest tests/integration/ --junit-xml=integration-test-results.xml
+  environment:
+    DATABASE_URL: postgresql://postgres:postgres@postgres:5432/pydance_test
+    REDIS_URL: redis://redis:6379/0
+  depends_on:
+  - postgres
+  - redis
+
+- name: client-tests
+  image: node:18
+  commands:
+  - cd pydance-client
+  - npm ci
+  - npm test
+  - npm run build
+  - npm run test:integration
+
+- name: security-scan
+  image: python:3.11
+  commands:
+  - python -m venv venv
+  - source venv/bin/activate
+  - pip install bandit
+  - bandit -r src/ -f json -o bandit-report.json
+  when:
+    branch:
+    - main
+    - develop
+
+- name: build-package
+  image: python:3.11
+  commands:
+  - python -m venv venv
+  - source venv/bin/activate
+  - pip install --upgrade pip
+  - pip install build twine
+  - python -m build
+  - twine check dist/*
+  depends_on:
+  - code-quality
+  - unit-tests
+  - integration-tests
+
+- name: build-docker
+  image: plugins/docker
+  settings:
+    repo: pydance/framework
+    tags:
+    - ${DRONE_COMMIT_SHA}
+    - latest
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+  when:
+    branch:
+    - main
+    - develop
+  depends_on:
+  - build-package
+
+- name: deploy-staging
+  image: alpine/k8s:latest
+  commands:
+  - echo "Deploying to staging environment"
+  - kubectl set image deployment/pydance-staging pydance=pydance/framework:${DRONE_COMMIT_SHA} --namespace=staging
+  - kubectl rollout status deployment/pydance-staging --namespace=staging
+  environment:
+    KUBECONFIG:
+      from_secret: kube_config
+  when:
+    branch:
+    - develop
+  depends_on:
+  - build-docker
+
+- name: deploy-production
+  image: alpine/k8s:latest
+  commands:
+  - echo "Deploying to production environment"
+  - kubectl set image deployment/pydance-prod pydance=pydance/framework:${DRONE_COMMIT_SHA} --namespace=production
+  - kubectl rollout status deployment/pydance-prod --namespace=production
+  environment:
+    KUBECONFIG:
+      from_secret: kube_config
+  when:
+    branch:
+    - main
+    event:
+    - tag
+  depends_on:
+  - build-docker
+
+- name: publish-pypi
+  image: python:3.11
+  commands:
+  - python -m venv venv
+  - source venv/bin/activate
+  - pip install twine
+  - twine upload dist/* --username __token__ --password $PYPI_TOKEN
+  environment:
+    PYPI_TOKEN:
+      from_secret: pypi_token
+  when:
+    event:
+    - tag
+  depends_on:
+  - build-package
+
+services:
+- name: postgres
+  image: postgres:15
+  environment:
+    POSTGRES_DB: pydance_test
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: postgres
+
+- name: redis
+  image: redis:7
+
+trigger:
+  branch:
+  - main
+  - develop
+  - feature/*
+  - hotfix/*
+  event:
+  - push
+  - pull_request
+  - tag
+
+---
+kind: pipeline
+type: docker
+name: nightly-tests
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: comprehensive-tests
+  image: python:3.11
+  commands:
+  - python -m venv venv
+  - source venv/bin/activate
+  - pip install --upgrade pip
+  - pip install -r requirements.txt
+  - pip install pytest pytest-cov pytest-asyncio locust
+  - python scripts/test_framework.py
+  - pytest tests/ --cov=src/pydance --cov-report=xml
+  - locust --headless --users 100 --spawn-rate 10 --run-time 5m --host http://localhost:8000
+
+trigger:
+  cron:
+  - nightly

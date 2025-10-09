@@ -20,7 +20,7 @@ class TestServerManagement:
 
         # Create app.py
         app_content = '''
-from pyserv import Application
+from pydance import Application
 
 app = Application()
 
@@ -36,7 +36,7 @@ async def health(request):
 
         # Create config.py
         config_content = '''
-from pyserv import AppConfig
+from pydance import AppConfig
 
 config = AppConfig(
     debug=True,
@@ -214,7 +214,7 @@ config = AppConfig(
 
             try:
                 # Check PID file exists
-                pid_file = Path('.pyserv .pid')
+                pid_file = Path('.pydance .pid')
                 assert pid_file.exists()
 
                 # Check server is responding

@@ -1,12 +1,12 @@
 """
-Performance tests for Pyserv  framework
+Performance tests for Pydance  framework
 """
 import asyncio
 import time
 import pytest
 from unittest.mock import patch
 
-from pyserv import Application
+from pydance import Application
 
 
 @pytest.mark.performance
@@ -167,9 +167,8 @@ class TestPerformance:
 
     def test_database_connection_pooling(self, benchmark):
         """Test database connection pooling performance"""
-        from pyserv.database.config import DatabaseConfig
-
         def create_connections():
+            from pydance.db.config import DatabaseConfig
             configs = []
             for i in range(10):
                 config = DatabaseConfig(f"sqlite:///test_{i}.db")
@@ -238,7 +237,3 @@ class TestPerformance:
 
         result = benchmark(lambda: asyncio.run(benchmark_chain()))
         assert result.status_code == 200
-
-
-
-

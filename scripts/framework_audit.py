@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive Pyserv Framework Quality Audit
+Comprehensive Pydance Framework Quality Audit
 Validates implementation quality against best-in-class frameworks
 """
 
@@ -23,12 +23,12 @@ class ComponentAudit:
 class FrameworkAuditor:
     def __init__(self, framework_path: Path):
         self.framework_path = framework_path
-        self.src_path = framework_path / "src" / "pyserv"
+        self.src_path = framework_path / "src" / "pydance"
         self.results: Dict[str, ComponentAudit] = {}
         
     def audit_all(self) -> Dict[str, ComponentAudit]:
         """Audit all framework components"""
-        print("Starting comprehensive Pyserv framework audit...\n")
+        print("Starting comprehensive Pydance framework audit...\n")
         
         # Core components
         self.audit_core_application()
@@ -601,7 +601,7 @@ class FrameworkAuditor:
         """Generate comprehensive audit report"""
         report = []
         report.append("=" * 80)
-        report.append("PYSERV FRAMEWORK COMPREHENSIVE QUALITY AUDIT")
+        report.append("PYDANCE FRAMEWORK COMPREHENSIVE QUALITY AUDIT")
         report.append("=" * 80)
         report.append("")
         
@@ -679,7 +679,7 @@ class FrameworkAuditor:
         
         for name, desc, score in comparisons:
             comparison = "BETTER" if avg_score > score else "COMPARABLE" if abs(avg_score - score) <= 5 else "BEHIND"
-            report.append(f"{name} ({desc}): {score}/100 - Pyserv is {comparison}")
+            report.append(f"{name} ({desc}): {score}/100 - Pydance is {comparison}")
         
         report.append("")
         report.append("=" * 80)

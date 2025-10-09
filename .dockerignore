@@ -104,7 +104,7 @@ logs/
 node_modules/
 
 # Static files (will be copied during build if needed)
-src/pyserv/static/
+src/pydance/static/
 static/
 
 # Examples (not needed in production)

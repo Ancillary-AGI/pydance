@@ -1,9 +1,9 @@
 """
-Integration tests for full Pyserv  application
+Integration tests for full Pydance  application
 """
 import pytest
 
-from pyserv import Application
+from pydance import Application
 
 
 @pytest.mark.integration
@@ -17,7 +17,7 @@ class TestFullApplication:
 
         @app.route('/')
         async def home(request):
-            return {'message': 'Welcome to Pyserv ', 'status': 'ok'}
+            return {'message': 'Welcome to Pydance ', 'status': 'ok'}
 
         @app.route('/health')
         async def health(request):

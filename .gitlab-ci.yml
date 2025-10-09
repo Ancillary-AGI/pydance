@@ -1,0 +1,255 @@
+stages:
+  - validate
+  - test
+  - security
+  - build
+  - deploy
+
+variables:
+  PYTHON_VERSION: "3.11"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+
+cache:
+  paths:
+    - .cache/pip
+    - venv/
+    - pydance-client/node_modules/
+
+# Validation Stage
+code-quality:
+  stage: validate
+  image: python:${PYTHON_VERSION}
+  before_script:
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - pip install black isort flake8 mypy bandit safety
+  script:
+    - black --check src/ tests/
+    - isort --check-only src/ tests/
+    - flake8 src/ tests/
+    - mypy src/
+  artifacts:
+    reports:
+      junit: mypy-report.xml
+    paths:
+      - flake8-report.txt
+    expire_in: 1 week
+
+dependency-check:
+  stage: validate
+  image: python:${PYTHON_VERSION}
+  script:
+    - pip install safety
+    - safety check --json --output safety-report.json
+  artifacts:
+    reports:
+      junit: safety-report.json
+    expire_in: 1 week
+  allow_failure: true
+
+# Test Stage
+.test-template: &test-template
+  stage: test
+  image: python:${PYTHON_VERSION}
+  services:
+    - postgres:15
+    - redis:7
+  variables:
+    POSTGRES_DB: pydance_test
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: postgres
+    DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/pydance_test"
+    REDIS_URL: "redis://redis:6379/0"
+  before_script:
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - pip install pytest pytest-cov pytest-asyncio
+
+unit-tests:
+  <<: *test-template
+  script:
+    - source venv/bin/activate
+    - pytest tests/unit/ --cov=src/pydance --cov-report=xml --cov-report=html --junit-xml=unit-test-results.xml
+  artifacts:
+    reports:
+      junit: unit-test-results.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    paths:
+      - htmlcov/
+    expire_in: 1 week
+  coverage: '/TOTAL.*\s+(\d+%)$/'
+
+integration-tests:
+  <<: *test-template
+  script:
+    - source venv/bin/activate
+    - pytest tests/integration/ --junit-xml=integration-test-results.xml
+  artifacts:
+    reports:
+      junit: integration-test-results.xml
+    expire_in: 1 week
+
+performance-tests:
+  <<: *test-template
+  script:
+    - source venv/bin/activate
+    - python scripts/test_framework.py
+    - pytest tests/performance/ --junit-xml=performance-test-results.xml
+  artifacts:
+    reports:
+      junit: performance-test-results.xml
+    expire_in: 1 week
+  allow_failure: true
+
+client-tests:
+  stage: test
+  image: node:18
+  before_script:
+    - cd pydance-client
+    - npm ci
+  script:
+    - npm test
+    - npm run build
+    - npm run test:integration
+  artifacts:
+    reports:
+      junit: pydance-client/test-results.xml
+    paths:
+      - pydance-client/dist/
+    expire_in: 1 week
+
+# Security Stage
+security-scan:
+  stage: security
+  image: python:${PYTHON_VERSION}
+  before_script:
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install bandit
+  script:
+    - bandit -r src/ -f json -o bandit-report.json
+  artifacts:
+    reports:
+      junit: bandit-report.json
+    expire_in: 1 week
+  allow_failure: true
+
+container-scan:
+  stage: security
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - apk add --no-cache curl
+    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+  script:
+    - docker build -t pydance:$CI_COMMIT_SHA .
+    - trivy image --format json --output trivy-report.json pydance:$CI_COMMIT_SHA
+  artifacts:
+    reports:
+      junit: trivy-report.json
+    expire_in: 1 week
+  allow_failure: true
+
+# Build Stage
+build-package:
+  stage: build
+  image: python:${PYTHON_VERSION}
+  before_script:
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install --upgrade pip
+    - pip install build twine
+  script:
+    - source venv/bin/activate
+    - python -m build
+    - twine check dist/*
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 week
+
+build-docker:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - |
+      if [ "$CI_COMMIT_BRANCH" == "main" ]; then
+        docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:latest
+        docker push $CI_REGISTRY_IMAGE:latest
+      fi
+
+# Deploy Stage
+deploy-staging:
+  stage: deploy
+  image: alpine/k8s:latest
+  environment:
+    name: staging
+    url: https://staging.pydance.com
+  before_script:
+    - echo $KUBE_CONFIG | base64 -d > kubeconfig
+    - export KUBECONFIG=kubeconfig
+  script:
+    - kubectl set image deployment/pydance-staging pydance=$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA --namespace=staging
+    - kubectl rollout status deployment/pydance-staging --namespace=staging
+  only:
+    - develop
+
+deploy-production:
+  stage: deploy
+  image: alpine/k8s:latest
+  environment:
+    name: production
+    url: https://pydance.com
+  before_script:
+    - echo $KUBE_CONFIG | base64 -d > kubeconfig
+    - export KUBECONFIG=kubeconfig
+  script:
+    - kubectl set image deployment/pydance-prod pydance=$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA --namespace=production
+    - kubectl rollout status deployment/pydance-prod --namespace=production
+  when: manual
+  only:
+    - tags
+
+publish-pypi:
+  stage: deploy
+  image: python:${PYTHON_VERSION}
+  before_script:
+    - pip install twine
+  script:
+    - twine upload dist/* --username __token__ --password $PYPI_TOKEN
+  dependencies:
+    - build-package
+  only:
+    - tags
+
+# Pages for documentation
+pages:
+  stage: deploy
+  image: python:${PYTHON_VERSION}
+  before_script:
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install sphinx sphinx-rtd-theme
+  script:
+    - source venv/bin/activate
+    - sphinx-build -b html docs/ public/
+  artifacts:
+    paths:
+      - public
+  only:
+    - main

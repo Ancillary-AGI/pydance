@@ -1,7 +1,7 @@
-# Example Nginx configuration for Pyserv  applications
+# Example Nginx configuration for Pydance  applications
 # Copy this file to /etc/nginx/sites-available/ and symlink to sites-enabled/
 
-upstream pyserv _app {
+upstream pydance _app {
     # For single server
     server 127.0.0.1:8000;
 
@@ -68,7 +68,7 @@ server {
 
     # Main application
     location / {
-        proxy_pass http://pyserv _app;
+        proxy_pass http://pydance _app;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -92,13 +92,13 @@ server {
 
     # Health check endpoint
     location /health {
-        proxy_pass http://pyserv _app;
+        proxy_pass http://pydance _app;
         access_log off;
     }
 
     # Metrics endpoint (if using Prometheus)
     location /metrics {
-        proxy_pass http://pyserv _app;
+        proxy_pass http://pydance _app;
         allow 127.0.0.1;
         deny all;
     }

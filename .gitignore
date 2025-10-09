@@ -116,8 +116,8 @@ dmypy.json
 .DS_Store
 Thumbs.db
 
-# Pyserv 
-.pyserv .pid
+# Pydance 
+.pydance .pid
 *.log
 config.py
 static/

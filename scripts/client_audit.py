@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive Pyserv-Client Framework Quality Audit
+Comprehensive Pydance-Client Framework Quality Audit
 Validates client-side implementation quality
 """
 
@@ -26,7 +26,7 @@ class ClientFrameworkAuditor:
         
     def audit_all(self) -> Dict[str, ClientComponentAudit]:
         """Audit all client framework components"""
-        print("Starting comprehensive Pyserv-Client framework audit...\n")
+        print("Starting comprehensive Pydance-Client framework audit...\n")
         
         # Core client components
         self.audit_project_structure()
@@ -400,7 +400,7 @@ class ClientFrameworkAuditor:
         """Generate comprehensive client audit report"""
         report = []
         report.append("=" * 80)
-        report.append("PYSERV-CLIENT FRAMEWORK COMPREHENSIVE QUALITY AUDIT")
+        report.append("PYDANCE-CLIENT FRAMEWORK COMPREHENSIVE QUALITY AUDIT")
         report.append("=" * 80)
         report.append("")
         
@@ -462,7 +462,7 @@ class ClientFrameworkAuditor:
         
         for name, desc, score in comparisons:
             comparison = "BETTER" if avg_score > score else "COMPARABLE" if abs(avg_score - score) <= 5 else "BEHIND"
-            report.append(f"{name} ({desc}): {score}/100 - Pyserv-Client is {comparison}")
+            report.append(f"{name} ({desc}): {score}/100 - Pydance-Client is {comparison}")
         
         report.append("")
         report.append("=" * 80)
@@ -470,10 +470,10 @@ class ClientFrameworkAuditor:
         return "\n".join(report)
 
 def main():
-    client_path = Path(__file__).parent.parent / "pyserv-client"
+    client_path = Path(__file__).parent.parent / "pydance-client"
     
     if not client_path.exists():
-        print("Pyserv-Client framework not found!")
+        print("Pydance-Client framework not found!")
         return
     
     auditor = ClientFrameworkAuditor(client_path)

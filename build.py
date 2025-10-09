@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Build script for Pyserv  framework.
+Build script for Pydance  framework.
 Handles building, testing, and publishing the package.
 """
 
@@ -47,21 +47,21 @@ def main():
 
     elif command == "test":
         print("Running tests...")
-        run_command("python -m pytest --cov=pyserv  --cov-report=term-missing")
+        run_command("python -m pytest --cov=pydance  --cov-report=term-missing")
 
     elif command == "lint":
         print("Running linting...")
-        run_command("python -m flake8 src/pyserv tests")
-        run_command("python -m black --check --diff src/pyserv tests")
-        run_command("python -m isort --check-only --diff src/pyserv tests")
+        run_command("python -m flake8 src/pydance tests")
+        run_command("python -m black --check --diff src/pydance tests")
+        run_command("python -m isort --check-only --diff src/pydance tests")
 
     elif command == "typecheck":
         print("Running type checking...")
-        run_command("python -m mypy src/pyserv")
+        run_command("python -m mypy src/pydance")
 
     elif command == "security":
         print("Running security checks...")
-        run_command("python -m bandit -r src/pyserv -c .bandit.yml")
+        run_command("python -m bandit -r src/pydance -c .bandit.yml")
 
     elif command == "publish":
         print("Publishing to PyPI...")

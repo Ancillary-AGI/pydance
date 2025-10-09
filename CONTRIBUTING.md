@@ -1,6 +1,6 @@
-# Contributing to Pyserv 
+# Contributing to Pydance 
 
-Thank you for your interest in contributing to Pyserv ! We welcome contributions from the community.
+Thank you for your interest in contributing to Pydance ! We welcome contributions from the community.
 
 ## Development Setup
 
@@ -14,8 +14,8 @@ Thank you for your interest in contributing to Pyserv ! We welcome contributions
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/ancillary-ai/pyserv .git
-cd pyserv 
+git clone https://github.com/ancillary-ai/pydance .git
+cd pydance 
 ```
 
 2. Create a virtual environment:
@@ -38,7 +38,7 @@ pre-commit install
 
 ### 1. Choose an Issue
 
-- Check the [Issues](https://github.com/ancillary-ai/pyserv /issues) page
+- Check the [Issues](https://github.com/ancillary-ai/pydance /issues) page
 - Look for issues labeled `good first issue` or `help wanted`
 - Comment on the issue to indicate you're working on it
 
@@ -69,7 +69,7 @@ pytest tests/integration/
 pytest tests/performance/
 
 # Run with coverage
-pytest --cov=pyserv  --cov-report=html
+pytest --cov=pydance  --cov-report=html
 
 # Run linting
 tox -e lint
@@ -174,7 +174,7 @@ Types:
 
 ## Release Process
 
-1. Update version in `src/pyserv/__init__.py`
+1. Update version in `src/pydance/__init__.py`
 2. Update CHANGELOG.md
 3. Create a release PR
 4. Tag the release after merge
@@ -188,7 +188,7 @@ Types:
 
 ## License
 
-By contributing to Pyserv , you agree that your contributions will be licensed under the MIT License.
+By contributing to Pydance , you agree that your contributions will be licensed under the MIT License.
 
 
 

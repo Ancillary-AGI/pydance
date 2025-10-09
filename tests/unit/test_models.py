@@ -4,11 +4,11 @@ Unit tests for refactored models
 import pytest
 import asyncio
 from datetime import datetime
-from pyserv.models.base import BaseModel
-from pyserv.models.user import BaseUser, UserRole, UserStatus
-from pyserv.models.factory import ModelFactory
-from pyserv.database.config_consolidated import DatabaseConfig
-from pyserv.models.base import StringField, IntegerField, BooleanField
+from pydance.models.base import BaseModel
+from pydance.models.user import BaseUser, UserRole, UserStatus
+from pydance.models.factory import ModelFactory
+from pydance.db.config import DatabaseConfig
+from pydance.models.base import StringField, IntegerField, BooleanField
 
 
 class TestModel(BaseModel):

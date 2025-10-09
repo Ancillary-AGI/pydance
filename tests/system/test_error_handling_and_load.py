@@ -21,7 +21,7 @@ class TestErrorHandlingAndLoad:
 
         # Create app.py with error routes
         app_content = '''
-from pyserv import Application
+from pydance import Application
 
 app = Application()
 

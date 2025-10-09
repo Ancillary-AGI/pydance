@@ -3,7 +3,7 @@ Integration tests for HTTP endpoints
 """
 import pytest
 
-from pyserv import Application
+from pydance import Application
 
 
 @pytest.mark.integration
@@ -17,7 +17,7 @@ class TestHTTPEndpoints:
 
         @app.route('/')
         async def home(request):
-            return {'message': 'Welcome to Pyserv ', 'status': 'ok'}
+            return {'message': 'Welcome to Pydance ', 'status': 'ok'}
 
         @app.route('/users/{user_id}')
         async def get_user(request, user_id: int):
@@ -36,7 +36,7 @@ class TestHTTPEndpoints:
         response = await client.get('/')
         assert response.status_code == 200
         data = response.json()
-        assert data['message'] == 'Welcome to Pyserv '
+        assert data['message'] == 'Welcome to Pydance '
         assert data['status'] == 'ok'
 
     @pytest.mark.asyncio

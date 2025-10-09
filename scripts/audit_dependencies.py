@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Dependency audit script for Pyserv framework
+Dependency audit script for Pydance framework
 Scans all Python files to find actual external dependencies being used
 """
 
@@ -81,8 +81,8 @@ def scan_directory(directory):
                 imports = find_imports_in_file(file_path)
                 
                 for imp in imports:
-                    # Skip internal pyserv imports
-                    if imp.startswith('pyserv'):
+                    # Skip internal pydance imports
+                    if imp.startswith('pydance'):
                         continue
                     # Skip standard library
                     if imp in STDLIB_MODULES:
@@ -96,9 +96,9 @@ def scan_directory(directory):
     return external_deps
 
 def main():
-    src_dir = Path(__file__).parent / "src" / "pyserv"
+    src_dir = Path(__file__).parent / "src" / "pydance"
     
-    print("Scanning Pyserv framework for external dependencies...\n")
+    print("Scanning Pydance framework for external dependencies...\n")
     
     external_deps = scan_directory(src_dir)
     

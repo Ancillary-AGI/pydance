@@ -1,5 +1,5 @@
 ================================================================================
-PYSERV FRAMEWORK COMPREHENSIVE QUALITY AUDIT
+PYDANCE FRAMEWORK COMPREHENSIVE QUALITY AUDIT
 ================================================================================
 
 OVERALL ASSESSMENT: WORLD-CLASS - Exceeds best-in-class frameworks
@@ -96,10 +96,10 @@ Enterprise Features: 100.0/100
 
 COMPARISON WITH BEST-IN-CLASS FRAMEWORKS:
 --------------------------------------------------
-FastAPI (Modern async Python framework): 85/100 - Pyserv is BETTER
-Django (Full-featured web framework): 88/100 - Pyserv is BETTER
-Flask (Lightweight web framework): 75/100 - Pyserv is BETTER
-Starlette (ASGI framework): 82/100 - Pyserv is BETTER
-Tornado (Async web framework): 78/100 - Pyserv is BETTER
+FastAPI (Modern async Python framework): 85/100 - Pydance is BETTER
+Django (Full-featured web framework): 88/100 - Pydance is BETTER
+Flask (Lightweight web framework): 75/100 - Pydance is BETTER
+Starlette (ASGI framework): 82/100 - Pydance is BETTER
+Tornado (Async web framework): 78/100 - Pydance is BETTER
 
 ================================================================================

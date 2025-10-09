@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive test to verify Pyserv framework is working correctly.
+Comprehensive test to verify Pydance framework is working correctly.
 Tests core functionality, imports, and basic operations.
 """
 
@@ -18,44 +18,44 @@ def test_imports():
     
     try:
         # Core framework
-        from pyserv import Application, AppConfig, Router, Route
-        from pyserv.http import Request, Response
-        from pyserv.server import Server
+        from pydance import Application, AppConfig, Router, Route
+        from pydance.http import Request, Response
+        from pydance.server import Server
         print("[OK] Core framework imports")
         
         # Security
-        from pyserv.security import SecurityManager, FileValidator
-        from pyserv.security.middleware import SecurityMiddleware
+        from pydance.security import SecurityManager, FileValidator
+        from pydance.security.middleware import SecurityMiddleware
         print("[OK] Security imports")
         
         # Session management
-        from pyserv.server.session import SessionManager, SessionConfig
+        from pydance.server.session import SessionManager, SessionConfig
         print("[OK] Session imports")
         
         # Database/Models
-        from pyserv.models import BaseModel, StringField, IntegerField
+        from pydance.models import BaseModel, StringField, IntegerField
         print("[OK] Model imports")
         
         # Middleware
-        from pyserv.middleware import MiddlewareManager
+        from pydance.middleware import MiddlewareManager
         print("[OK] Middleware imports")
         
         # Templates
-        from pyserv.templating import TemplateEngine
+        from pydance.templating import TemplateEngine
         print("[OK] Template imports")
         
         # Events and plugins
-        from pyserv.events import EventBus, Event
-        from pyserv.plugins import PluginManager
+        from pydance.events import EventBus, Event
+        from pydance.plugins import PluginManager
         print("[OK] Events/Plugins imports")
         
         # WebSocket and SSE
-        from pyserv.websocket import WebSocket
-        from pyserv.server.sse import SSEManager
+        from pydance.websocket import WebSocket
+        from pydance.server.sse import SSEManager
         print("[OK] WebSocket/SSE imports")
         
         # Exceptions
-        from pyserv.exceptions import HTTPException, BadRequest, NotFound
+        from pydance.exceptions import HTTPException, BadRequest, NotFound
         print("[OK] Exception imports")
         
         return True
@@ -70,7 +70,7 @@ def test_basic_application():
     print("\nTesting basic application...")
     
     try:
-        from pyserv import Application, Response
+        from pydance import Application, Response
         
         # Create application
         app = Application()
@@ -78,11 +78,11 @@ def test_basic_application():
         # Add a simple route
         @app.route('/')
         async def home(request):
-            return Response.text("Hello, Pyserv!")
+            return Response.text("Hello, Pydance!")
         
         @app.route('/json')
         async def json_endpoint(request):
-            return Response.json({"message": "success", "framework": "Pyserv"})
+            return Response.json({"message": "success", "framework": "Pydance"})
         
         # Check routes were added
         assert len(app.router.routes) >= 2
@@ -100,7 +100,7 @@ def test_models():
     print("\nTesting models...")
     
     try:
-        from pyserv.models import BaseModel, StringField, IntegerField, DateTimeField
+        from pydance.models import BaseModel, StringField, IntegerField, DateTimeField
         
         class User(BaseModel):
             name = StringField(max_length=100, nullable=False)
@@ -133,9 +133,9 @@ def test_middleware():
     print("\nTesting middleware...")
     
     try:
-        from pyserv import Application
-        from pyserv.middleware.manager import PerformanceMonitoringMiddleware
-        from pyserv.security.middleware import SecurityHeadersMiddleware
+        from pydance import Application
+        from pydance.middleware.manager import PerformanceMonitoringMiddleware
+        from pydance.security.middleware import SecurityHeadersMiddleware
         
         app = Application()
         
@@ -159,8 +159,8 @@ def test_security():
     print("\nTesting security...")
     
     try:
-        from pyserv.security import get_security_manager, BasicFileValidator
-        from pyserv.security.middleware import SecurityConfig
+        from pydance.security import get_security_manager, BasicFileValidator
+        from pydance.security.middleware import SecurityConfig
         
         # Test security manager
         security = get_security_manager()
@@ -187,7 +187,7 @@ def test_sessions():
     print("\nTesting sessions...")
     
     try:
-        from pyserv.server.session import SessionManager, SessionConfig, MemorySessionStore
+        from pydance.server.session import SessionManager, SessionConfig, MemorySessionStore
         
         # Create session manager
         config = SessionConfig(secret_key="test-key")
@@ -210,7 +210,7 @@ def test_templates():
     print("\nTesting templates...")
     
     try:
-        from pyserv.templating import TemplateEngine
+        from pydance.templating import TemplateEngine
         
         engine = TemplateEngine()
         
@@ -232,8 +232,8 @@ async def test_async_features():
     print("\nTesting async features...")
     
     try:
-        from pyserv.events import EventBus, Event
-        from pyserv.server.sse import SSEManager
+        from pydance.events import EventBus, Event
+        from pydance.server.sse import SSEManager
         
         # Test event bus
         bus = EventBus()
@@ -257,7 +257,7 @@ def test_exceptions():
     print("\nTesting exceptions...")
     
     try:
-        from pyserv.exceptions import HTTPException, BadRequest, NotFound, ValidationError
+        from pydance.exceptions import HTTPException, BadRequest, NotFound, ValidationError
         
         # Test basic exception
         exc = BadRequest("Invalid input")
@@ -278,7 +278,7 @@ def test_exceptions():
 
 async def main():
     """Run all tests"""
-    print("Testing Pyserv Framework Functionality\n")
+    print("Testing Pydance Framework Functionality\n")
     
     tests = [
         test_imports,
@@ -310,7 +310,7 @@ async def main():
     print(f"\nTest Results: {passed}/{total} tests passed")
     
     if passed == total:
-        print("All tests passed! Pyserv framework is working correctly.")
+        print("All tests passed! Pydance framework is working correctly.")
         return True
     else:
         print("Some tests failed. Check the output above for details.")

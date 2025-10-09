@@ -1,0 +1,308 @@
+trigger:
+  branches:
+    include:
+    - main
+    - develop
+    - feature/*
+    - hotfix/*
+  tags:
+    include:
+    - v*
+
+pr:
+  branches:
+    include:
+    - main
+    - develop
+
+variables:
+  pythonVersion: '3.11'
+  nodeVersion: '18'
+
+stages:
+- stage: Validate
+  displayName: 'Code Quality & Validation'
+  jobs:
+  - job: CodeQuality
+    displayName: 'Code Quality Checks'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(pythonVersion)'
+      displayName: 'Use Python $(pythonVersion)'
+    
+    - script: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install black isort flake8 mypy bandit safety
+      displayName: 'Install dependencies'
+    
+    - script: |
+        black --check src/ tests/
+        isort --check-only src/ tests/
+      displayName: 'Code formatting check'
+    
+    - script: |
+        flake8 src/ tests/ --output-file=flake8-report.txt
+        mypy src/ --junit-xml=mypy-results.xml
+      displayName: 'Linting and type checking'
+      continueOnError: true
+    
+    - script: |
+        bandit -r src/ -f json -o bandit-report.json
+        safety check --json --output safety-report.json
+      displayName: 'Security scanning'
+      continueOnError: true
+    
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFiles: 'mypy-results.xml'
+        testRunTitle: 'MyPy Type Checking'
+      condition: always()
+    
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)'
+        artifactName: 'security-reports'
+        includeRootFolder: false
+        artifactType: 'container'
+      condition: always()
+
+- stage: Test
+  displayName: 'Testing'
+  dependsOn: Validate
+  jobs:
+  - job: UnitTests
+    displayName: 'Unit Tests'
+    strategy:
+      matrix:
+        Python39:
+          pythonVersion: '3.9'
+        Python310:
+          pythonVersion: '3.10'
+        Python311:
+          pythonVersion: '3.11'
+        Python312:
+          pythonVersion: '3.12'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(pythonVersion)'
+      displayName: 'Use Python $(pythonVersion)'
+    
+    - script: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-asyncio
+      displayName: 'Install dependencies'
+    
+    - script: |
+        pytest tests/unit/ --cov=src/pydance --cov-report=xml --cov-report=html --junit-xml=unit-test-results.xml
+      displayName: 'Run unit tests'
+    
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFiles: 'unit-test-results.xml'
+        testRunTitle: 'Unit Tests - Python $(pythonVersion)'
+      condition: always()
+    
+    - task: PublishCodeCoverageResults@1
+      inputs:
+        codeCoverageTool: 'Cobertura'
+        summaryFileLocation: 'coverage.xml'
+        reportDirectory: 'htmlcov'
+      condition: always()
+
+  - job: IntegrationTests
+    displayName: 'Integration Tests'
+    pool:
+      vmImage: 'ubuntu-latest'
+    services:
+      postgres: postgres:15
+      redis: redis:7
+    variables:
+      POSTGRES_DB: pydance_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/pydance_test
+      REDIS_URL: redis://localhost:6379/0
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(pythonVersion)'
+      displayName: 'Use Python $(pythonVersion)'
+    
+    - script: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-asyncio
+      displayName: 'Install dependencies'
+    
+    - script: |
+        pytest tests/integration/ --junit-xml=integration-test-results.xml
+      displayName: 'Run integration tests'
+    
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFiles: 'integration-test-results.xml'
+        testRunTitle: 'Integration Tests'
+      condition: always()
+
+  - job: ClientTests
+    displayName: 'Client Tests'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '$(nodeVersion)'
+      displayName: 'Use Node.js $(nodeVersion)'
+    
+    - script: |
+        cd pydance-client
+        npm ci
+        npm test
+        npm run build
+        npm run test:integration
+      displayName: 'Run client tests'
+    
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFiles: 'pydance-client/test-results.xml'
+        testRunTitle: 'Client Tests'
+      condition: always()
+
+- stage: Security
+  displayName: 'Security Scanning'
+  dependsOn: Test
+  jobs:
+  - job: SecurityScan
+    displayName: 'Security Analysis'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(pythonVersion)'
+      displayName: 'Use Python $(pythonVersion)'
+    
+    - script: |
+        python -m pip install --upgrade pip
+        pip install bandit
+        bandit -r src/ -f json -o bandit-report.json
+      displayName: 'Bandit security scan'
+      continueOnError: true
+    
+    - task: Docker@2
+      displayName: 'Build Docker image'
+      inputs:
+        command: 'build'
+        dockerfile: 'Dockerfile'
+        tags: 'pydance:$(Build.BuildId)'
+    
+    - script: |
+        docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+          -v $(pwd):/tmp aquasec/trivy:latest image \
+          --format json --output /tmp/trivy-report.json pydance:$(Build.BuildId)
+      displayName: 'Trivy container scan'
+      continueOnError: true
+
+- stage: Build
+  displayName: 'Build & Package'
+  dependsOn: Security
+  jobs:
+  - job: BuildPackage
+    displayName: 'Build Python Package'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(pythonVersion)'
+      displayName: 'Use Python $(pythonVersion)'
+    
+    - script: |
+        python -m pip install --upgrade pip
+        pip install build twine
+        python -m build
+        twine check dist/*
+      displayName: 'Build package'
+    
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: 'dist'
+        artifactName: 'python-package'
+
+  - job: BuildDocker
+    displayName: 'Build Docker Image'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: Docker@2
+      displayName: 'Build and push Docker image'
+      inputs:
+        containerRegistry: 'DockerHub'
+        repository: 'pydance/framework'
+        command: 'buildAndPush'
+        dockerfile: 'Dockerfile'
+        tags: |
+          $(Build.BuildId)
+          latest
+
+- stage: Deploy
+  displayName: 'Deployment'
+  dependsOn: Build
+  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/develop'), startsWith(variables['Build.SourceBranch'], 'refs/tags/v')))
+  jobs:
+  - deployment: DeployStaging
+    displayName: 'Deploy to Staging'
+    condition: eq(variables['Build.SourceBranch'], 'refs/heads/develop')
+    environment: 'staging'
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: KubernetesManifest@0
+            displayName: 'Deploy to Kubernetes'
+            inputs:
+              action: 'deploy'
+              kubernetesServiceConnection: 'k8s-staging'
+              namespace: 'staging'
+              manifests: 'k8s/staging/*.yaml'
+              containers: 'pydance/framework:$(Build.BuildId)'
+
+  - deployment: DeployProduction
+    displayName: 'Deploy to Production'
+    condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
+    environment: 'production'
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: KubernetesManifest@0
+            displayName: 'Deploy to Kubernetes'
+            inputs:
+              action: 'deploy'
+              kubernetesServiceConnection: 'k8s-production'
+              namespace: 'production'
+              manifests: 'k8s/production/*.yaml'
+              containers: 'pydance/framework:$(Build.BuildId)'
+          
+          - task: TwineAuthenticate@1
+            displayName: 'Authenticate with PyPI'
+            inputs:
+              pythonUploadServiceConnection: 'PyPI'
+          
+          - script: |
+              python -m pip install --upgrade pip
+              pip install twine
+              twine upload dist/* --config-file $(PYPIRC_PATH)
+            displayName: 'Publish to PyPI'

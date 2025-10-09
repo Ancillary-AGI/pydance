@@ -1,0 +1,135 @@
+steps:
+  - label: ":python: Code Quality"
+    command: |
+      python -m venv venv
+      source venv/bin/activate
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      pip install black isort flake8 mypy bandit safety
+      
+      echo "--- Code formatting"
+      black --check src/ tests/
+      isort --check-only src/ tests/
+      
+      echo "--- Linting"
+      flake8 src/ tests/
+      mypy src/
+      
+      echo "--- Security scan"
+      bandit -r src/ -f json -o bandit-report.json
+      safety check --json --output safety-report.json
+    artifact_paths:
+      - "bandit-report.json"
+      - "safety-report.json"
+    agents:
+      queue: "default"
+
+  - label ":test_tube: Unit Tests"
+    command: |
+      python -m venv venv
+      source venv/bin/activate
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      pip install pytest pytest-cov pytest-asyncio
+      
+      pytest tests/unit/ --cov=src/pydance --cov-report=xml --cov-report=html --junit-xml=unit-test-results.xml
+    artifact_paths:
+      - "unit-test-results.xml"
+      - "coverage.xml"
+      - "htmlcov/**/*"
+    agents:
+      queue: "default"
+
+  - label ":gear: Integration Tests"
+    command: |
+      python -m venv venv
+      source venv/bin/activate
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      pip install pytest pytest-asyncio
+      
+      pytest tests/integration/ --junit-xml=integration-test-results.xml
+    services:
+      - postgres:15
+      - redis:7
+    env:
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/pydance_test"
+      REDIS_URL: "redis://redis:6379/0"
+    artifact_paths:
+      - "integration-test-results.xml"
+    agents:
+      queue: "default"
+
+  - label ":nodejs: Client Tests"
+    command: |
+      cd pydance-client
+      npm ci
+      npm test
+      npm run build
+      npm run test:integration
+    artifact_paths:
+      - "pydance-client/dist/**/*"
+      - "pydance-client/test-results.xml"
+    agents:
+      queue: "default"
+
+  - label ":package: Build Package"
+    command: |
+      python -m venv venv
+      source venv/bin/activate
+      pip install --upgrade pip
+      pip install build twine
+      
+      python -m build
+      twine check dist/*
+    artifact_paths:
+      - "dist/*"
+    agents:
+      queue: "default"
+
+  - label ":docker: Build Docker Image"
+    command: |
+      docker build -t pydance/framework:$BUILDKITE_COMMIT .
+      
+      if [[ "$BUILDKITE_BRANCH" == "main" || "$BUILDKITE_BRANCH" == "develop" ]]; then
+        echo "--- Pushing to registry"
+        docker tag pydance/framework:$BUILDKITE_COMMIT pydance/framework:latest
+        docker push pydance/framework:$BUILDKITE_COMMIT
+        docker push pydance/framework:latest
+      fi
+    agents:
+      queue: "docker"
+
+  - wait
+
+  - label ":rocket: Deploy to Staging"
+    command: |
+      echo "Deploying to staging environment"
+      kubectl set image deployment/pydance-staging pydance=pydance/framework:$BUILDKITE_COMMIT --namespace=staging
+      kubectl rollout status deployment/pydance-staging --namespace=staging
+    branches: "develop"
+    agents:
+      queue: "deploy"
+
+  - label ":rocket: Deploy to Production"
+    command: |
+      echo "Deploying to production environment"
+      kubectl set image deployment/pydance-prod pydance=pydance/framework:$BUILDKITE_COMMIT --namespace=production
+      kubectl rollout status deployment/pydance-prod --namespace=production
+    branches: "main"
+    agents:
+      queue: "deploy"
+    concurrency: 1
+    concurrency_group: "production-deploy"
+
+  - label ":package: Publish to PyPI"
+    command: |
+      python -m venv venv
+      source venv/bin/activate
+      pip install twine
+      
+      twine upload dist/* --username __token__ --password $PYPI_TOKEN
+    branches: "main"
+    if: build.tag != null
+    agents:
+      queue: "default"

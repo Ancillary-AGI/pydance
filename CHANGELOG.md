@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Initial release of Pyserv  framework
+- Initial release of Pydance  framework
 - High-performance web framework with C/C++ extensions
 - MVC architecture with controllers, models, and views
 - Advanced security features including IAM, cryptography, and zero trust

@@ -12,12 +12,12 @@ from unittest.mock import Mock, patch, MagicMock
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
-from pyserv.migrations.migration import Migration
-from pyserv.migrations.migrator import Migrator
-from pyserv.migrations.framework import MigrationFramework
-from pyserv.database.config import DatabaseConfig
-from pyserv.models.base import BaseModel
-from pyserv.utils.types import Field, StringField, IntegerField
+from pydance.db.migrations.migration import Migration
+from pydance.db.migrations.migrator import Migrator
+from pydance.db.migrations.framework import MigrationFramework
+from pydance.db.config import DatabaseConfig
+from pydance.db.models.base import BaseModel
+from pydance.db.models.base import Field, StringField, IntegerField
 
 
 class TestMigration:
@@ -138,13 +138,10 @@ class TestMigrator:
         assert migrator.applied_migrations == {}
         assert migrator.migration_schemas == {}
 
-    @patch('src.pyserv .migrations.migrator.DatabaseConnection')
+    @patch('pydance.db.migrations.migrator.DatabaseConnection')
     async def test_initialize_sqlite(self, mock_db_conn, migrator):
         """Test SQLite initialization"""
-        migrator.db_config.is_sqlite = True
-        migrator.db_config.is_postgres = False
-        migrator.db_config.is_mysql = False
-        migrator.db_config.is_mongodb = False
+        migrator.db_config.engine = 'sqlite'
 
         mock_conn = Mock()
         mock_db_conn.get_instance.return_value.get_connection.return_value.__aenter__ = Mock(return_value=mock_conn)
@@ -204,7 +201,7 @@ class TestMigrationFramework:
         assert framework.app_package == 'test_app'
         assert framework.discovered_models == []
 
-    @patch('src.pyserv .migrations.framework.DatabaseConnection')
+    @patch('pydance.db.migrations.framework.DatabaseConnection')
     async def test_initialize_framework(self, mock_db_conn, framework):
         """Test framework initialization"""
         mock_conn_instance = Mock()
@@ -243,39 +240,39 @@ class TestDatabaseConfig:
     def test_sqlite_config(self):
         """Test SQLite database configuration"""
         config = DatabaseConfig('sqlite:///test.db')
-        assert config.is_sqlite is True
-        assert config.database == 'test.db'
+        assert config.engine == 'sqlite'
+        assert config.name == 'test.db'
         assert config.get_connection_params() == {'database': 'test.db'}
 
     def test_postgres_config(self):
         """Test PostgreSQL database configuration"""
         config = DatabaseConfig('postgresql://user:pass@localhost:5432/testdb')
-        assert config.is_postgres is True
-        assert config.username == 'user'
+        assert config.engine == 'postgresql'
+        assert config.user == 'user'
         assert config.password == 'pass'
         assert config.host == 'localhost'
         assert config.port == 5432
-        assert config.database == 'testdb'
+        assert config.name == 'testdb'
 
     def test_mysql_config(self):
         """Test MySQL database configuration"""
         config = DatabaseConfig('mysql://user:pass@localhost:3306/testdb')
-        assert config.is_mysql is True
-        assert config.username == 'user'
+        assert config.engine == 'mysql'
+        assert config.user == 'user'
         assert config.password == 'pass'
         assert config.host == 'localhost'
         assert config.port == 3306
-        assert config.database == 'testdb'
+        assert config.name == 'testdb'
 
     def test_mongodb_config(self):
         """Test MongoDB database configuration"""
         config = DatabaseConfig('mongodb://user:pass@localhost:27017/testdb')
-        assert config.is_mongodb is True
-        assert config.username == 'user'
+        assert config.engine == 'mongodb'
+        assert config.user == 'user'
         assert config.password == 'pass'
         assert config.host == 'localhost'
         assert config.port == 27017
-        assert config.database == 'testdb'
+        assert config.name == 'testdb'
 
 
 class TestFieldTypes:
@@ -356,7 +353,3 @@ class TestMigrationWorkflow:
         current_version = 0
         target_version = getattr(test_model, '_migration_version', 1)
         assert target_version > current_version
-
-
-
-

@@ -1,4 +1,4 @@
-# Gunicorn configuration for Pyserv  applications
+# Gunicorn configuration for Pydance  applications
 # Copy this file to your project root and modify as needed
 
 import multiprocessing
@@ -27,13 +27,13 @@ errorlog = "/app/logs/error.log"
 access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(D)s'
 
 # Process naming
-proc_name = "pyserv "
+proc_name = "pydance "
 
 # Server mechanics
 preload_app = True
 pidfile = "/app/logs/gunicorn.pid"
-user = "pyserv "
-group = "pyserv "
+user = "pydance "
+group = "pydance "
 tmp_upload_dir = None
 
 # SSL (uncomment and configure if needed)
@@ -64,12 +64,12 @@ if os.getenv("ENVIRONMENT", "development").lower() == "production":
 
     # Enable statsd metrics (if available)
     # statsd_host = "localhost:8125"
-    # statsd_prefix = "pyserv "
+    # statsd_prefix = "pydance "
 
     # Enable Prometheus metrics (if available)
     # prometheus_registry = None
 
-# Custom worker class for Pyserv  (if needed)
+# Custom worker class for Pydance  (if needed)
 # def worker_exit(server, worker):
 #     """Called when a worker exits"""
 #     pass

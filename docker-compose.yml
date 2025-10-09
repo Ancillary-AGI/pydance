@@ -13,28 +13,28 @@ services:
       - /app/__pycache__
     environment:
       - DEBUG=true
-      - DATABASE_URL=postgresql://pyserv :password@db:5432/pyserv 
+      - DATABASE_URL=postgresql://pydance :password@db:5432/pydance 
       - REDIS_URL=redis://redis:6379/0
     depends_on:
       - db
       - redis
-    command: python -c "from pyserv import Application; app = Application(); app.run(host='0.0.0.0', port=8000, debug=True)"
+    command: python -c "from pydance import Application; app = Application(); app.run(host='0.0.0.0', port=8000, debug=True)"
     networks:
-      - pyserv 
+      - pydance 
 
   # PostgreSQL database
   db:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_DB=pyserv 
-      - POSTGRES_USER=pyserv 
+      - POSTGRES_DB=pydance 
+      - POSTGRES_USER=pydance 
       - POSTGRES_PASSWORD=password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - pyserv 
+      - pydance 
 
   # Redis cache
   redis:
@@ -44,20 +44,20 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - pyserv 
+      - pydance 
 
   # PgAdmin for database management
   pgadmin:
     image: dpage/pgadmin4:latest
     environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@pyserv .com
+      - PGADMIN_DEFAULT_EMAIL=admin@pydance .com
       - PGADMIN_DEFAULT_PASSWORD=admin
     ports:
       - "5050:80"
     depends_on:
       - db
     networks:
-      - pyserv 
+      - pydance 
 
   # Redis Commander for Redis management
   redis-commander:
@@ -69,7 +69,7 @@ services:
     depends_on:
       - redis
     networks:
-      - pyserv 
+      - pydance 
 
   # Testing service
   test:
@@ -80,13 +80,13 @@ services:
       - .:/app
       - /app/__pycache__
     environment:
-      - DATABASE_URL=postgresql://pyserv :password@db:5432/pyserv _test
+      - DATABASE_URL=postgresql://pydance :password@db:5432/pydance _test
       - REDIS_URL=redis://redis:6379/1
     depends_on:
       - db
       - redis
     networks:
-      - pyserv 
+      - pydance 
     profiles:
       - testing
 
@@ -99,13 +99,13 @@ services:
       - "8001:8000"
     environment:
       - DEBUG=false
-      - DATABASE_URL=postgresql://pyserv :password@db:5432/pyserv _prod
+      - DATABASE_URL=postgresql://pydance :password@db:5432/pydance _prod
       - REDIS_URL=redis://redis:6379/2
     depends_on:
       - db
       - redis
     networks:
-      - pyserv 
+      - pydance 
     profiles:
       - production
 
@@ -114,7 +114,7 @@ volumes:
   redis_data:
 
 networks:
-  pyserv :
+  pydance :
     driver: bridge
 
 

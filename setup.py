@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Pyserv Framework Setup
+Pydance Framework Setup
 Enterprise-grade web framework with optional C/C++ extensions
 """
 
@@ -12,7 +12,7 @@ import subprocess
 
 def get_version():
     """Get version from __init__.py"""
-    version_file = Path(__file__).parent / "src" / "pyserv" / "__init__.py"
+    version_file = Path(__file__).parent / "src" / "pydance" / "__init__.py"
     if version_file.exists():
         with open(version_file, 'r') as f:
             for line in f:
@@ -49,7 +49,7 @@ def get_compile_args():
 def should_build_extensions():
     """Determine if C extensions should be built"""
     # Skip C extensions if explicitly disabled
-    if os.environ.get('PYSERV_DISABLE_CEXT', '').lower() in ('1', 'true', 'yes'):
+    if os.environ.get('PYDANCE_DISABLE_CEXT', '').lower() in ('1', 'true', 'yes'):
         return False
     
     # Check if compiler is available
@@ -149,33 +149,33 @@ extensions = []
 if should_build_extensions():
     # HTTP parser extension
     http_parser_ext = Extension(
-        'pyserv.core.http_parser',
-        sources=['src/pyserv/core/http_parser.c'] if os.path.exists('src/pyserv/core/http_parser.c') else [],
+        'pydance.http.http_parser',
+        sources=['src/pydance/http/http_parser.c'] if os.path.exists('src/pydance/http/http_parser.c') else [],
         extra_compile_args=get_compile_args(),
         language='c'
     )
-    
+
     # Only add if source file exists
-    if os.path.exists('src/pyserv/core/http_parser.c'):
+    if os.path.exists('src/pydance/http/http_parser.c'):
         extensions.append(http_parser_ext)
     
     if not extensions:
         print("Note: C extension source files not found. Framework will use Python implementations.")
 
 setup(
-    name="pyserv",
+    name="pydance",
     version=get_version(),
-    author="Pyserv Team",
-    author_email="team@pyserv.dev",
-    description="Enterprise-grade Python web framework with optional high-performance extensions",
+    author="Pydance Team",
+    author_email="team@pydance.dev",
+    description="Ultra-high-performance Python web framework with world-class efficiency",
     long_description=read_readme(),
     long_description_content_type="text/markdown",
-    url="https://github.com/pyserv/pyserv",
+    url="https://github.com/ancillary-ai/pydance",
     project_urls={
-        "Documentation": "https://docs.pyserv.dev",
-        "Source Code": "https://github.com/pyserv/pyserv",
-        "Bug Tracker": "https://github.com/pyserv/pyserv/issues",
-        "Changelog": "https://github.com/pyserv/pyserv/blob/main/CHANGELOG.md",
+        "Documentation": "https://pydance.dev/docs",
+        "Source Code": "https://github.com/ancillary-ai/pydance",
+        "Bug Tracker": "https://github.com/ancillary-ai/pydance/issues",
+        "Changelog": "https://github.com/ancillary-ai/pydance/blob/main/CHANGELOG.md",
     },
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -198,9 +198,9 @@ setup(
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     package_data={
-        "pyserv": [
+        "pydance": [
             "static/css/*.css",
-            "static/js/*.js", 
+            "static/js/*.js",
             "translations/*.json",
             "locale/*/LC_MESSAGES/*.mo",
         ]
@@ -212,7 +212,7 @@ setup(
     ext_modules=extensions,
     entry_points={
         "console_scripts": [
-            "pyserv=pyserv.cli:main",
+            "pydance=pydance.cli:main",
         ],
     },
     zip_safe=False,

@@ -3,10 +3,10 @@ Integration tests for database-agnostic model operations
 """
 import pytest
 import asyncio
-from pyserv.models.base import BaseModel
-from pyserv.models.user import BaseUser, UserRole, UserStatus
-from pyserv.database.config_consolidated import DatabaseConfig
-from pyserv.models.base import StringField, IntegerField, BooleanField, EmailField
+from pydance.models.base import BaseModel
+from pydance.models.user import BaseUser, UserRole, UserStatus
+from pydance.db.config_consolidated import DatabaseConfig
+from pydance.models.base import StringField, IntegerField, BooleanField, EmailField
 
 
 class Product(BaseModel):
