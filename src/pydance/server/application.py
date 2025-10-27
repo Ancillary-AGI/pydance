@@ -1,20 +1,26 @@
 """
-Pydance Application - Enterprise ASGI Web Framework
-A high-performance framework combining modern patterns from Express, Django, and Laravel.
+Pydance Application - ASGI Web Framework
+
+A framework for building ASGI applications with routing, middleware, and configuration management.
 """
 
 import inspect
-from typing import Dict, List, Callable, Any, Optional, Type, Union
+import asyncio
+import time
+from typing import Dict, List, Callable, Any, Optional, Type, Union, Awaitable
 import logging
+from dataclasses import dataclass, field
+from enum import Enum
 
 from pydance.config.settings import settings
 from pydance.config import AppConfig
 from pydance.routing import Router
-from pydance.middleware.manager import MiddlewareManager, get_middleware_manager
+from pydance.middleware.manager import get_middleware_manager
+from pydance.middleware.types import MiddlewareType
 from pydance.exceptions import HTTPException, WebSocketException, WebSocketDisconnect
 from pydance.http import Request, Response
 from pydance.websocket import WebSocket
-from pydance.templating import TemplateEngine
+from pydance.templating.engine import AbstractTemplateEngine
 
 logger = logging.getLogger(__name__)
 
@@ -22,11 +28,21 @@ from pydance.utils.di import Container
 from pydance.monitoring import MetricsCollector, HealthChecker
 from pydance.caching import get_cache_manager
 from pydance.graphql import GraphQLManager
+from pydance.events import get_event_bus
+from pydance.plugins import get_plugin_manager
 
 
 class Application:
     """
-    Modern ASGI web application framework.
+    ASGI web application framework.
+
+    This is the main application class that combines routing, middleware, and configuration.
+
+    Key features:
+    - URL routing with path converters
+    - Middleware pipeline with priority system
+    - Dependency injection container
+    - Optional features (monitoring, GraphQL, caching)
 
     Example:
         from pydance.server import Application
@@ -37,6 +53,10 @@ class Application:
         async def home(request):
             return Response.text('Hello, World!')
 
+        @app.route('/users/{id:int}')
+        async def user_detail(request, id):
+            return Response.json({'user_id': id})
+
         if __name__ == '__main__':
             app.run()
     """
@@ -44,8 +64,8 @@ class Application:
     def __init__(self, config: Optional[AppConfig] = None):
         self.config = config or settings
         self.router = Router()
-        self.middleware_manager = MiddlewareManager()
-        self.template_engine: Optional[TemplateEngine] = None
+        self.middleware_manager = get_middleware_manager()
+        self.template_engine: Optional[AbstractTemplateEngine] = None
         self.state: Dict[str, Any] = {}
 
         # Optional advanced features (explicit opt-in only)
@@ -55,7 +75,7 @@ class Application:
         self.graphql_manager = None
         self.cache = None
 
-        # Event handlers (Express style)
+        # Event handlers
         self._startup_handlers: List[Callable] = []
         self._shutdown_handlers: List[Callable] = []
         self._exception_handlers: Dict[Type[Exception], Callable] = {}
@@ -69,7 +89,7 @@ class Application:
 
     # Explicit opt-in methods for advanced features
     def with_container(self) -> 'Application':
-        """Enable dependency injection container (Laravel/Django style)."""
+        """Enable dependency injection container."""
         if Container is None:
             raise ImportError("Dependency injection not available. Install: pip install pydance[di]")
         self.container = Container()
@@ -121,6 +141,20 @@ class Application:
         except ImportError:
             pass
 
+        # Enable event bus and plugins
+        self.event_bus = get_event_bus()
+        self.plugin_manager = get_plugin_manager()
+
+        return self
+
+    def with_events(self) -> 'Application':
+        """Enable event system."""
+        self.event_bus = get_event_bus()
+        return self
+
+    def with_plugins(self) -> 'Application':
+        """Enable plugin system."""
+        self.plugin_manager = get_plugin_manager()
         return self
 
     def _setup_defaults(self) -> None:
@@ -162,12 +196,12 @@ class Application:
     def _setup_default_middleware(self) -> None:
         """Setup default middleware stack."""
         try:
-            from pydance.middleware import CORSMiddleware, LoggingMiddleware
+            from pydance.middleware import cors_middleware, logging_middleware
 
             # Add CORS support
-            self.add_middleware(CORSMiddleware())
+            self.use(cors_middleware)
             # Add logging middleware
-            self.add_middleware(LoggingMiddleware())
+            self.use(logging_middleware)
 
         except ImportError:
             # Best-effort: if middleware not available, continue silently
@@ -203,85 +237,122 @@ class Application:
             return handler
         return decorator
 
-    # Middleware API - combining Express, Django, and Laravel patterns
+    # Enhanced Middleware API
 
-    def use(self, middleware: Union[Callable, str], options: Optional[Dict[str, Any]] = None) -> 'Application':
+    def use(self, middleware: Union[MiddlewareType, List[MiddlewareType], str, List[str]],
+            options: Optional[Dict[str, Any]] = None,
+            priority: Optional[int] = None) -> 'Application':
         """
-        Express.js style middleware registration.
+        Enhanced middleware registration with Laravel-style aliases and priority support.
 
         Examples:
+            # Single middleware
             app.use(cors_middleware)
             app.use('auth', {'redirect': '/login'})
-            app.use(lambda req, call_next: call_next(req))
+            app.use(CORSMiddleware)
+
+            # Multiple middlewares with priorities
+            app.use([
+                'cors',
+                ('auth', {'redirect': '/login'}, 10),
+                ('rate_limit', {}, 5),
+                custom_middleware
+            ])
+
+            # Laravel-style middleware groups
+            app.use('web')  # Uses MIDDLEWARE_GROUPS['web']
+            app.use('api')  # Uses MIDDLEWARE_GROUPS['api']
+
+            # Priority-based registration
+            app.use('auth', priority=10)
+            app.use('cors', priority=1)
         """
+        # Handle list of middlewares
+        if isinstance(middleware, list):
+            for item in middleware:
+                if isinstance(item, tuple):
+                    # Tuple format: (middleware, options, priority)
+                    if len(item) == 3:
+                        mw, opts, pri = item
+                        self.use(mw, opts, pri)
+                    elif len(item) == 2:
+                        mw, opts = item
+                        self.use(mw, opts, priority)
+                    else:
+                        self.use(item[0], priority=priority)
+                else:
+                    self.use(item, options, priority)
+            return self
+
+        # Handle single middleware
         if isinstance(middleware, str):
-            # Laravel-style named middleware
+            # Named middleware or alias - resolve via settings
             middleware_instance = self._resolve_middleware_by_name(middleware, options or {})
+        elif isinstance(middleware, type):
+            # Class middleware - instantiate it
+            middleware_instance = middleware(**options) if options else middleware()
         else:
+            # Function middleware or already instantiated class
             middleware_instance = middleware
 
-        self.middleware_manager.add(middleware_instance)
-        return self  # Fluent interface
-
-    def middleware(self, *middleware_list: Union[str, Callable], **options) -> 'Application':
-        """
-        Laravel-style middleware registration with groups.
-
-        Examples:
-            app.middleware('auth', 'throttle:60,1', cors_middleware)
-            app.middleware('web')  # Group
-        """
-        for middleware in middleware_list:
-            if isinstance(middleware, str):
-                if ':' in middleware:
-                    # Laravel-style with parameters (throttle:60,1)
-                    name, params = middleware.split(':', 1)
-                    middleware_instance = self._resolve_middleware_by_name(name, {'params': params})
-                else:
-                    # Named middleware or group
-                    middleware_instance = self._resolve_middleware_by_name(middleware, options)
-            else:
-                middleware_instance = middleware
-
+        # Add with priority if specified
+        if priority is not None:
+            self.middleware_manager.add_with_priority(middleware_instance, priority)
+        else:
             self.middleware_manager.add(middleware_instance)
 
         return self  # Fluent interface
 
-    def add_middleware(self, middleware: Union[Callable, Type], priority: Optional[int] = None) -> None:
-        """
-        Django-style middleware registration.
-
-        Example:
-            app.add_middleware(CORSMiddleware)
-            app.add_middleware('django.middleware.security.SecurityMiddleware')
-        """
-        if priority is not None:
-            # Handle priority if middleware manager supports it
-            if hasattr(self.middleware_manager, 'add_with_priority'):
-                self.middleware_manager.add_with_priority(middleware, priority)
-            else:
-                self.middleware_manager.add(middleware)
-        else:
-            self.middleware_manager.add(middleware)
-
     def _resolve_middleware_by_name(self, name: str, options: Dict[str, Any]) -> Optional[Callable]:
         """
-        Laravel-style middleware resolution by name or group.
+        Enhanced middleware resolution with Laravel-style aliases and parameters.
 
-        Looks up middleware in:
-        1. Application middleware aliases
-        2. Global middleware registry
-        3. Middleware groups
+        Supports:
+        1. Laravel-style middleware groups: 'web', 'api'
+        2. Middleware aliases with parameters: 'throttle:api', 'auth:sanctum'
+        3. Settings-based middleware aliases
+        4. Global middleware registry
         """
         from pydance.middleware import MIDDLEWARE_ALIASES, MIDDLEWARE_GROUPS
 
-        # Check if it's a middleware group
-        if name in MIDDLEWARE_GROUPS:
-            for middleware_name in MIDDLEWARE_GROUPS[name]:
+        # Handle Laravel-style middleware with parameters (e.g., 'throttle:api')
+        if ':' in name:
+            middleware_name, parameters = name.split(':', 1)
+            # Parse parameters (can be comma-separated or single value)
+            param_list = [p.strip() for p in parameters.split(',')]
+
+            # Merge with provided options
+            enhanced_options = options.copy()
+            if len(param_list) == 1:
+                enhanced_options['guard'] = param_list[0]
+            else:
+                for i, param in enumerate(param_list):
+                    enhanced_options[f'param_{i}'] = param
+
+            # Recursively resolve the base middleware name
+            return self._resolve_middleware_by_name(middleware_name, enhanced_options)
+
+        # Check if it's a middleware group (Laravel style)
+        middleware_groups = getattr(self.config, 'MIDDLEWARE_GROUPS', {})
+        if name in middleware_groups:
+            for middleware_name in middleware_groups[name]:
                 self.use(middleware_name, options)
             return lambda req, call_next: call_next(req)  # Placeholder
 
-        # Check middleware aliases
+        # Check settings for middleware aliases (Laravel/Django style)
+        middleware_aliases = getattr(self.config, 'MIDDLEWARE_ALIASES', {})
+        if name in middleware_aliases:
+            middleware_path = middleware_aliases[name]
+            try:
+                module_name, class_name = middleware_path.rsplit('.', 1)
+                module = __import__(module_name, fromlist=[class_name])
+                middleware_class = getattr(module, class_name)
+                return middleware_class(**options)
+            except (ImportError, AttributeError):
+                logger.warning(f"Middleware '{name}' from settings not found")
+                return lambda req, call_next: call_next(req)
+
+        # Check global middleware aliases
         if name in MIDDLEWARE_ALIASES:
             middleware_path = MIDDLEWARE_ALIASES[name]
             try:
@@ -290,7 +361,7 @@ class Application:
                 middleware_class = getattr(module, class_name)
                 return middleware_class(**options)
             except (ImportError, AttributeError):
-                # Try to import the middleware class
+                # Try to import the middleware class from pydance.middleware
                 try:
                     module = __import__(f'pydance.middleware.{name}', fromlist=[name])
                     middleware_class = getattr(module, name.title() + 'Middleware')
@@ -303,10 +374,9 @@ class Application:
         logger.warning(f"Middleware '{name}' not resolved, using passthrough")
         return lambda req, call_next: call_next(req)
 
-    # Pipeline method for chaining (Express.js style)
-    def pipeline(self, *middlewares: Union[str, Callable]) -> 'Application':
+    def pipeline(self, *middlewares: MiddlewareType) -> 'Application':
         """
-        Express.js style middleware pipeline.
+        Middleware pipeline.
 
         Example:
             app.pipeline('cors', 'auth', 'logging', custom_middleware)
@@ -315,10 +385,9 @@ class Application:
             self.use(middleware)
         return self
 
-    # Django-style middleware exclusion
     def without_middleware(self, *middleware_names: str) -> 'Application':
         """
-        Laravel/Django style middleware exclusion.
+        Middleware exclusion.
 
         Example:
             app.without_middleware('csrf', 'auth')
@@ -346,9 +415,28 @@ class Application:
 
     async def startup(self) -> None:
         """Initialize the application."""
-        # Initialize template engine
-        template_dir = getattr(self.config, 'template_dir', 'templates')
-        self.template_engine = TemplateEngine(template_dir)
+        # Initialize template engine based on configuration
+        template_engine_type = getattr(self.config, 'TEMPLATE_ENGINE', 'pydance.templating.languages.lean.LeanTemplateEngine')
+        template_dirs = getattr(self.config, 'TEMPLATES_DIRS', ['templates'])
+
+        # Import and instantiate the configured template engine
+        try:
+            module_path, class_name = template_engine_type.rsplit('.', 1)
+            module = __import__(module_path, fromlist=[class_name])
+            engine_class = getattr(module, class_name)
+            self.template_engine = engine_class(Path(template_dirs[0]))
+        except (ImportError, AttributeError, ValueError) as e:
+            logger.warning(f"Failed to load template engine {template_engine_type}, falling back to default: {e}")
+            from pydance.templating.engine import get_template_engine
+            self.template_engine = get_template_engine("lean", template_dirs[0])
+
+        # Start event bus if enabled
+        if hasattr(self, 'event_bus'):
+            await self.event_bus.start()
+
+        # Load plugins if enabled
+        if hasattr(self, 'plugin_manager'):
+            await self.plugin_manager.start()
 
         # Run startup handlers
         for handler in self._startup_handlers:
@@ -357,10 +445,28 @@ class Application:
             else:
                 handler()
 
+        # Emit startup event
+        if hasattr(self, 'event_bus'):
+            from pydance.events import StartupEvent
+            await self.event_bus.publish(StartupEvent(app_name="pydance"))
+
         logger.info("Application started")
 
     async def shutdown(self) -> None:
         """Shutdown the application."""
+        # Emit shutdown event
+        if hasattr(self, 'event_bus'):
+            from pydance.events import ShutdownEvent
+            await self.event_bus.publish(ShutdownEvent(app_name="pydance"))
+
+        # Stop plugins if enabled
+        if hasattr(self, 'plugin_manager'):
+            await self.plugin_manager.stop()
+
+        # Stop event bus if enabled
+        if hasattr(self, 'event_bus'):
+            await self.event_bus.stop()
+
         # Run shutdown handlers in reverse order
         for handler in reversed(self._shutdown_handlers):
             if inspect.iscoroutinefunction(handler):

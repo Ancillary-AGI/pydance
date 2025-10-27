@@ -12,13 +12,13 @@ from pathlib import Path
 
 from pydance.db.connections import DatabaseConnection
 from pydance.db.config import DatabaseConfig
-from .base import BaseModel
+from pydance.db.models.base import BaseModel
 from .migrator import MigrationRunner, MigrationManager, Migrator
 from .migration import Migration, MigrationOperation, MigrationOperationType
 
 
 class MigrationFramework:
-    """High-level migration framework for Pydance applications"""
+    """Main migration framework class"""
 
     def __init__(self, db_config: DatabaseConfig = None):
         self.db_config = db_config

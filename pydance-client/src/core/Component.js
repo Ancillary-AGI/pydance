@@ -1,9 +1,9 @@
 /**
- * @fileoverview Component - Ultra-efficient Function-Based Component System
+ * @fileoverview Component - Function-Based Component System
  * Provides signal-based reactivity with hooks and lifecycle management
  *
  * @description
- * This module implements Pydance Client's component system, which provides:
+ * This module implements a component system with:
  * - Function-based components with automatic dependency tracking
  * - Virtual DOM with efficient diffing and selective updates
  * - Complete hooks system (useState, useEffect, useMemo, etc.)
@@ -13,11 +13,11 @@
  * - JSX runtime with caching and optimization
  * - Event handling and ref management
  *
- * The component system is designed for maximum performance with:
+ * Performance optimizations:
  * - O(n) VDOM diffing instead of O(n²)
  * - Selective DOM updates (only changed elements)
  * - Automatic dependency tracking
- * - Memory leak prevention
+ * - Memory leak prevention through proper cleanup
  * - Batch updates for performance
  *
  * @example
@@ -80,7 +80,7 @@ export class JSXFragment {
   }
 }
 
-// Component Pool for advanced scaling
+// Component Pool for scaling - object pooling for component reuse
 class ComponentPool {
   constructor(maxSize = 10000) {
     this.maxSize = maxSize;
@@ -244,7 +244,7 @@ class VirtualList {
     this.renderItem = options.renderItem;
     this.itemHeight = options.itemHeight || 50;
     this.containerHeight = options.containerHeight || 400;
-    this.overscan = options.overscan || 5;
+    this.overscan = options.overscan || 5; // Render extra items outside viewport for smoother scrolling
     this.parentComponent = options.parentComponent;
 
     this.container = null;
@@ -306,14 +306,14 @@ class VirtualList {
   }
 }
 
-// Virtual Scrolling for millions of components
+// Virtual Scrolling for millions of components - inspired by react-window and vue-virtual-scroller
 class VirtualScroller {
   constructor(container, items, renderItem, itemHeight = 50) {
     this.container = container;
     this.items = items;
     this.renderItem = renderItem;
     this.itemHeight = itemHeight;
-    this.visibleCount = Math.ceil(container.clientHeight / itemHeight) + 10; // Add buffer
+    this.visibleCount = Math.ceil(container.clientHeight / itemHeight) + 10; // Add buffer for smooth scrolling
     this.startIndex = 0;
     this.endIndex = Math.min(this.visibleCount, items.length);
     this.scrollTop = 0;
@@ -362,7 +362,7 @@ class VirtualScroller {
   }
 }
 
-// Component instance with advanced scaling features
+// Component instance with scaling features
 export class ComponentInstance {
   constructor(renderFn, props = {}) {
     this.renderFn = renderFn;
@@ -375,7 +375,7 @@ export class ComponentInstance {
     this.cleanup = null;
     this.effects = new Set();
 
-    // Advanced scaling features
+    // Performance monitoring
     this.performanceMetrics = {
       renderCount: 0,
       lastRenderTime: 0,
@@ -1160,9 +1160,9 @@ export class ComponentInstance {
     }
   }
 
-  // Advanced scaling methods
+  // Scaling methods
   reset() {
-    // Reset component state for pooling
+    // Reset component state for pooling (like React's fiber recycling)
     this.hookIndex = 0;
     this.mounted = false;
     this.element = null;
@@ -1182,12 +1182,12 @@ export class ComponentInstance {
 
   // Memory management for large-scale applications
   optimizeMemory() {
-    // Force garbage collection if available
+    // Force garbage collection if available (like Chrome DevTools manual GC)
     if (window.gc) {
       window.gc();
     }
 
-    // Clear unused caches
+    // Clear unused caches (like React's cache invalidation)
     if (this._jsxCache) {
       this._jsxCache.clear();
     }
@@ -1300,7 +1300,7 @@ export class ComponentInstance {
     return plugins[pluginName];
   }
 
-  // SSR compatibility methods
+  // SSR compatibility methods - similar to Next.js or Nuxt.js hydration
   renderToString() {
     if (this.isServerSide) {
       const vdom = this.rendered.value;
@@ -1362,7 +1362,7 @@ export class ComponentInstance {
     const {
       itemHeight = 50,
       containerHeight = 400,
-      overscan = 5
+      overscan = 5 // Render extra items outside viewport for smoother scrolling
     } = options;
 
     return new VirtualList({
@@ -1375,14 +1375,14 @@ export class ComponentInstance {
     });
   }
 
-  // Advanced lifecycle methods
+  // Lifecycle methods
   shouldComponentUpdate(nextProps, nextState) {
     // Custom update logic for performance
     if (this.props.value === nextProps && this.state.value === nextState) {
       return false;
     }
 
-    // Use plugins for advanced update decisions
+    // Use plugins for update decisions
     for (const plugin of this.plugins.values()) {
       if (plugin.shouldComponentUpdate) {
         const pluginDecision = plugin.shouldComponentUpdate(nextProps, nextState);

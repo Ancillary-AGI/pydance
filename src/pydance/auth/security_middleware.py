@@ -16,7 +16,7 @@ from collections import defaultdict, deque
 import threading
 import hmac
 import gzip
-from pydance.security.middleware import CORSMiddleware
+from pydance.middleware import CORSMiddleware
 # Security Exceptions
 class SecurityError(Exception):
     """Base security exception"""
@@ -108,8 +108,8 @@ class SecurityConfig:
         self.rate_limit_window = 60     # seconds
         self.dos_threshold = 1000       # requests per minute for DoS detection
 
-        # CSRF settings
-        self.csrf_secret_key = 'your-secret-key-here'
+        # CSRF settings - use secure keys from settings
+        self.csrf_secret_key = self._get_csrf_secret_key()
         self.csrf_token_length = 32
         self.csrf_cookie_name = 'csrf_token'
         self.csrf_header_name = 'X-CSRF-Token'
@@ -117,15 +117,55 @@ class SecurityConfig:
         self.csrf_secure_cookies = True
         self.csrf_token_expiry = timedelta(hours=24)
 
-        # WebSocket security
+        # WebSocket security - use secure keys from settings
         self.ws_require_auth = True
-        self.ws_secret_key = 'your-ws-jwt-secret-key-here'
+        self.ws_secret_key = self._get_websocket_secret_key()
         self.ws_token_algorithms = ['HS256']
         self.ws_token_audience = 'websocket-auth'
         self.ws_token_issuer = 'your-app'
         self.ws_require_https = True
         self.ws_allowed_origins = []
         self.ws_channel_timeout = 300  # 5 minutes
+
+    def _get_csrf_secret_key(self) -> str:
+        """Get CSRF secret key from settings or generate secure one."""
+        try:
+            # Try to import settings - handle circular imports gracefully
+            from pydance.config.settings import settings
+            return getattr(settings, 'CSRF_SECRET_KEY', None) or self._generate_secure_key('csrf')
+        except ImportError:
+            # Fallback if settings not available yet
+            return self._generate_secure_key('csrf')
+
+    def _get_websocket_secret_key(self) -> str:
+        """Get WebSocket secret key from settings or generate secure one."""
+        try:
+            # Try to import settings - handle circular imports gracefully
+            from pydance.config.settings import settings
+            return getattr(settings, 'WEBSOCKET_SECRET_KEY', None) or self._generate_secure_key('websocket')
+        except ImportError:
+            # Fallback if settings not available yet
+            return self._generate_secure_key('websocket')
+
+    def _generate_secure_key(self, key_type: str) -> str:
+        """Generate a cryptographically secure key for the given type."""
+        import secrets
+        import string
+
+        # Generate a 32-character secure key
+        alphabet = string.ascii_letters + string.digits + '!@#$%^&*(-_=+)'
+        key = ''.join(secrets.choice(alphabet) for _ in range(32))
+
+        # Log warning about using fallback key generation
+        import warnings
+        warnings.warn(
+            f"Using fallback key generation for {key_type}. "
+            f"Consider setting {key_type.upper()}_SECRET_KEY in your settings.",
+            UserWarning,
+            stacklevel=3
+        )
+
+        return key
 
 
 class XSSProtector:

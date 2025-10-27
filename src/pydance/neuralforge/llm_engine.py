@@ -147,13 +147,13 @@ class LLMEngine:
         """Call local LLM (Ollama, LMStudio, etc.)"""
         # Implementation for local LLMs
         # This would need to be implemented based on the specific local LLM setup
-        raise NotImplementedError("Local LLM implementation not yet available")
+        raise NotImplementedError("Local LLM implementation not yet available. Subclasses must implement _call_local method")
 
     async def _call_custom(self, config: LLMConfig, prompt: str, **kwargs) -> Dict:
         """Call custom LLM endpoint"""
         # Implementation for custom LLM endpoints
         # This would need to be implemented based on the custom endpoint requirements
-        raise NotImplementedError("Custom LLM implementation not yet available")
+        raise NotImplementedError("Custom LLM implementation not yet available. Subclasses must implement _call_custom method")
 
     async def close(self):
         """Close the HTTP session"""

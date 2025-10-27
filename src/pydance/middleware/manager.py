@@ -167,18 +167,27 @@ class MiddlewareManager:
             enabled=True
         )
 
-        # Add to appropriate list
+        # Check for duplicates before adding
         if middleware_type_detected in [MiddlewareType.HTTP, MiddlewareType.BOTH]:
-            self.http_middlewares.append(middleware_info)
+            # Check if this middleware instance is already added
+            if not any(m.middleware is middleware_callable for m in self.http_middlewares):
+                self.http_middlewares.append(middleware_info)
 
         if middleware_type_detected in [MiddlewareType.WEBSOCKET, MiddlewareType.BOTH]:
-            self.websocket_middlewares.append(middleware_info)
+            # Check if this middleware instance is already added
+            if not any(m.middleware is middleware_callable for m in self.websocket_middlewares):
+                self.websocket_middlewares.append(middleware_info)
 
         # Sort by priority (highest first)
         self.http_middlewares.sort(key=lambda m: m.priority.value, reverse=True)
         self.websocket_middlewares.sort(key=lambda m: m.priority.value, reverse=True)
 
         logger.info(f"Added middleware {name} with priority {priority.value} (phases: {[p.value for p in phases]})")
+
+    def add_with_priority(self, middleware: Union[Callable, Type], priority: int) -> None:
+        """Add middleware with integer priority (convenience method)"""
+        priority_enum = MiddlewarePriority(priority)
+        self.add(middleware, priority_enum)
 
     def _create_structured_wrapper(self, middleware_instance, middleware_type):
         """Create wrapper for structured middleware (process_request/process_response pattern)"""

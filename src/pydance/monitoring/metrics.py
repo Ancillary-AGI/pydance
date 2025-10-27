@@ -281,8 +281,94 @@ class MetricsCollector:
         return json.dumps([v.__dict__ for v in all_values], default=str)
 
 
-# Global metrics collector
+class HealthChecker:
+    """Health check system for monitoring service health"""
+
+    def __init__(self):
+        self.checks: Dict[str, callable] = {}
+        self.last_results: Dict[str, Dict[str, Any]] = {}
+
+    def add_check(self, name: str, check_func: callable):
+        """Add a health check"""
+        self.checks[name] = check_func
+
+    def remove_check(self, name: str):
+        """Remove a health check"""
+        if name in self.checks:
+            del self.checks[name]
+
+    async def run_check(self, name: str) -> Dict[str, Any]:
+        """Run a specific health check"""
+        if name not in self.checks:
+            return {
+                "name": name,
+                "status": "error",
+                "message": "Check not found",
+                "timestamp": time.time()
+            }
+
+        try:
+            check_func = self.checks[name]
+            if asyncio.iscoroutinefunction(check_func):
+                result = await check_func()
+            else:
+                result = check_func()
+
+            # Ensure result has required fields
+            if isinstance(result, dict):
+                result.update({
+                    "name": name,
+                    "timestamp": time.time()
+                })
+                if "status" not in result:
+                    result["status"] = "ok"
+            else:
+                result = {
+                    "name": name,
+                    "status": "ok" if result else "error",
+                    "message": str(result),
+                    "timestamp": time.time()
+                }
+
+            self.last_results[name] = result
+            return result
+
+        except Exception as e:
+            result = {
+                "name": name,
+                "status": "error",
+                "message": str(e),
+                "timestamp": time.time()
+            }
+            self.last_results[name] = result
+            return result
+
+    async def run_all_checks(self) -> Dict[str, Any]:
+        """Run all health checks"""
+        results = {}
+        overall_status = "ok"
+
+        for name in self.checks:
+            result = await self.run_check(name)
+            results[name] = result
+
+            if result["status"] != "ok":
+                overall_status = "error"
+
+        return {
+            "overall_status": overall_status,
+            "checks": results,
+            "timestamp": time.time()
+        }
+
+    def get_last_result(self, name: str) -> Optional[Dict[str, Any]]:
+        """Get the last result of a health check"""
+        return self.last_results.get(name)
+
+
+# Global instances
 _metrics_collector = None
+_health_checker = None
 
 def get_metrics_collector() -> MetricsCollector:
     """Get global metrics collector"""
@@ -290,6 +376,13 @@ def get_metrics_collector() -> MetricsCollector:
     if _metrics_collector is None:
         _metrics_collector = MetricsCollector()
     return _metrics_collector
+
+def get_health_checker() -> HealthChecker:
+    """Get global health checker"""
+    global _health_checker
+    if _health_checker is None:
+        _health_checker = HealthChecker()
+    return _health_checker
 
 # Built-in metrics
 request_counter = None

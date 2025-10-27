@@ -22,7 +22,7 @@ class Validator:
 
     def validate(self, value: Any, field_name: str = None) -> Any:
         """Validate and return the value, or raise ValidationError"""
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement validate method")
 
     def __call__(self, value: Any, field_name: str = None) -> Any:
         return self.validate(value, field_name)
@@ -424,20 +424,27 @@ class Sanitizer:
 # Common field types
 class CharField(Field):
     def __init__(self, max_length: int = None, min_length: int = None, **kwargs):
-        validators = []
+        validators = kwargs.pop('validators', [])
         if max_length or min_length:
             validators.append(LengthValidator(min_length, max_length))
-        super().__init__(validators=validators, **kwargs)
+        kwargs['validators'] = validators
+        super().__init__(**kwargs)
 
 
 class EmailField(CharField):
     def __init__(self, **kwargs):
-        super().__init__(validators=[EmailValidator()], **kwargs)
+        validators = kwargs.pop('validators', [])
+        validators.append(EmailValidator())
+        kwargs['validators'] = validators
+        super().__init__(**kwargs)
 
 
 class URLField(CharField):
     def __init__(self, **kwargs):
-        super().__init__(validators=[URLValidator()], **kwargs)
+        validators = kwargs.pop('validators', [])
+        validators.append(URLValidator())
+        kwargs['validators'] = validators
+        super().__init__(**kwargs)
 
 
 class IntegerField(Field):
@@ -486,4 +493,3 @@ class FileField(Field):
     def __init__(self, allowed_extensions: List[str] = None,
                  max_size: int = None, **kwargs):
         super().__init__(validators=[FileValidator(allowed_extensions, max_size)], **kwargs)
-

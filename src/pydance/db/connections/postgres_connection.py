@@ -1,5 +1,5 @@
 """
-Real PostgreSQL database connection implementation with full CRUD operations.
+Real PostgreSQL database backend implementation with full CRUD operations.
 """
 
 import asyncpg
@@ -13,17 +13,18 @@ import threading
 from decimal import Decimal
 from urllib.parse import urlparse
 
+from pydance.db.connections.base_connection import DatabaseConnection
 from pydance.db.config import DatabaseConfig
-from pydance.utils.types import Field, StringField, IntegerField, BooleanField, DateTimeField, FieldType
+from pydance.db.models.base import Field, StringField, IntegerField, BooleanField, DateTimeField, FieldType
 
 logger = logging.getLogger(__name__)
 
 
-class PostgreSQLConnection:
-    """PostgreSQL database connection"""
+class PostgreSQLConnection(DatabaseConnection):
+    """PostgreSQL database backend implementation."""
 
     def __init__(self, config: DatabaseConfig):
-        self.config = config
+        super().__init__(config)
         self.pool = None
 
     async def connect(self) -> None:
@@ -488,3 +489,103 @@ class PostgreSQLConnection:
         params = self.config.get_connection_params()
         return await asyncpg.connect(**params)
 
+    async def test_connection(self) -> bool:
+        """Test if PostgreSQL connection is working."""
+        try:
+            async with self.pool.acquire() as conn:
+                await conn.execute("SELECT 1")
+            return True
+        except Exception as e:
+            self.logger.error(f"PostgreSQL connection test failed: {e}")
+            return False
+
+    async def execute_many(self, query: str, parameters_list: List[Tuple]) -> Any:
+        """Execute a query multiple times with different parameters."""
+        async with self.pool.acquire() as conn:
+            return await conn.executemany(query, parameters_list)
+
+    async def table_exists(self, table_name: str) -> bool:
+        """Check if table exists in PostgreSQL."""
+        query = """
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables
+                WHERE table_schema = 'public'
+                AND table_name = $1
+            )
+        """
+        async with self.pool.acquire() as conn:
+            return await conn.fetchval(query, table_name)
+
+    async def get_table_columns(self, table_name: str) -> Dict[str, Dict[str, Any]]:
+        """Get table column information for PostgreSQL."""
+        query = """
+            SELECT column_name, data_type, is_nullable, column_default
+            FROM information_schema.columns
+            WHERE table_name = $1
+            ORDER BY ordinal_position
+        """
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(query, table_name)
+
+        columns = {}
+        for row in rows:
+            columns[row['column_name']] = {
+                'type': row['data_type'],
+                'nullable': row['is_nullable'] == 'YES',
+                'default': row['column_default']
+            }
+        return columns
+
+    async def get_indexes(self, table_name: str) -> List[Dict[str, Any]]:
+        """Get indexes for a PostgreSQL table."""
+        query = """
+            SELECT indexname, indexdef
+            FROM pg_indexes
+            WHERE tablename = $1
+        """
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(query, table_name)
+
+        indexes = []
+        for row in rows:
+            indexes.append({
+                'name': row['indexname'],
+                'definition': row['indexdef']
+            })
+        return indexes
+
+    def get_column_sql_definition(self, field_name: str, field) -> str:
+        """Generate SQL for PostgreSQL column definition."""
+        field_type = getattr(field, 'field_type', 'string')
+        db_type = self.get_field_type_mapping().get(field_type, 'VARCHAR(255)')
+
+        # Handle field options
+        nullable = getattr(field, 'nullable', True)
+        default = getattr(field, 'default', None)
+        max_length = getattr(field, 'max_length', None)
+        primary_key = getattr(field, 'primary_key', False)
+
+        # Apply length constraints
+        if max_length and 'VARCHAR' in db_type:
+            db_type = db_type.replace('VARCHAR', f'VARCHAR({max_length})')
+
+        sql_parts = [field_name, db_type]
+
+        if not nullable:
+            sql_parts.append("NOT NULL")
+
+        if primary_key:
+            sql_parts.append("PRIMARY KEY")
+
+        if default is not None:
+            if isinstance(default, str):
+                sql_parts.append(f"DEFAULT '{default}'")
+            else:
+                sql_parts.append(f"DEFAULT {default}")
+
+        return " ".join(sql_parts)
+
+    def get_field_type_mapping(self) -> Dict[str, str]:
+        """Get PostgreSQL field type mapping."""
+        from pydance.db.connections.base import COMMON_FIELD_TYPE_MAPPINGS
+        return COMMON_FIELD_TYPE_MAPPINGS['postgresql']

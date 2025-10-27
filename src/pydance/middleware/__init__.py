@@ -7,14 +7,14 @@ All middleware classes inherit from the proper base classes in base.py.
 Features:
 - HTTP middleware with process_request/process_response pattern
 - WebSocket middleware with process_websocket pattern
-- Laravel/Django style middleware registration
+- Middleware registration with aliases and groups
 - Throttle/rate limiting middleware
 - Security, CORS, logging middleware
 - Middleware resolver for dynamic loading
 - Maintenance mode middleware
 """
 
-from pydance.middleware.base import HTTPMiddleware, WebSocketMiddleware, MiddlewareCallable, MiddlewareType
+from pydance.middleware.base import HTTPMiddleware, WebSocketMiddleware
 from pydance.middleware.manager import MiddlewareManager, get_middleware_manager
 
 # Throttle middleware (specialized)
@@ -81,7 +81,7 @@ from pydance.middleware.pipeline import (
     get_pipeline, configure_pipeline
 )
 
-# Laravel-style middleware aliases (now using unified implementations)
+# Middleware aliases for easy registration
 MIDDLEWARE_ALIASES = {
     'auth': 'pydance.auth.middleware.AuthenticationMiddleware',
     'guest': 'pydance.auth.middleware.GuestMiddleware',
@@ -102,7 +102,7 @@ MIDDLEWARE_ALIASES = {
     'authentication': 'pydance.middleware.builtin.AuthenticationMiddleware',
 }
 
-# Middleware groups (Laravel style) - using unified implementations
+# Middleware groups for organizing middleware
 MIDDLEWARE_GROUPS = {
     'web': [
         'cors',
@@ -134,7 +134,6 @@ MIDDLEWARE_GROUPS = {
 __all__ = [
     # Base middleware classes
     'HTTPMiddleware', 'WebSocketMiddleware',
-    'MiddlewareCallable', 'MiddlewareType',
 
     # Middleware manager
     'MiddlewareManager', 'get_middleware_manager',

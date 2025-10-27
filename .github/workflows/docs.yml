@@ -1,0 +1,107 @@
+name: Deploy Documentation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        pip install sphinx sphinx-rtd-theme myst-parser
+        pip install -e .
+
+    - name: Build documentation
+      run: |
+        mkdir -p docs
+        cd docs
+        # Create basic conf.py if it doesn't exist
+        if [ ! -f conf.py ]; then
+          cat > conf.py << 'EOF'
+import sys
+import os
+sys.path.insert(0, os.path.abspath('../src'))
+
+project = 'Pydance'
+copyright = '2024, Pydance Team'
+author = 'Pydance Team'
+version = '1.0.0'
+release = '1.0.0'
+
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.napoleon',
+]
+
+html_theme = 'sphinx_rtd_theme'
+EOF
+        fi
+
+        # Create basic index.rst if it doesn't exist
+        if [ ! -f index.rst ]; then
+          cat > index.rst << 'EOF'
+Pydance Documentation
+=====================
+
+Welcome to Pydance, a modern Python web framework.
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+   installation
+   quickstart
+   api
+
+Installation
+------------
+
+.. code-block:: bash
+
+   pip install pydance
+
+Quick Start
+-----------
+
+.. code-block:: python
+
+   from pydance import Application
+
+   app = Application()
+
+   @app.route('/')
+   async def hello(request):
+       return {'message': 'Hello, World!'}
+
+   if __name__ == '__main__':
+       app.run()
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
+EOF
+        fi
+
+        make html
+
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: docs/_build/html

@@ -3,6 +3,8 @@ GraphQL schema definition for Pydance  framework.
 Provides type system, schema construction, and field definitions.
 """
 
+from __future__ import annotations
+
 from typing import Dict, Any, Optional, List, Callable, Union, Type
 import json
 
@@ -224,6 +226,121 @@ class GraphQLResult:
         return json.dumps(self.to_dict())
 
 
+class GraphQLManager:
+    """Main GraphQL manager for handling queries and mutations."""
+
+    def __init__(self, schema: Schema):
+        self.schema = schema
+        self.middlewares = []
+
+    def execute(self, query: str, variables: Optional[Dict[str, Any]] = None) -> GraphQLResult:
+        """Execute GraphQL query"""
+        try:
+            # Parse query
+            document = GraphQLParser.parse(query)
+
+            # Get operation
+            operation = document.get_operation()
+
+            # Execute based on operation type
+            if operation['type'] == 'query':
+                data = self._execute_query(operation, variables or {})
+            elif operation['type'] == 'mutation':
+                data = self._execute_mutation(operation, variables or {})
+            else:
+                data = {}
+
+            return GraphQLResult(data=data)
+
+        except Exception as e:
+            return GraphQLResult(errors=[{"message": str(e)}])
+
+    def _execute_query(self, operation: Dict[str, Any], variables: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute GraphQL query with proper field resolution"""
+        if not self.schema.query:
+            return {}
+
+        result = {}
+        selection_set = operation.get('selection_set', [])
+
+        for selection in selection_set:
+            field_name = selection.get('name', {}).get('value')
+            if field_name and field_name in self.schema.query.fields:
+                field = self.schema.query.fields[field_name]
+                result[field_name] = self._resolve_field(field, {}, variables)
+
+        return result
+
+    def _execute_mutation(self, operation: Dict[str, Any], variables: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute GraphQL mutation with proper field resolution"""
+        if not self.schema.mutation:
+            return {}
+
+        result = {}
+        selection_set = operation.get('selection_set', [])
+
+        for selection in selection_set:
+            field_name = selection.get('name', {}).get('value')
+            if field_name and field_name in self.schema.mutation.fields:
+                field = self.schema.mutation.fields[field_name]
+                result[field_name] = self._resolve_field(field, {}, variables)
+
+        return result
+
+    def _resolve_field(self, field: Field, args: Dict[str, Any], variables: Dict[str, Any]) -> Any:
+        """Resolve a single field"""
+        if field.resolver:
+            return field.resolver(args, variables)
+        else:
+            # Default resolver - return field name
+            return f"Resolved {field.type.name}"
+
+    def validate_query(self, query: str) -> List[str]:
+        """Validate GraphQL query"""
+        errors = []
+
+        try:
+            document = GraphQLParser.parse(query)
+            operation = document.get_operation()
+
+            # Check if operation type exists in schema
+            if operation['type'] == 'query' and not self.schema.query:
+                errors.append("Schema does not support queries")
+            elif operation['type'] == 'mutation' and not self.schema.mutation:
+                errors.append("Schema does not support mutations")
+            elif operation['type'] == 'subscription' and not self.schema.subscription:
+                errors.append("Schema does not support subscriptions")
+
+            # Validate field existence
+            selection_set = operation.get('selection_set', [])
+            for selection in selection_set:
+                field_name = selection.get('name', {}).get('value')
+                if operation['type'] == 'query':
+                    if not self.schema.query or field_name not in self.schema.query.fields:
+                        errors.append(f"Unknown query field: {field_name}")
+                elif operation['type'] == 'mutation':
+                    if not self.schema.mutation or field_name not in self.schema.mutation.fields:
+                        errors.append(f"Unknown mutation field: {field_name}")
+
+        except Exception as e:
+            errors.append(f"Query parsing error: {str(e)}")
+
+        return errors
 
 
+class GraphQLSchema:
+    """GraphQL schema wrapper"""
+    def __init__(self, schema: Schema):
+        self.schema = schema
 
+
+class GraphQLObjectType:
+    """GraphQL object type wrapper"""
+    def __init__(self, object_type: ObjectType):
+        self.object_type = object_type
+
+
+class GraphQLField:
+    """GraphQL field wrapper"""
+    def __init__(self, field: Field):
+        self.field = field

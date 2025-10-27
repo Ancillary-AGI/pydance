@@ -16,7 +16,7 @@ from functools import wraps
 from dataclasses import dataclass
 from enum import Enum
 
-from pydance.models.user import BaseUser
+from pydance.db.models.user import BaseUser
 from pydance.utils.form_validation import EmailField, CharField
 from pydance.caching import get_cache_manager
 from pydance.exceptions import HTTPException
@@ -1008,7 +1008,7 @@ class LoginForm:
     """Login form"""
 
     username = CharField(required=True, max_length=150)
-    password = CharField(required=True, widget="password")
+    password = CharField(required=True)
 
     def __init__(self, data=None):
         self.data = data or {}
@@ -1068,4 +1068,3 @@ __all__ = [
     'login_required', 'permission_required', 'role_required',
     'LoginForm', 'RegistrationForm', 'auth_manager'
 ]
-

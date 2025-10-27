@@ -427,7 +427,7 @@ class Widget:
 
     def render(self, name: str, value: Any, attrs: Optional[Dict[str, str]] = None) -> str:
         """Render widget HTML"""
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement render method")
 
     def build_attrs(self, base_attrs: Dict[str, str], extra_attrs: Optional[Dict[str, str]] = None) -> Dict[str, str]:
         """Build HTML attributes"""

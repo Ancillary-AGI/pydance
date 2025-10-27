@@ -21,6 +21,7 @@ from enum import Enum
 from pydance.rate_limiting import RateLimiter, RateLimitConfig, RateLimitAlgorithm
 from pydance.pagination import PaginationParams, Paginator, PaginationResult
 from pydance.exceptions import APIError
+from pydance.http.response import Response
 
 
 class HttpMethod(Enum):
@@ -67,7 +68,7 @@ class Link:
         return result
 
 
-class APIResponse:
+class APIResponse(Response):
     """
     Standardized API response with HATEOAS links.
 
@@ -80,7 +81,8 @@ class APIResponse:
                  status: int = 200,
                  message: str = "Success",
                  links: Optional[List[Link]] = None,
-                 meta: Optional[Dict[str, Any]] = None):
+                 meta: Optional[Dict[str, Any]] = None,
+                 headers: Dict[str, str] = None):
         self.data = data
         self.status = status
         self.message = message
@@ -89,6 +91,16 @@ class APIResponse:
         self.timestamp = datetime.now()
         self.api_version = "v1"
         self.request_id = self._generate_request_id()
+
+        # Prepare content and headers for Response parent class
+        if isinstance(data, dict):
+            content = json.dumps(self.to_dict())
+            headers = headers or {}
+            headers['Content-Type'] = 'application/json'
+        else:
+            content = data
+
+        super().__init__(content, status, headers)
 
     def _generate_request_id(self) -> str:
         """Generate unique request ID"""
@@ -273,4 +285,3 @@ class APIResource(ABC):
                 title="Create resource"
             )
         ]
-

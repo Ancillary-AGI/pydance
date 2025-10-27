@@ -1,40 +1,47 @@
-# Consolidated comprehensive type system for Pydance framework
+"""
+Database-specific type definitions for Pydance framework.
+"""
 
-from typing import Any, Callable, Optional, Union, Dict, List, Type, ClassVar
+from typing import Dict, List, Any, Callable, Awaitable, Union, Optional, Set, Type, ClassVar
 from enum import Enum
+from dataclasses import dataclass, field
 from datetime import datetime, date, time, timezone
 import uuid
 import re
 import json
 from decimal import Decimal
-from dataclasses import dataclass, field
-from pydance.db.connections import DatabaseConnection
+import asyncio
+import logging
+import time
+import threading
+import abc
+from contextlib import asynccontextmanager
+import queue
+import weakref
 
+# Database field types
 class FieldType(str, Enum):
-    """Field types for database schema"""
     # Basic types
-    STRING = "STRING"
     INTEGER = "INTEGER"
     BIGINT = "BIGINT"
     SMALLINT = "SMALLINT"
+    TEXT = "TEXT"
+    VARCHAR = "VARCHAR"
+    CHAR = "CHAR"
     BOOLEAN = "BOOLEAN"
-    DATETIME = "DATETIME"
-    DATE = "DATE"
-    TIME = "TIME"
+    TIMESTAMP = "TIMESTAMP"
+    TIMESTAMPTZ = "TIMESTAMPTZ"
     FLOAT = "FLOAT"
     DOUBLE = "DOUBLE"
     DECIMAL = "DECIMAL"
     NUMERIC = "NUMERIC"
-    UUID = "UUID"
     JSON = "JSON"
     JSONB = "JSONB"
-    TEXT = "TEXT"
-    VARCHAR = "VARCHAR"
-    CHAR = "CHAR"
+    DATE = "DATE"
+    TIME = "TIME"
+    UUID = "UUID"
     BLOB = "BLOB"
     BYTEA = "BYTEA"
-    TIMESTAMP = "TIMESTAMP"
-    TIMESTAMPTZ = "TIMESTAMPTZ"
 
     # Specialized types
     EMAIL = "EMAIL"
@@ -61,6 +68,74 @@ class OrderDirection(str, Enum):
     ASC = "ASC"
     DESC = "DESC"
 
+class ConnectionState(Enum):
+    """Connection state enumeration."""
+    IDLE = "idle"
+    ACTIVE = "active"
+    BROKEN = "broken"
+    CLOSED = "closed"
+
+# Database pool types
+@dataclass
+class PoolConfig:
+    """Database connection pool configuration"""
+    min_size: int = 1
+    max_size: int = 10
+    max_idle_time: int = 300
+    max_lifetime: int = 3600
+    acquire_timeout: int = 30
+
+@dataclass
+class ConnectionStats:
+    """Database connection statistics"""
+    created_at: float = field(default_factory=time.time)
+    total_connections_created: int = 0
+    total_connections_borrowed: int = 0
+    total_connections_returned: int = 0
+    total_connection_errors: int = 0
+    total_query_count: int = 0
+    total_query_time: float = 0.0
+    average_query_time: float = 0.0
+    current_active_connections: int = 0
+    current_idle_connections: int = 0
+    connection_pool_size: int = 0
+
+# Distributed cache types
+@dataclass
+class DistributedCacheConfig:
+    """Distributed cache configuration"""
+    nodes: List[str]
+    replication_factor: int = 1
+    consistency_level: str = "quorum"
+    ttl: int = 300
+
+# Pagination types
+@dataclass
+class PaginationParams:
+    """Pagination parameters"""
+    page: int = 1
+    page_size: int = 20
+    sort_by: Optional[str] = None
+    sort_order: OrderDirection = OrderDirection.ASC
+
+@dataclass
+class PaginationMetadata:
+    """Pagination metadata"""
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+    has_next: bool
+    has_prev: bool
+
+@dataclass
+class PaginationLink:
+    """Pagination link"""
+    rel: str
+    href: str
+    method: str = "GET"
+
+# Model and field types
 @dataclass
 class PaginatedResponse:
     """Response for paginated queries"""
@@ -79,6 +154,39 @@ class AggregationResult:
     min: Any = None
     max: Any = None
     group_by: Dict[Any, Any] = field(default_factory=dict)
+
+@dataclass
+class ManagedConnection:
+    """Managed database connection with metadata."""
+    connection: Any
+    created_at: float = field(default_factory=time.time)
+    last_used_at: float = field(default_factory=time.time)
+    state: ConnectionState = ConnectionState.IDLE
+    transaction_active: bool = False
+    query_count: int = 0
+    total_query_time: float = 0.0
+
+    def mark_used(self):
+        """Mark connection as used."""
+        self.last_used_at = time.time()
+        self.state = ConnectionState.ACTIVE
+
+    def mark_idle(self):
+        """Mark connection as idle."""
+        self.last_used_at = time.time()
+        self.state = ConnectionState.IDLE
+
+    def mark_broken(self):
+        """Mark connection as broken."""
+        self.state = ConnectionState.BROKEN
+
+    def is_expired(self, max_age: float) -> bool:
+        """Check if connection has exceeded max age."""
+        return (time.time() - self.created_at) > max_age
+
+    def is_stale(self, max_idle_time: float) -> bool:
+        """Check if connection has been idle too long."""
+        return (time.time() - self.last_used_at) > max_idle_time
 
 class LazyLoad:
     """Descriptor for lazy loading of relationships"""
@@ -142,8 +250,6 @@ class Field:
         if self.min_value is not None or self.max_value is not None:
             self.validators.append(self._validate_range)
 
-        # Don't validate callable defaults here
-
     def validate(self, value: Any) -> Any:
         """Validate field value"""
         if value is None and not self.nullable:
@@ -206,6 +312,7 @@ class Field:
             return None
 
         # For SQL databases, generate SQL definition
+        from pydance.db.connections import DatabaseConnection
         connection = DatabaseConnection.get_instance(db_config)
         sql_type = connection.get_sql_type(self)
         parts = [name, sql_type]
@@ -687,15 +794,21 @@ class BaseModel(metaclass=ModelMeta):
             if value is None:
                 # Handle default values - call functions for each instance
                 if callable(field.default):
-                    value = field.default()
+                    try:
+                        value = field.default()
+                    except Exception:
+                        value = None
                 elif field.default is not None:
                     value = field.default
                 elif field.primary_key and field.field_type in [FieldType.UUID, FieldType.TEXT]:
                     value = str(uuid.uuid4())
 
             if value is not None:
-                validated_value = field.validate(value)
-                setattr(self, col_name, validated_value)
+                try:
+                    validated_value = field.validate(value)
+                    setattr(self, col_name, validated_value)
+                except Exception as e:
+                    raise ValueError(f"Validation failed for field {col_name}: {e}")
 
         # Set any additional kwargs that aren't in _fields
         for key, value in kwargs.items():
@@ -824,6 +937,7 @@ class BaseModel(metaclass=ModelMeta):
 
     async def save(self, update_fields: Optional[List[str]] = None):
         """Save the instance to the database"""
+        from pydance.db.connections import DatabaseConnection
         db = DatabaseConnection.get_instance(self._db_config)
 
         # Update timestamps
@@ -855,12 +969,12 @@ class BaseModel(metaclass=ModelMeta):
         if primary_key_value is not None:
             # Update existing record
             filters = {primary_key: primary_key_value}
-            success = await db.backend.update_one(self.__class__, filters, data)
+            success = await db.update_one(self.__class__, filters, data)
             if not success:
                 raise ValueError("Record not found or not modified")
         else:
             # Insert new record
-            result = await db.backend.insert_one(self.__class__, data)
+            result = await db.insert_one(self.__class__, data)
             if primary_key and result:
                 setattr(self, primary_key, result)
 
@@ -954,14 +1068,16 @@ def get_field_from_type(python_type: Type) -> Field:
     field_class = type_map.get(origin, Field)
     return field_class() if callable(field_class) else Field()
 
-# Export all field types
 __all__ = [
-    'FieldType', 'Field', 'StringField', 'IntegerField', 'BigIntegerField', 'BooleanField',
+    'FieldType', 'RelationshipType', 'OrderDirection', 'ConnectionState',
+    'PoolConfig', 'ConnectionStats', 'DistributedCacheConfig',
+    'PaginationParams', 'PaginationMetadata', 'PaginationLink',
+    'PaginatedResponse', 'AggregationResult', 'LazyLoad', 'Field',
+    'StringField', 'IntegerField', 'BigIntegerField', 'BooleanField',
     'DateTimeField', 'DateField', 'TimeField', 'FloatField', 'DecimalField',
     'UUIDField', 'JSONField', 'TextField', 'BlobField', 'ByteaField',
     'TimestampTZField', 'EmailField', 'PhoneField', 'URLField', 'IPAddressField',
     'PasswordField', 'ArrayField', 'EnumField', 'ForeignKeyField', 'FileField', 'ImageField',
-    'BaseModel', 'Relationship', 'RelationshipType', 'PaginatedResponse', 'AggregationResult',
-    'OrderDirection', 'LazyLoad', 'ModelMeta', 'validate_email', 'validate_url',
+    'Relationship', 'ModelMeta', 'BaseModel', 'validate_email', 'validate_url',
     'validate_phone', 'validate_ip', 'get_field_from_type'
 ]

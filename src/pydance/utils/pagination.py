@@ -359,10 +359,80 @@ class CursorPaginator(BasePaginator[T]):
         self.direction = params.filters.get('direction', 'next')  # 'next' or 'prev'
 
     def paginate(self, queryset: Any, request: Any = None) -> PaginationResult[T]:
-        """Paginate using cursor"""
-        # This is a simplified implementation
-        # In production, this would need database-specific cursor queries
+        """Paginate using cursor-based queries"""
+        # For database querysets, use efficient cursor queries
+        if hasattr(queryset, 'filter') and hasattr(queryset, 'order_by'):
+            return self._paginate_database_queryset(queryset, request)
+        else:
+            # Fallback to in-memory pagination for non-database querysets
+            return self._paginate_in_memory(queryset, request)
 
+    def _paginate_database_queryset(self, queryset: Any, request: Any = None) -> PaginationResult[T]:
+        """Efficient cursor pagination for database querysets"""
+        try:
+            # Build cursor conditions
+            cursor_conditions = self._build_cursor_conditions(queryset)
+
+            # Apply cursor filtering
+            if cursor_conditions:
+                if self.direction == 'next':
+                    queryset = queryset.filter(cursor_conditions)
+                else:
+                    queryset = queryset.filter(cursor_conditions).reverse()
+
+            # Apply ordering
+            if not queryset.query.order_by:
+                queryset = queryset.order_by(self.cursor_field)
+
+            # Apply limit
+            paginated_items = list(queryset[:self.params.per_page + 1])  # +1 to check if there are more items
+
+            # Check if there are more items
+            has_next = len(paginated_items) > self.params.per_page
+            if has_next:
+                paginated_items = paginated_items[:-1]  # Remove the extra item
+
+            # For cursor pagination, we don't know the total count efficiently
+            # Estimate based on available data
+            total = None
+            if hasattr(queryset, 'count'):
+                try:
+                    total = queryset.count()
+                except:
+                    total = None
+
+            # Create metadata
+            metadata = PaginationMetadata(
+                total=total or 0,
+                page=1,  # Not meaningful for cursor pagination
+                per_page=self.params.per_page,
+                total_pages=1,  # Not meaningful for cursor pagination
+                has_next=has_next,
+                has_prev=bool(self.cursor and self.direction == 'next'),
+                next_page=None,
+                prev_page=None,
+                start_index=0,
+                end_index=len(paginated_items)
+            )
+
+            result = PaginationResult(
+                items=paginated_items,
+                metadata=metadata
+            )
+
+            # Add cursor links
+            if request and hasattr(request, 'url'):
+                result.links = self._get_cursor_links(str(request.url), paginated_items)
+
+            return result
+
+        except Exception as e:
+            logger.warning(f"Database cursor pagination failed, falling back to in-memory: {e}")
+            return self._paginate_in_memory(queryset, request)
+
+    def _paginate_in_memory(self, queryset: Any, request: Any = None) -> PaginationResult[T]:
+        """Fallback in-memory cursor pagination"""
+        # Convert to list
         if hasattr(queryset, 'all'):
             items = list(queryset.all())
         elif hasattr(queryset, '__iter__'):
@@ -370,30 +440,34 @@ class CursorPaginator(BasePaginator[T]):
         else:
             items = queryset if isinstance(queryset, list) else [queryset]
 
-        # Apply cursor-based filtering (simplified)
+        # Apply cursor-based filtering
         if self.cursor:
             try:
-                cursor_value = int(self.cursor)
+                cursor_value = self._decode_cursor(self.cursor)
                 if self.direction == 'next':
-                    items = [item for item in items if getattr(item, self.cursor_field, 0) > cursor_value]
+                    items = [item for item in items if self._get_cursor_value(item) > cursor_value]
                 else:
-                    items = [item for item in items if getattr(item, self.cursor_field, 0) < cursor_value]
+                    items = [item for item in items if self._get_cursor_value(item) < cursor_value]
                     items.reverse()  # Reverse for previous page
-            except (ValueError, AttributeError):
-                pass
+            except (ValueError, AttributeError, TypeError):
+                logger.warning(f"Invalid cursor value: {self.cursor}")
 
         # Apply limit
-        paginated_items = items[:self.params.per_page]
-        total = len(items)  # This is approximate for cursor pagination
+        paginated_items = items[:self.params.per_page + 1]  # +1 to check if there are more items
 
-        # Create metadata (simplified for cursor pagination)
+        # Check if there are more items
+        has_next = len(paginated_items) > self.params.per_page
+        if has_next:
+            paginated_items = paginated_items[:-1]  # Remove the extra item
+
+        # Create metadata
         metadata = PaginationMetadata(
-            total=total,
+            total=len(items),
             page=1,  # Not meaningful for cursor pagination
             per_page=self.params.per_page,
             total_pages=1,  # Not meaningful for cursor pagination
-            has_next=len(paginated_items) == self.params.per_page,
-            has_prev=bool(self.cursor and self.direction == 'prev'),
+            has_next=has_next,
+            has_prev=bool(self.cursor and self.direction == 'next'),
             next_page=None,
             prev_page=None,
             start_index=0,
@@ -411,6 +485,88 @@ class CursorPaginator(BasePaginator[T]):
 
         return result
 
+    def _build_cursor_conditions(self, queryset: Any) -> Any:
+        """Build database-specific cursor conditions"""
+        if not self.cursor:
+            return None
+
+        try:
+            cursor_value = self._decode_cursor(self.cursor)
+            field_name = self.cursor_field
+
+            if self.direction == 'next':
+                return queryset.model._meta.get_field(field_name).get_col(self.cursor_field) > cursor_value
+            else:
+                return queryset.model._meta.get_field(field_name).get_col(self.cursor_field) < cursor_value
+
+        except Exception:
+            # Fallback for non-Django models or when field lookup fails
+            return None
+
+    def _get_cursor_value(self, item: T) -> Any:
+        """Get cursor value from item"""
+        try:
+            if hasattr(item, self.cursor_field):
+                return getattr(item, self.cursor_field)
+            elif isinstance(item, dict):
+                return item.get(self.cursor_field)
+            else:
+                return str(item)
+        except (AttributeError, KeyError):
+            return str(item)
+
+    def _encode_cursor(self, value: Any) -> str:
+        """Encode cursor value for URL safety"""
+        import base64
+        import json
+
+        try:
+            # Convert to JSON-serializable format
+            if hasattr(value, 'isoformat'):  # datetime
+                cursor_data = {'type': 'datetime', 'value': value.isoformat()}
+            elif isinstance(value, (int, float, str, bool)):
+                cursor_data = {'type': type(value).__name__, 'value': value}
+            else:
+                cursor_data = {'type': 'str', 'value': str(value)}
+
+            json_str = json.dumps(cursor_data)
+            return base64.urlsafe_b64encode(json_str.encode()).decode()
+        except Exception:
+            # Fallback to simple string encoding
+            return str(value)
+
+    def _decode_cursor(self, cursor: str) -> Any:
+        """Decode cursor value from URL"""
+        import base64
+        import json
+
+        try:
+            json_str = base64.urlsafe_b64decode(cursor.encode()).decode()
+            cursor_data = json.loads(json_str)
+
+            value = cursor_data['value']
+            value_type = cursor_data['type']
+
+            # Convert back to appropriate type
+            if value_type == 'datetime':
+                from datetime import datetime
+                return datetime.fromisoformat(value)
+            elif value_type == 'int':
+                return int(value)
+            elif value_type == 'float':
+                return float(value)
+            elif value_type == 'bool':
+                return value.lower() == 'true'
+            else:
+                return value
+
+        except Exception:
+            # Fallback for simple cursors
+            try:
+                return int(cursor)
+            except ValueError:
+                return cursor
+
     def _get_cursor_links(self, base_url: str, items: List[T]) -> List[PaginationLink]:
         """Generate cursor-based pagination links"""
         links = []
@@ -418,10 +574,11 @@ class CursorPaginator(BasePaginator[T]):
         if items:
             # Next cursor
             last_item = items[-1]
-            if hasattr(last_item, self.cursor_field):
-                next_cursor = getattr(last_item, self.cursor_field)
+            cursor_value = self._get_cursor_value(last_item)
+            if cursor_value is not None:
+                next_cursor = self._encode_cursor(cursor_value)
                 next_params = self.params.to_dict()
-                next_params['cursor'] = str(next_cursor)
+                next_params['cursor'] = next_cursor
                 next_params['direction'] = 'next'
                 links.append(PaginationLink(
                     href=self._build_url(base_url, next_params),
@@ -492,8 +649,3 @@ __all__ = [
     'paginate',
     'default_paginator'
 ]
-
-
-
-
-

@@ -1,16 +1,16 @@
 """
-Pydance HTTP Response Handler - Ultra-high-performance ASGI-compliant response processing.
+Pydance HTTP Response Handler.
 
-This module provides world-class HTTP response handling with support for:
-- ASGI response lifecycle management with zero-copy optimizations
-- Advanced content type detection using MIME magic
-- Ultra-efficient streaming and chunking with memory pooling
-- Background task execution with priority scheduling
-- HTTP status code management with semantic validation
-- Header manipulation with security validation
-- Multi-algorithm compression (gzip, brotli, lz4) with adaptive selection
-- Intelligent caching headers and ETags with CDN integration
-- Real-time performance monitoring and optimization
+This module provides HTTP response handling with support for:
+- ASGI response lifecycle management
+- Content type detection
+- Streaming and chunking
+- Background task execution
+- HTTP status code management
+- Header manipulation
+- Multi-algorithm compression (gzip, brotli, lz4)
+- Caching headers and ETags
+- Performance monitoring
 """
 
 import asyncio
@@ -33,7 +33,7 @@ import lz4.frame
 
 
 class CompressionAlgorithm(Enum):
-    """Available compression algorithms for optimal performance."""
+    """Available compression algorithms."""
     GZIP = "gzip"
     DEFLATE = "deflate"
     BROTLI = "brotli"

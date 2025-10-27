@@ -1,10 +1,10 @@
-from typing import Optional, Dict, Any, ClassVar
+import hashlib
+import re
+import bcrypt
+from email_validator import validate_email, EmailNotValidError
+from typing import Optional, Dict, Any, ClassVar, List
 from datetime import datetime, timezone
 from enum import Enum
-import hashlib
-import bcrypt
-import re
-from email_validator import validate_email, EmailNotValidError
 
 from .base import (
     BaseModel, StringField, EmailField, BooleanField, DateTimeField,
@@ -348,6 +348,50 @@ class BaseUser(BaseModel):
     def verify_password(self, password: str) -> bool:
         """Verify if password matches hash"""
         return self.verify_password_hash(password, self.password_hash)
+
+    async def enable_mfa(self, secret: str) -> None:
+        """Enable multi-factor authentication"""
+        self.two_factor_enabled = True
+        self.two_factor_secret = secret
+        await self.save()
+
+    async def disable_mfa(self) -> None:
+        """Disable multi-factor authentication"""
+        self.two_factor_enabled = False
+        self.two_factor_secret = None
+        await self.save()
+
+    def verify_mfa_code(self, code: str) -> bool:
+        """Verify MFA code"""
+        if not self.two_factor_enabled or not self.two_factor_secret:
+            return False
+
+        try:
+            import pyotp
+            totp = pyotp.TOTP(self.two_factor_secret)
+            return totp.verify(code)
+        except ImportError:
+            return False
+
+    async def generate_recovery_codes(self) -> List[str]:
+        """Generate recovery codes for MFA"""
+        import secrets
+        codes = [secrets.token_hex(8) for _ in range(10)]
+        self.recovery_codes = json.dumps(codes)
+        await self.save()
+        return codes
+
+    def use_recovery_code(self, code: str) -> bool:
+        """Use a recovery code"""
+        if not self.recovery_codes:
+            return False
+
+        codes = json.loads(self.recovery_codes)
+        if code in codes:
+            codes.remove(code)
+            self.recovery_codes = json.dumps(codes)
+            return True
+        return False
 
     async def get_permissions(self) -> List[str]:
         """Get user permissions (cached)"""

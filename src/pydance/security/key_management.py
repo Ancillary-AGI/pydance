@@ -58,39 +58,39 @@ class HSMInterface:
 
     async def generate_key(self, algorithm: str, key_size: int, metadata: Dict[str, Any]) -> str:
         """Generate a new key"""
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement generate_key method")
 
     async def store_key(self, key_id: str, key_material: bytes, metadata: KeyMetadata):
         """Store key material"""
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement store_key method")
 
     async def retrieve_key(self, key_id: str) -> Optional[bytes]:
         """Retrieve key material"""
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement retrieve_key method")
 
     async def sign_data(self, key_id: str, data: bytes) -> bytes:
         """Sign data with key"""
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement sign_data method")
 
     async def verify_signature(self, key_id: str, data: bytes, signature: bytes) -> bool:
         """Verify signature with key"""
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement verify_signature method")
 
     async def encrypt_data(self, key_id: str, data: bytes) -> bytes:
         """Encrypt data with key"""
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement encrypt_data method")
 
     async def decrypt_data(self, key_id: str, encrypted_data: bytes) -> bytes:
         """Decrypt data with key"""
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement decrypt_data method")
 
     async def rotate_key(self, key_id: str) -> str:
         """Rotate key and return new key ID"""
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement rotate_key method")
 
     async def revoke_key(self, key_id: str):
         """Revoke key"""
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement revoke_key method")
 
 
 class SoftwareHSM(HSMInterface):

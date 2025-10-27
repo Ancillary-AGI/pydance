@@ -1,5 +1,5 @@
 """
-Route classes for Pydance  routing system.
+Route classes for Pydance routing system.
 """
 
 import re
@@ -7,8 +7,8 @@ import asyncio
 from typing import Callable, Dict, List, Optional, Tuple, Any, Union, Set, Pattern
 from dataclasses import dataclass
 from urllib.parse import unquote
-from pydance.routing.types import RouteType, RouteConfig
 from pydance.middleware.resolver import middleware_resolver
+from pydance.routing.types import HandlerType
 
 
 class Route:
@@ -30,7 +30,7 @@ class Route:
         methods: Optional[Union[List[str], Set[str]]] = None,
         name: Optional[str] = None,
         middleware: Optional[List[Callable]] = None,
-        route_type: RouteType = RouteType.NORMAL,
+        route_type: HandlerType = HandlerType.HTTP,
         redirect_to: Optional[str] = None,
         redirect_code: int = 302,
         view_class: Optional[Any] = None,
@@ -55,12 +55,13 @@ class Route:
         self.defaults = defaults or {}
         self.host = host
         self.schemes = schemes or []
-        self.config = RouteConfig(
-            methods=self.methods,
-            name=name,
-            middleware=self.middleware,
+        # Simple config dict instead of RouteConfig class
+        self.config = {
+            'methods': self.methods,
+            'name': name,
+            'middleware': self.middleware,
             **kwargs
-        )
+        }
 
         # Pattern compilation
         self.pattern: Optional[Pattern] = None

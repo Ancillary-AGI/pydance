@@ -4,6 +4,7 @@ Advanced cache manager with multiple cache levels and strategies.
 
 import asyncio
 import hashlib
+import json
 import logging
 from typing import Dict, Optional, Any
 from dataclasses import dataclass
@@ -43,6 +44,45 @@ class CacheEntry:
     access_count: int = 0
     size_bytes: int = 0
     compressed: bool = False
+
+class CacheMetricsCollector:
+    """Collects cache metrics for monitoring and performance analysis"""
+
+    def __init__(self):
+        self.total_hits = 0
+        self.total_misses = 0
+        self.level_hits = {}
+        self.level_misses = {}
+
+    def record_hit(self, level: CacheLevel):
+        """Record a cache hit"""
+        self.total_hits += 1
+        self.level_hits[level] = self.level_hits.get(level, 0) + 1
+
+    def record_miss(self):
+        """Record a cache miss"""
+        self.total_misses += 1
+
+    @property
+    def hit_rate(self) -> float:
+        """Calculate hit rate"""
+        total = self.total_hits + self.total_misses
+        return self.total_hits / total if total > 0 else 0.0
+
+    def get_level_metrics(self) -> Dict[str, Any]:
+        """Get metrics per level"""
+        return {
+            level.value: {
+                "hits": self.level_hits.get(level, 0),
+                "misses": self.level_misses.get(level, 0)
+            }
+            for level in CacheLevel
+        }
+
+    def get_memory_usage(self) -> Dict[str, int]:
+        """Get memory usage (placeholder)"""
+        return {"used": 0, "available": 0}
+
 
 class CacheManager:
     """
@@ -179,52 +219,61 @@ class CacheManager:
 cache_manager = CacheManager(CacheConfig())
 
 
-class CacheMetricsCollector:
-    """Collects cache metrics"""
+def get_cache_manager() -> CacheManager:
+    """Get the global cache manager instance."""
+    return cache_manager
 
-    def __init__(self):
-        self.total_hits = 0
-        self.total_misses = 0
-        self.level_hits = {}
-        self.level_misses = {}
 
-    def record_hit(self, level: CacheLevel):
-        """Record a cache hit"""
-        self.total_hits += 1
-        self.level_hits[level] = self.level_hits.get(level, 0) + 1
 
-    def record_miss(self):
-        """Record a cache miss"""
-        self.total_misses += 1
-
-    @property
-    def hit_rate(self) -> float:
-        """Calculate hit rate"""
-        total = self.total_hits + self.total_misses
-        return self.total_hits / total if total > 0 else 0.0
-
-    def get_level_metrics(self) -> Dict[str, Any]:
-        """Get metrics per level"""
-        return {
-            level.value: {
-                "hits": self.level_hits.get(level, 0),
-                "misses": self.level_misses.get(level, 0)
-            }
-            for level in CacheLevel
-        }
-
-    def get_memory_usage(self) -> Dict[str, int]:
-        """Get memory usage (placeholder)"""
-        return {"used": 0, "available": 0}
 
 
 class MemoryCache:
-    """In-memory cache implementation"""
+    """In-memory cache implementation with automatic cleanup"""
 
     def __init__(self, config: CacheConfig):
         self.config = config
         self._data = {}
         self._access_order = []
+        self._cleanup_task = None
+        self._start_cleanup_task()
+
+    def _start_cleanup_task(self):
+        """Start background cleanup task for expired entries"""
+        import asyncio
+
+        async def cleanup_expired():
+            while True:
+                try:
+                    await asyncio.sleep(60)  # Run cleanup every minute
+                    await self._cleanup_expired_entries()
+                except asyncio.CancelledError:
+                    break
+                except Exception as e:
+                    # Log error but don't stop cleanup task
+                    print(f"Cache cleanup error: {e}")
+
+        # Start cleanup task
+        try:
+            loop = asyncio.get_event_loop()
+            self._cleanup_task = loop.create_task(cleanup_expired())
+        except RuntimeError:
+            # No event loop available, cleanup will be manual
+            pass
+
+    async def _cleanup_expired_entries(self):
+        """Remove expired entries from cache"""
+        now = datetime.now()
+        expired_keys = []
+
+        for key, entry in self._data.items():
+            if entry.expires_at and now > entry.expires_at:
+                expired_keys.append(key)
+
+        for key in expired_keys:
+            del self._data[key]
+
+        if expired_keys:
+            print(f"Cleaned up {len(expired_keys)} expired cache entries")
 
     async def get(self, key: str) -> Optional[Any]:
         """Get value from memory cache"""
@@ -265,6 +314,8 @@ class MemoryCache:
         """Clear memory cache"""
         self._data.clear()
         self._access_order.clear()
+        if self._cleanup_task:
+            self._cleanup_task.cancel()
 
     async def invalidate_pattern(self, pattern: str):
         """Invalidate keys matching pattern"""
@@ -272,13 +323,43 @@ class MemoryCache:
         for key in keys_to_delete:
             del self._data[key]
 
+    def __del__(self):
+        """Cleanup when cache is destroyed"""
+        if self._cleanup_task:
+            self._cleanup_task.cancel()
+
 
 class RedisCache:
-    """Redis cache implementation"""
+    """Redis cache implementation with connection pooling and clustering"""
 
     def __init__(self, config: CacheConfig):
         self.config = config
         self._redis = None
+        self._pool = None
+        self._cluster = None
+
+    async def initialize(self, redis_url: str = None):
+        """Initialize Redis connection"""
+        try:
+            import aioredis
+            from aioredis import Redis, ConnectionPool
+
+            if redis_url:
+                # Use connection pool for better performance
+                self._pool = ConnectionPool.from_url(redis_url, max_connections=20)
+                self._redis = Redis(connection_pool=self._pool)
+            else:
+                # Default connection
+                self._redis = Redis()
+
+            # Test connection
+            await self._redis.ping()
+            print("Redis cache connected successfully")
+
+        except ImportError:
+            print("aioredis not installed, Redis cache disabled")
+        except Exception as e:
+            print(f"Redis connection failed: {e}")
 
     async def get(self, key: str) -> Optional[Any]:
         """Get value from Redis cache"""
@@ -286,8 +367,15 @@ class RedisCache:
             return None
         try:
             value = await self._redis.get(key)
-            return value
-        except Exception:
+            if value:
+                # Try to deserialize JSON
+                try:
+                    return json.loads(value)
+                except:
+                    return value
+            return None
+        except Exception as e:
+            print(f"Redis get error: {e}")
             return None
 
     async def set(self, key: str, value: Any, ttl_seconds: int = None) -> bool:
@@ -295,12 +383,19 @@ class RedisCache:
         if not self._redis:
             return False
         try:
+            # Serialize to JSON if possible
+            try:
+                serialized_value = json.dumps(value)
+            except:
+                serialized_value = str(value)
+
             if ttl_seconds:
-                await self._redis.setex(key, ttl_seconds, value)
+                await self._redis.setex(key, ttl_seconds, serialized_value)
             else:
-                await self._redis.set(key, value)
+                await self._redis.set(key, serialized_value)
             return True
-        except Exception:
+        except Exception as e:
+            print(f"Redis set error: {e}")
             return False
 
     async def delete(self, key: str) -> bool:
@@ -310,7 +405,8 @@ class RedisCache:
         try:
             await self._redis.delete(key)
             return True
-        except Exception:
+        except Exception as e:
+            print(f"Redis delete error: {e}")
             return False
 
     async def clear(self):
@@ -326,8 +422,15 @@ class RedisCache:
             keys = await self._redis.keys(pattern)
             if keys:
                 await self._redis.delete(*keys)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Redis pattern invalidate error: {e}")
+
+    async def close(self):
+        """Close Redis connection"""
+        if self._pool:
+            await self._pool.disconnect()
+        if self._redis:
+            await self._redis.close()
 
 
 class CDNCache:
@@ -357,4 +460,3 @@ class CDNCache:
     async def invalidate_pattern(self, pattern: str):
         """Invalidate keys matching pattern (placeholder)"""
         pass
-

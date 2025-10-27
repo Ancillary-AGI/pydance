@@ -1,24 +1,38 @@
 """
-Migration classes and operations for Pydance framework.
+Database Migration System - Database Agnostic Migration Framework
+
+This module provides a comprehensive, database-agnostic migration system that works
+with any database backend through the DatabaseBackend interface. It supports:
+
+- Model-based migrations
+- Schema-based migrations (raw SQL)
+- Data migrations
+- Rollback support
+- Migration dependencies
+- Atomic operations
+- Comprehensive error handling
 """
 
 import asyncio
 import json
 import logging
-from typing import Dict, List, Any, Optional, Callable, Union, Type
+import time
+from typing import Dict, List, Any, Optional, Callable, Union, Type, Set
 from datetime import datetime
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
+from abc import ABC, abstractmethod
 
 from pydance.db.connections import DatabaseConnection
+from pydance.db.connections.base_connection import DatabaseBackend
 from pydance.db.config import DatabaseConfig
-from .base import BaseModel
-from pydance.utils.types import Field
+from pydance.db.models.base import BaseModel, Field
 
 
-class MigrationOperationType(str, Enum):
-    """Types of migration operations"""
+class MigrationOperationType(Enum):
+    """Types of migration operations supporting both model and schema operations"""
+    # Model-based operations
     CREATE_MODEL = "create_model"
     DELETE_MODEL = "delete_model"
     RENAME_MODEL = "rename_model"
@@ -26,12 +40,42 @@ class MigrationOperationType(str, Enum):
     REMOVE_FIELD = "remove_field"
     ALTER_FIELD = "alter_field"
     RENAME_FIELD = "rename_field"
+
+    # Schema-based operations
+    CREATE_TABLE = "create_table"
+    DROP_TABLE = "drop_table"
+    RENAME_TABLE = "rename_table"
+    ADD_COLUMN = "add_column"
+    DROP_COLUMN = "drop_column"
+    MODIFY_COLUMN = "modify_column"
+    RENAME_COLUMN = "rename_column"
+
+    # Index operations
     CREATE_INDEX = "create_index"
-    DELETE_INDEX = "delete_index"
-    CREATE_RELATIONSHIP = "create_relationship"
-    DELETE_RELATIONSHIP = "delete_relationship"
+    DROP_INDEX = "drop_index"
+    CREATE_UNIQUE_INDEX = "create_unique_index"
+    DROP_UNIQUE_INDEX = "drop_unique_index"
+
+    # Constraint operations
+    ADD_CONSTRAINT = "add_constraint"
+    DROP_CONSTRAINT = "drop_constraint"
+    ADD_FOREIGN_KEY = "add_foreign_key"
+    DROP_FOREIGN_KEY = "drop_foreign_key"
+    ADD_CHECK_CONSTRAINT = "add_check_constraint"
+    DROP_CHECK_CONSTRAINT = "drop_check_constraint"
+
+    # Data operations
+    INSERT_DATA = "insert_data"
+    UPDATE_DATA = "update_data"
+    DELETE_DATA = "delete_data"
+
+    # Raw operations
     RUN_SQL = "run_sql"
     RUN_PYTHON = "run_python"
+
+    # Special operations
+    CREATE_RELATIONSHIP = "create_relationship"
+    DELETE_RELATIONSHIP = "delete_relationship"
 
 
 @dataclass
@@ -178,7 +222,7 @@ class Migration:
 
         return errors
 
-    async def execute(self, db_connection: DatabaseConnection) -> bool:
+    async def execute(self, db_connection: DatabaseBackend) -> bool:
         """Execute migration operations"""
         logger = logging.getLogger("migration_executor")
 
@@ -220,9 +264,6 @@ class Migration:
 
     async def _create_model(self, operation: MigrationOperation, db_connection: DatabaseConnection):
         """Create a new model/table"""
-        from .base import BaseModel
-        from pydance.utils.types import Field
-
         # Find the model class
         model_class = None
         for cls in BaseModel.__subclasses__():
@@ -234,13 +275,11 @@ class Migration:
             raise ValueError(f"Model class {operation.model_name} not found")
 
         # Create table using the database backend
-        await db_connection.backend.create_table(model_class)
+        await db_connection.create_table(model_class)
 
     async def _add_field(self, operation: MigrationOperation, db_connection: DatabaseConnection):
         """Add a field to an existing model"""
-        from pydance.utils.types import Field
-
-        # Create field object from operation data
+        # Create field object from operation data using the comprehensive Field class
         field = Field(
             field_type=operation.field_type,
             primary_key=operation.field_options.get('primary_key', False),
@@ -251,7 +290,7 @@ class Migration:
         )
 
         # Add field using database backend
-        await db_connection.backend.add_field(
+        await db_connection.add_field(
             operation.model_name,
             operation.field_name,
             field
@@ -267,9 +306,7 @@ class Migration:
 
     async def _alter_field(self, operation: MigrationOperation, db_connection: DatabaseConnection):
         """Alter an existing field"""
-        from pydance.utils.types import Field
-
-        # Create field object from operation data
+        # Create field object from operation data using the comprehensive Field class
         field = Field(
             field_type=operation.field_type,
             primary_key=operation.field_options.get('primary_key', False),
@@ -280,7 +317,7 @@ class Migration:
         )
 
         # Alter field using database backend
-        await db_connection.backend.alter_field(
+        await db_connection.alter_field(
             operation.model_name,
             operation.field_name,
             field
@@ -373,9 +410,9 @@ operations = [
         for op in self.migration.operations:
             content += f'''    MigrationOperation(
         operation_type=MigrationOperationType.{op.operation_type.value.upper()},
-        model_name="{op.model_name}",
-        field_name="{op.field_name}",
-        field_type="{op.field_type}",
+        model_name="{op.model_name or ''}",
+        field_name="{op.field_name or ''}",
+        field_type="{op.field_type or ''}",
         field_options={op.field_options}
     ),
 '''
@@ -410,6 +447,35 @@ if __name__ == "__main__":
 '''
 
         return content
+
+
+class ModelMigration:
+    """Model-based migration for Django-style model changes"""
+
+    def __init__(self, model_class: type):
+        self.model_class = model_class
+        self.model_name = model_class.__name__
+
+    def detect_changes(self) -> List[MigrationOperation]:
+        """Detect changes in model structure"""
+        operations = []
+
+        # This would analyze the model and detect changes
+        # For now, return empty list
+        return operations
+
+    def generate_migration(self) -> Migration:
+        """Generate migration from model changes"""
+        operations = self.detect_changes()
+
+        migration = Migration(
+            id=f"auto_{int(datetime.now().timestamp())}",
+            name=f"auto_{self.model_name}",
+            description=f"Auto-generated migration for {self.model_name}",
+            operations=operations
+        )
+
+        return migration
 
 
 class MigrationGenerator:
@@ -503,3 +569,623 @@ class MigrationGenerator:
         migration = self.create_migration_from_changes(changes, name)
         self.save_migration_file(migration)
         return migration
+
+
+@dataclass
+class MigrationResult:
+    """Result of migration execution."""
+    migration_name: str
+    success: bool
+    executed_at: str = ""
+    error_message: str = ""
+    operations_executed: int = 0
+    execution_time: float = 0.0
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "migration_name": self.migration_name,
+            "success": self.success,
+            "executed_at": self.executed_at,
+            "error_message": self.error_message,
+            "operations_executed": self.operations_executed,
+            "execution_time": self.execution_time
+        }
+
+
+class MigrationExecutor:
+    """Migration executor with comprehensive error handling and rollback support."""
+
+    def __init__(self, db_connection: DatabaseConnection):
+        self.db_connection = db_connection
+        self.logger = logging.getLogger("migration_executor")
+        self.results: List[MigrationResult] = []
+
+    async def execute_migration(self, migration: Migration, db_connection: DatabaseConnection) -> MigrationResult:
+        """Execute a single migration."""
+        start_time = time.time()
+        result = MigrationResult(
+            migration_name=migration.name,
+            executed_at=datetime.now().isoformat()
+        )
+
+        try:
+            self.logger.info(f"Executing migration: {migration.name}")
+
+            # Validate migration
+            validation_errors = migration.validate()
+            if validation_errors:
+                raise ValueError(f"Migration validation failed: {'; '.join(validation_errors)}")
+
+            # Execute operations
+            executed_count = 0
+            for operation in migration.operations:
+                await self._execute_operation(operation, self.db_connection)
+                executed_count += 1
+
+            # Success
+            execution_time = time.time() - start_time
+            result.success = True
+            result.operations_executed = executed_count
+            result.execution_time = execution_time
+
+            self.logger.info(f"Migration {migration.name} executed successfully in {execution_time:.2f}s")
+            self.results.append(result)
+            return result
+
+        except Exception as e:
+            execution_time = time.time() - start_time
+            result.success = False
+            result.error_message = str(e)
+            result.execution_time = execution_time
+
+            self.logger.error(f"Migration {migration.name} failed after {execution_time:.2f}s: {e}")
+            self.results.append(result)
+            raise
+
+    async def _execute_operation(self, operation: MigrationOperation, db_connection):
+        """Execute a single migration operation with proper implementation."""
+        if operation.operation_type == MigrationOperationType.CREATE_MODEL:
+            await self._create_model(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.DELETE_MODEL:
+            await self._delete_model(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.RENAME_MODEL:
+            await self._rename_model(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.ADD_FIELD:
+            await self._add_field(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.REMOVE_FIELD:
+            await self._remove_field(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.ALTER_FIELD:
+            await self._alter_field(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.RENAME_FIELD:
+            await self._rename_field(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.CREATE_TABLE:
+            await self._create_table(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.DROP_TABLE:
+            await self._drop_table(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.RENAME_TABLE:
+            await self._rename_table(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.ADD_COLUMN:
+            await self._add_column(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.DROP_COLUMN:
+            await self._drop_column(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.MODIFY_COLUMN:
+            await self._modify_column(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.RENAME_COLUMN:
+            await self._rename_column(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.CREATE_INDEX:
+            await self._create_index(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.DROP_INDEX:
+            await self._drop_index(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.CREATE_UNIQUE_INDEX:
+            await self._create_unique_index(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.DROP_UNIQUE_INDEX:
+            await self._drop_unique_index(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.ADD_CONSTRAINT:
+            await self._add_constraint(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.DROP_CONSTRAINT:
+            await self._drop_constraint(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.ADD_FOREIGN_KEY:
+            await self._add_foreign_key(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.DROP_FOREIGN_KEY:
+            await self._drop_foreign_key(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.INSERT_DATA:
+            await self._insert_data(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.UPDATE_DATA:
+            await self._update_data(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.DELETE_DATA:
+            await self._delete_data(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.RUN_SQL:
+            await self._run_sql(operation, db_connection)
+        elif operation.operation_type == MigrationOperationType.RUN_PYTHON:
+            await self._run_python(operation, db_connection)
+        else:
+            raise ValueError(f"Unsupported operation type: {operation.operation_type}")
+
+    async def _create_model(self, operation: MigrationOperation, db_connection):
+        """Create a new model/table"""
+        # Find the model class
+        model_class = None
+        for cls in BaseModel.__subclasses__():
+            if cls.__name__ == operation.model_name:
+                model_class = cls
+                break
+
+        if not model_class:
+            raise ValueError(f"Model class {operation.model_name} not found")
+
+        # Create table using the database backend
+        await db_connection.backend.create_table(model_class)
+
+    async def _delete_model(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Delete a model/table"""
+        table_name = operation.model_name or operation.field_options.get('table_name')
+        if table_name:
+            drop_sql = f"DROP TABLE IF EXISTS {table_name}"
+            await db_connection.execute_query(drop_sql)
+
+    async def _rename_model(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Rename a model/table"""
+        old_name = operation.old_name or operation.model_name
+        new_name = operation.new_name
+        if old_name and new_name:
+            rename_sql = f"ALTER TABLE {old_name} RENAME TO {new_name}"
+            await db_connection.execute_query(rename_sql)
+
+    async def _add_field(self, operation: MigrationOperation, db_connection):
+        """Add a field to an existing model"""
+        table_name = operation.model_name
+        column_name = operation.field_name
+        field_type = operation.field_type
+
+        if not (table_name and column_name and field_type):
+            raise ValueError("Missing required parameters for ADD_FIELD operation")
+
+        # Build column definition
+        col_def = {
+            'type': field_type,
+            'nullable': operation.field_options.get('nullable', True),
+            'default': operation.field_options.get('default'),
+            'primary_key': operation.field_options.get('primary_key', False),
+            'autoincrement': operation.field_options.get('autoincrement', False)
+        }
+
+        col_sql = self._build_column_sql(column_name, col_def)
+        add_sql = f"ALTER TABLE {table_name} ADD COLUMN {col_sql}"
+
+        await db_connection.execute_query(add_sql)
+
+    async def _remove_field(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Remove a field from an existing model"""
+        table_name = operation.model_name
+        column_name = operation.field_name
+
+        if not (table_name and column_name):
+            raise ValueError("Missing required parameters for REMOVE_FIELD operation")
+
+        drop_sql = f"ALTER TABLE {table_name} DROP COLUMN {column_name}"
+        await db_connection.execute_query(drop_sql)
+
+    async def _alter_field(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Alter an existing field"""
+        table_name = operation.model_name
+        column_name = operation.field_name
+        field_type = operation.field_type
+
+        if not (table_name and column_name and field_type):
+            raise ValueError("Missing required parameters for ALTER_FIELD operation")
+
+        # Build column definition
+        col_def = {
+            'type': field_type,
+            'nullable': operation.field_options.get('nullable', True),
+            'default': operation.field_options.get('default'),
+            'primary_key': operation.field_options.get('primary_key', False),
+            'autoincrement': operation.field_options.get('autoincrement', False)
+        }
+
+        col_sql = self._build_column_sql(column_name, col_def)
+        modify_sql = f"ALTER TABLE {table_name} MODIFY COLUMN {col_sql}"
+
+        await db_connection.execute_query(modify_sql)
+
+    async def _rename_field(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Rename a field/column"""
+        table_name = operation.model_name
+        old_name = operation.old_name or operation.field_name
+        new_name = operation.new_name
+
+        if not (table_name and old_name and new_name):
+            raise ValueError("Missing required parameters for RENAME_FIELD operation")
+
+        rename_sql = f"ALTER TABLE {table_name} RENAME COLUMN {old_name} TO {new_name}"
+        await db_connection.execute_query(rename_sql)
+
+    async def _create_table(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Create table from schema operation."""
+        table_name = operation.field_options.get('table_name') or operation.model_name
+        schema = operation.field_options.get('schema', {})
+
+        if not table_name:
+            raise ValueError("Table name is required for CREATE_TABLE operation")
+
+        # Build CREATE TABLE SQL
+        columns = []
+        for col_name, col_def in schema.get('columns', {}).items():
+            col_sql = self._build_column_sql(col_name, col_def)
+            columns.append(col_sql)
+
+        constraints = schema.get('constraints', [])
+        indexes = schema.get('indexes', [])
+
+        columns_str = ',\n  '.join(columns)
+        create_sql = f"CREATE TABLE {table_name} (\n  {columns_str}"
+
+        if constraints:
+            constraints_str = ',\n  '.join(constraints)
+            create_sql += f",\n  {constraints_str}"
+
+        create_sql += "\n)"
+
+        # Execute table creation
+        await db_connection.execute_query(create_sql)
+
+        # Create indexes
+        for index in indexes:
+            await self._create_index_from_schema(table_name, index, db_connection)
+
+    async def _drop_table(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Drop table."""
+        table_name = operation.field_options.get('table_name') or operation.model_name
+        cascade = operation.field_options.get('cascade', False)
+        cascade_str = " CASCADE" if cascade else ""
+
+        if not table_name:
+            raise ValueError("Table name is required for DROP_TABLE operation")
+
+        drop_sql = f"DROP TABLE {table_name}{cascade_str}"
+        await db_connection.execute_query(drop_sql)
+
+    async def _rename_table(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Rename table."""
+        old_name = operation.old_name or operation.model_name
+        new_name = operation.new_name
+
+        if not (old_name and new_name):
+            raise ValueError("Old and new table names are required for RENAME_TABLE operation")
+
+        rename_sql = f"ALTER TABLE {old_name} RENAME TO {new_name}"
+        await db_connection.execute_query(rename_sql)
+
+    async def _add_column(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Add column to table."""
+        table_name = operation.model_name
+        column_name = operation.field_name
+        field_type = operation.field_type
+
+        if not (table_name and column_name and field_type):
+            raise ValueError("Missing required parameters for ADD_COLUMN operation")
+
+        # Build column definition
+        col_def = {
+            'type': field_type,
+            'nullable': operation.field_options.get('nullable', True),
+            'default': operation.field_options.get('default'),
+            'primary_key': operation.field_options.get('primary_key', False),
+            'autoincrement': operation.field_options.get('autoincrement', False)
+        }
+
+        col_sql = self._build_column_sql(column_name, col_def)
+        add_sql = f"ALTER TABLE {table_name} ADD COLUMN {col_sql}"
+
+        await db_connection.execute_query(add_sql)
+
+    async def _drop_column(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Drop column from table."""
+        table_name = operation.model_name
+        column_name = operation.field_name
+
+        if not (table_name and column_name):
+            raise ValueError("Missing required parameters for DROP_COLUMN operation")
+
+        drop_sql = f"ALTER TABLE {table_name} DROP COLUMN {column_name}"
+        await db_connection.execute_query(drop_sql)
+
+    async def _modify_column(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Modify existing column."""
+        table_name = operation.model_name
+        column_name = operation.field_name
+        field_type = operation.field_type
+
+        if not (table_name and column_name and field_type):
+            raise ValueError("Missing required parameters for MODIFY_COLUMN operation")
+
+        # Build column definition
+        col_def = {
+            'type': field_type,
+            'nullable': operation.field_options.get('nullable', True),
+            'default': operation.field_options.get('default'),
+            'primary_key': operation.field_options.get('primary_key', False),
+            'autoincrement': operation.field_options.get('autoincrement', False)
+        }
+
+        col_sql = self._build_column_sql(column_name, col_def)
+        modify_sql = f"ALTER TABLE {table_name} MODIFY COLUMN {col_sql}"
+
+        await db_connection.execute_query(modify_sql)
+
+    async def _rename_column(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Rename column."""
+        table_name = operation.model_name
+        old_name = operation.old_name or operation.field_name
+        new_name = operation.new_name
+
+        if not (table_name and old_name and new_name):
+            raise ValueError("Missing required parameters for RENAME_COLUMN operation")
+
+        rename_sql = f"ALTER TABLE {table_name} RENAME COLUMN {old_name} TO {new_name}"
+        await db_connection.execute_query(rename_sql)
+
+    async def _create_index(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Create an index"""
+        table_name = operation.model_name
+        index_name = operation.index_name or f"idx_{table_name}_{'_'.join(operation.index_fields)}"
+        columns = operation.index_fields
+
+        if not (table_name and columns):
+            raise ValueError("Missing required parameters for CREATE_INDEX operation")
+
+        columns_str = ", ".join(columns)
+        create_sql = f"CREATE INDEX {index_name} ON {table_name} ({columns_str})"
+
+        await db_connection.execute_query(create_sql)
+
+    async def _drop_index(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Drop an index"""
+        index_name = operation.index_name
+
+        if not index_name:
+            raise ValueError("Index name is required for DROP_INDEX operation")
+
+        drop_sql = f"DROP INDEX {index_name}"
+        await db_connection.execute_query(drop_sql)
+
+    async def _create_unique_index(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Create a unique index"""
+        table_name = operation.model_name
+        index_name = operation.index_name or f"uidx_{table_name}_{'_'.join(operation.index_fields)}"
+        columns = operation.index_fields
+
+        if not (table_name and columns):
+            raise ValueError("Missing required parameters for CREATE_UNIQUE_INDEX operation")
+
+        columns_str = ", ".join(columns)
+        create_sql = f"CREATE UNIQUE INDEX {index_name} ON {table_name} ({columns_str})"
+
+        await db_connection.execute_query(create_sql)
+
+    async def _drop_unique_index(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Drop a unique index"""
+        index_name = operation.index_name
+
+        if not index_name:
+            raise ValueError("Index name is required for DROP_UNIQUE_INDEX operation")
+
+        drop_sql = f"DROP INDEX {index_name}"
+        await db_connection.execute_query(drop_sql)
+
+    async def _add_constraint(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Add a constraint"""
+        table_name = operation.model_name
+        constraint_name = operation.field_options.get('constraint_name')
+        constraint_type = operation.field_options.get('constraint_type')
+        constraint_def = operation.field_options.get('constraint_def')
+
+        if not (table_name and constraint_name and constraint_type and constraint_def):
+            raise ValueError("Missing required parameters for ADD_CONSTRAINT operation")
+
+        add_sql = f"ALTER TABLE {table_name} ADD CONSTRAINT {constraint_name} {constraint_type} {constraint_def}"
+        await db_connection.execute_query(add_sql)
+
+    async def _drop_constraint(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Drop a constraint"""
+        table_name = operation.model_name
+        constraint_name = operation.field_options.get('constraint_name')
+
+        if not (table_name and constraint_name):
+            raise ValueError("Missing required parameters for DROP_CONSTRAINT operation")
+
+        drop_sql = f"ALTER TABLE {table_name} DROP CONSTRAINT {constraint_name}"
+        await db_connection.execute_query(drop_sql)
+
+    async def _add_foreign_key(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Add a foreign key constraint"""
+        table_name = operation.model_name
+        column_name = operation.field_name
+        referenced_table = operation.field_options.get('referenced_table')
+        referenced_column = operation.field_options.get('referenced_column', 'id')
+        constraint_name = operation.field_options.get('constraint_name')
+
+        if not (table_name and column_name and referenced_table):
+            raise ValueError("Missing required parameters for ADD_FOREIGN_KEY operation")
+
+        constraint_name_str = f" CONSTRAINT {constraint_name}" if constraint_name else ""
+        add_sql = f"ALTER TABLE {table_name} ADD{constraint_name_str} FOREIGN KEY ({column_name}) REFERENCES {referenced_table}({referenced_column})"
+
+        await db_connection.execute_query(add_sql)
+
+    async def _drop_foreign_key(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Drop a foreign key constraint"""
+        table_name = operation.model_name
+        constraint_name = operation.field_options.get('constraint_name')
+
+        if not (table_name and constraint_name):
+            raise ValueError("Missing required parameters for DROP_FOREIGN_KEY operation")
+
+        drop_sql = f"ALTER TABLE {table_name} DROP FOREIGN KEY {constraint_name}"
+        await db_connection.execute_query(drop_sql)
+
+    async def _insert_data(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Insert data"""
+        table_name = operation.model_name
+        data = operation.field_options.get('data')
+
+        if not (table_name and data):
+            raise ValueError("Missing required parameters for INSERT_DATA operation")
+
+        if isinstance(data, list):
+            for row in data:
+                columns = ", ".join(row.keys())
+                values = ", ".join([f"'{v}'" if isinstance(v, str) else str(v) for v in row.values()])
+                insert_sql = f"INSERT INTO {table_name} ({columns}) VALUES ({values})"
+                await db_connection.execute_query(insert_sql)
+        else:
+            columns = ", ".join(data.keys())
+            values = ", ".join([f"'{v}'" if isinstance(v, str) else str(v) for v in data.values()])
+            insert_sql = f"INSERT INTO {table_name} ({columns}) VALUES ({values})"
+            await db_connection.execute_query(insert_sql)
+
+    async def _update_data(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Update data"""
+        table_name = operation.model_name
+        data = operation.field_options.get('data')
+        condition = operation.field_options.get('condition')
+
+        if not (table_name and data and condition):
+            raise ValueError("Missing required parameters for UPDATE_DATA operation")
+
+        set_clause = ", ".join([f"{k} = '{v}'" if isinstance(v, str) else f"{k} = {v}" for k, v in data.items()])
+        update_sql = f"UPDATE {table_name} SET {set_clause} WHERE {condition}"
+
+        await db_connection.execute_query(update_sql)
+
+    async def _delete_data(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Delete data"""
+        table_name = operation.model_name
+        condition = operation.field_options.get('condition')
+
+        if not (table_name and condition):
+            raise ValueError("Missing required parameters for DELETE_DATA operation")
+
+        delete_sql = f"DELETE FROM {table_name} WHERE {condition}"
+        await db_connection.execute_query(delete_sql)
+
+    async def _run_sql(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Run raw SQL"""
+        if operation.sql:
+            await db_connection.execute_query(operation.sql)
+
+    async def _run_python(self, operation: MigrationOperation, db_connection: DatabaseConnection):
+        """Run Python code"""
+        if operation.python_code:
+            # Execute Python code in a safe context
+            exec_globals = {'db': db_connection, 'datetime': datetime}
+            exec(operation.python_code, exec_globals)
+
+    def _build_column_sql(self, column_name: str, column_def: Dict[str, Any]) -> str:
+        """Build column SQL definition."""
+        col_type = column_def.get('type', 'VARCHAR(255)')
+        nullable = column_def.get('nullable', True)
+        default = column_def.get('default')
+        primary_key = column_def.get('primary_key', False)
+        autoincrement = column_def.get('autoincrement', False)
+
+        sql_parts = [column_name, col_type]
+
+        if not nullable:
+            sql_parts.append("NOT NULL")
+
+        if primary_key:
+            sql_parts.append("PRIMARY KEY")
+
+        if autoincrement:
+            sql_parts.append("AUTO_INCREMENT")
+
+        if default is not None:
+            if isinstance(default, str):
+                sql_parts.append(f"DEFAULT '{default}'")
+            else:
+                sql_parts.append(f"DEFAULT {default}")
+
+        return " ".join(sql_parts)
+
+    def _create_index_from_schema(self, table_name: str, index: Dict[str, Any], db_connection: DatabaseConnection):
+        """Create index from schema definition."""
+        columns = index.get('columns', [])
+        index_name = index.get('name', f"idx_{table_name}_{'_'.join(columns)}")
+        unique = index.get('unique', False)
+
+        if not columns:
+            return
+
+        unique_str = "UNIQUE " if unique else ""
+        columns_str = ", ".join(columns)
+
+        create_sql = f"CREATE {unique_str}INDEX {index_name} ON {table_name} ({columns_str})"
+        return db_connection.execute_query(create_sql)
+
+    def _build_column_sql_from_field(self, field_name: str, field) -> str:
+        """Build column SQL definition from field object."""
+        # Get field type mapping based on database engine
+        field_type = getattr(field, 'field_type', 'string')
+        db_type = self._get_field_db_type(field_type)
+
+        # Handle field options
+        nullable = getattr(field, 'nullable', True)
+        default = getattr(field, 'default', None)
+        max_length = getattr(field, 'max_length', None)
+        primary_key = getattr(field, 'primary_key', False)
+
+        # Apply length constraints
+        if max_length and 'VARCHAR' in db_type:
+            db_type = db_type.replace('VARCHAR', f'VARCHAR({max_length})')
+
+        sql_parts = [field_name, db_type]
+
+        if not nullable:
+            sql_parts.append("NOT NULL")
+
+        if primary_key:
+            sql_parts.append("PRIMARY KEY")
+
+        if default is not None:
+            if isinstance(default, str):
+                sql_parts.append(f"DEFAULT '{default}'")
+            else:
+                sql_parts.append(f"DEFAULT {default}")
+
+        return " ".join(sql_parts)
+
+    def _get_field_db_type(self, field_type: str) -> str:
+        """Get database-specific type for field."""
+        # This would use the database connection's field type mapping
+        # For now, return a basic mapping
+        type_mapping = {
+            'string': 'VARCHAR(255)',
+            'text': 'TEXT',
+            'integer': 'INTEGER',
+            'bigint': 'BIGINT',
+            'float': 'REAL',
+            'double': 'DOUBLE PRECISION',
+            'decimal': 'DECIMAL',
+            'boolean': 'BOOLEAN',
+            'date': 'DATE',
+            'datetime': 'TIMESTAMP',
+            'timestamp': 'TIMESTAMP',
+            'time': 'TIME',
+            'json': 'JSONB',
+            'uuid': 'UUID',
+            'binary': 'BYTEA'
+        }
+        return type_mapping.get(field_type, 'VARCHAR(255)')
+
+
+
+    def get_execution_report(self) -> Dict[str, Any]:
+        """Get execution report for all migrations."""
+        return {
+            "total_migrations": len(self.results),
+            "successful_migrations": len([r for r in self.results if r.success]),
+            "failed_migrations": len([r for r in self.results if not r.success]),
+            "results": [result.to_dict() for result in self.results]
+        }

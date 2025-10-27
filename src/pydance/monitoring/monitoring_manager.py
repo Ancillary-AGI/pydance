@@ -1,178 +1,307 @@
 """
-Advanced monitoring manager for Pydance.
-Coordinates all monitoring activities and provides centralized observability.
+Monitoring manager for Pydance framework.
+Coordinates monitoring, metrics collection, and alerting.
 """
 
-import asyncio
-import logging
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
-from datetime import datetime
+import time
+import asyncio
+
 
 @dataclass
 class MonitoringConfig:
-    """Configuration for monitoring system."""
-    enable_metrics_collection: bool = True
-    enable_alerting: bool = True
-    enable_tracing: bool = True
-    enable_logging: bool = True
-    metrics_interval: int = 30  # seconds
-    alert_thresholds: Dict[str, Any] = None
-    tracing_sample_rate: float = 0.1  # 10%
+    """Configuration for monitoring system"""
 
-    def __post_init__(self):
-        if self.alert_thresholds is None:
-            self.alert_thresholds = {
-                "cpu_usage": 80,
-                "memory_usage": 85,
-                "error_rate": 0.05,
-                "response_time": 2.0
-            }
+    enabled: bool = True
+    metrics_enabled: bool = True
+    alerting_enabled: bool = True
+    logging_enabled: bool = True
+    dashboard_enabled: bool = False
+
+    # Metrics settings
+    metrics_interval: int = 60  # seconds
+    metrics_retention: int = 3600  # 1 hour
+
+    # Alerting settings
+    alert_check_interval: int = 30  # seconds
+    alert_cooldown: int = 300  # 5 minutes
+
+    # Dashboard settings
+    dashboard_port: int = 8080
+    dashboard_host: str = "localhost"
+
 
 class MonitoringManager:
-    """
-    Central monitoring manager for Pydance applications.
-    """
+    """Central monitoring management system"""
 
-    def __init__(self, config: MonitoringConfig):
-        self.config = config
-        self.logger = logging.getLogger("monitoring_manager")
-        self.metrics_collector = MetricsCollector()
-        self.alert_manager = AlertManager()
-        self.trace_manager = TraceManager()
-        self.log_aggregator = LogAggregator()
-        self.dashboard_generator = DashboardGenerator()
-        self.is_monitoring = False
+    def __init__(self, config: Optional[MonitoringConfig] = None):
+        self.config = config or MonitoringConfig()
+        self.metrics_collector = None
+        self.alert_manager = None
+        self.log_aggregator = None
+        self.trace_manager = None
+        self.dashboard_generator = None
 
-    async def start_monitoring(self):
-        """Start comprehensive monitoring."""
-        if self.is_monitoring:
-            self.logger.warning("Monitoring is already running")
+        self._monitoring_task: Optional[asyncio.Task] = None
+        self._alerting_task: Optional[asyncio.Task] = None
+
+    async def start(self):
+        """Start the monitoring system"""
+        if not self.config.enabled:
             return
 
-        self.is_monitoring = True
-        self.logger.info("Starting comprehensive monitoring")
+        # Initialize components
+        await self._initialize_components()
 
-        # Start all monitoring components
-        if self.config.enable_metrics_collection:
-            await self.metrics_collector.start_collection(self.config.metrics_interval)
+        # Start monitoring tasks
+        if self.config.metrics_enabled:
+            self._monitoring_task = asyncio.create_task(self._run_metrics_collection())
 
-        if self.config.enable_alerting:
-            await self.alert_manager.start_alerting()
+        if self.config.alerting_enabled:
+            self._alerting_task = asyncio.create_task(self._run_alert_checking())
 
-        if self.config.enable_tracing:
-            await self.trace_manager.start_tracing(self.config.tracing_sample_rate)
+    async def stop(self):
+        """Stop the monitoring system"""
+        if self._monitoring_task:
+            self._monitoring_task.cancel()
+            try:
+                await self._monitoring_task
+            except asyncio.CancelledError:
+                pass
 
-        if self.config.enable_logging:
-            await self.log_aggregator.start_aggregation()
+        if self._alerting_task:
+            self._alerting_task.cancel()
+            try:
+                await self._alerting_task
+            except asyncio.CancelledError:
+                pass
 
-    async def stop_monitoring(self):
-        """Stop all monitoring activities."""
-        self.is_monitoring = False
-        self.logger.info("Stopped comprehensive monitoring")
+    async def _initialize_components(self):
+        """Initialize monitoring components"""
+        if self.config.metrics_enabled:
+            try:
+                from .metrics import MetricsCollector
+                self.metrics_collector = MetricsCollector()
+            except ImportError:
+                pass
 
-        # Stop all monitoring components
-        await self.metrics_collector.stop_collection()
-        await self.alert_manager.stop_alerting()
-        await self.trace_manager.stop_tracing()
-        await self.log_aggregator.stop_aggregation()
+        if self.config.alerting_enabled:
+            try:
+                from .alert_manager import AlertManager
+                self.alert_manager = AlertManager()
+            except ImportError:
+                pass
 
-    async def get_system_health(self) -> Dict[str, Any]:
-        """Get comprehensive system health status."""
+        if self.config.logging_enabled:
+            try:
+                from .log_aggregator import LogAggregator
+                self.log_aggregator = LogAggregator()
+            except ImportError:
+                pass
+
+        if self.config.dashboard_enabled:
+            try:
+                from .dashboard_generator import DashboardGenerator
+                self.dashboard_generator = DashboardGenerator()
+            except ImportError:
+                pass
+
+    async def _run_metrics_collection(self):
+        """Run periodic metrics collection"""
+        while True:
+            try:
+                if self.metrics_collector:
+                    await self.metrics_collector.collect_all()
+                await asyncio.sleep(self.config.metrics_interval)
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                print(f"Metrics collection error: {e}")
+                await asyncio.sleep(self.config.metrics_interval)
+
+    async def _run_alert_checking(self):
+        """Run periodic alert checking"""
+        while True:
+            try:
+                if self.alert_manager and self.metrics_collector:
+                    # Check metrics against alert rules
+                    all_values = await self.metrics_collector.collect_all()
+                    for value in all_values:
+                        self.alert_manager.evaluate_metric(value.name, value.value)
+
+                await asyncio.sleep(self.config.alert_check_interval)
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                print(f"Alert checking error: {e}")
+                await asyncio.sleep(self.config.alert_check_interval)
+
+    def get_metrics_summary(self) -> Dict[str, Any]:
+        """Get a summary of current metrics"""
+        if not self.metrics_collector:
+            return {}
+
         try:
-            health_data = {
-                "overall_status": "healthy",
-                "components": {},
-                "timestamp": datetime.now().isoformat()
-            }
-
-            # Check each component
-            components = [
-                ("metrics_collector", self.metrics_collector),
-                ("alert_manager", self.alert_manager),
-                ("trace_manager", self.trace_manager),
-                ("log_aggregator", self.log_aggregator)
-            ]
-
-            for component_name, component in components:
-                try:
-                    component_health = await component.get_health_status()
-                    health_data["components"][component_name] = component_health
-
-                    if component_health["status"] != "healthy":
-                        health_data["overall_status"] = "degraded"
-
-                except Exception as e:
-                    health_data["components"][component_name] = {
-                        "status": "error",
-                        "error": str(e)
-                    }
-                    health_data["overall_status"] = "error"
-
-            return health_data
-
-        except Exception as e:
-            self.logger.error(f"Failed to get system health: {e}")
+            # Get basic metrics summary
             return {
-                "overall_status": "error",
-                "error": str(e),
-                "timestamp": datetime.now().isoformat()
+                "total_metrics": len(self.metrics_collector._metrics),
+                "active_collectors": len(self.metrics_collector._collectors),
+                "timestamp": time.time()
             }
+        except Exception:
+            return {}
 
-    async def get_monitoring_dashboard(self) -> Dict[str, Any]:
-        """Generate comprehensive monitoring dashboard."""
+    def get_alert_summary(self) -> Dict[str, Any]:
+        """Get a summary of current alerts"""
+        if not self.alert_manager:
+            return {}
+
         try:
-            dashboard = {
-                "generated_at": datetime.now().isoformat(),
-                "monitoring_status": "active" if self.is_monitoring else "inactive",
-                "system_health": await self.get_system_health(),
-                "metrics_summary": await self.metrics_collector.get_metrics_summary(),
-                "active_alerts": await self.alert_manager.get_active_alerts(),
-                "recent_traces": await self.trace_manager.get_recent_traces(),
-                "log_summary": await self.log_aggregator.get_log_summary()
-            }
-
-            return dashboard
-
-        except Exception as e:
-            self.logger.error(f"Failed to generate dashboard: {e}")
+            active_alerts = self.alert_manager.get_active_alerts()
             return {
-                "error": str(e),
-                "generated_at": datetime.now().isoformat()
+                "active_alerts": len(active_alerts),
+                "total_rules": len(self.alert_manager.rules),
+                "alert_history_count": len(self.alert_manager.alert_history)
             }
+        except Exception:
+            return {}
 
-    def get_monitoring_config(self) -> Dict[str, Any]:
-        """Get current monitoring configuration."""
-        return {
-            "enable_metrics_collection": self.config.enable_metrics_collection,
-            "enable_alerting": self.config.enable_alerting,
-            "enable_tracing": self.config.enable_tracing,
-            "enable_logging": self.config.enable_logging,
-            "metrics_interval": self.config.metrics_interval,
-            "alert_thresholds": self.config.alert_thresholds,
-            "tracing_sample_rate": self.config.tracing_sample_rate,
-            "is_monitoring": self.is_monitoring
+    def get_system_health(self) -> Dict[str, Any]:
+        """Get overall system health status"""
+        health = {
+            "monitoring_enabled": self.config.enabled,
+            "metrics_healthy": self.metrics_collector is not None,
+            "alerting_healthy": self.alert_manager is not None,
+            "logging_healthy": self.log_aggregator is not None,
+            "dashboard_healthy": self.dashboard_generator is not None,
+            "timestamp": time.time()
         }
 
-    async def update_monitoring_config(self, new_config: MonitoringConfig):
-        """Update monitoring configuration."""
-        old_config = self.config
-        self.config = new_config
+        # Add component health details
+        if self.metrics_collector:
+            try:
+                health["metrics_status"] = "healthy"
+                health["metrics_count"] = len(self.metrics_collector._metrics)
+            except Exception:
+                health["metrics_status"] = "error"
 
-        # Restart monitoring with new configuration if it was running
-        was_monitoring = self.is_monitoring
-        if was_monitoring:
-            await self.stop_monitoring()
-            await self.start_monitoring()
+        if self.alert_manager:
+            try:
+                health["alerting_status"] = "healthy"
+                health["active_alerts"] = len(self.alert_manager.get_active_alerts())
+            except Exception:
+                health["alerting_status"] = "error"
 
-        self.logger.info(f"Updated monitoring configuration from {old_config} to {new_config}")
+        return health
 
-# Global monitoring manager
-monitoring_manager = None
+    async def run_health_check(self) -> Dict[str, Any]:
+        """Run comprehensive health check"""
+        health = await self._check_component_health()
 
-def initialize_monitoring_manager(config: MonitoringConfig):
-    """Initialize global monitoring manager."""
-    global monitoring_manager
-    monitoring_manager = MonitoringManager(config)
-    return monitoring_manager
+        # Check database connections
+        db_health = await self._check_database_health()
+        health.update(db_health)
 
+        # Check cache health
+        cache_health = await self._check_cache_health()
+        health.update(cache_health)
+
+        # Check external services
+        external_health = await self._check_external_services()
+        health.update(external_health)
+
+        return health
+
+    async def _check_component_health(self) -> Dict[str, Any]:
+        """Check health of monitoring components"""
+        component_health = {}
+
+        # Check metrics collector
+        if self.metrics_collector:
+            try:
+                metrics = await self.metrics_collector.collect_all()
+                component_health["metrics_collector"] = {
+                    "status": "healthy",
+                    "metrics_count": len(metrics)
+                }
+            except Exception as e:
+                component_health["metrics_collector"] = {
+                    "status": "error",
+                    "error": str(e)
+                }
+        else:
+            component_health["metrics_collector"] = {"status": "disabled"}
+
+        # Check alert manager
+        if self.alert_manager:
+            try:
+                active_alerts = self.alert_manager.get_active_alerts()
+                component_health["alert_manager"] = {
+                    "status": "healthy",
+                    "active_alerts": len(active_alerts)
+                }
+            except Exception as e:
+                component_health["alert_manager"] = {
+                    "status": "error",
+                    "error": str(e)
+                }
+        else:
+            component_health["alert_manager"] = {"status": "disabled"}
+
+        return component_health
+
+    async def _check_database_health(self) -> Dict[str, Any]:
+        """Check database connection health"""
+        db_health = {"databases": {}}
+
+        try:
+            from pydance.db import DatabaseConnection
+            db = DatabaseConnection.get_instance()
+            if db:
+                # Test connection
+                await db.test_connection()
+                db_health["databases"]["main"] = {"status": "healthy"}
+            else:
+                db_health["databases"]["main"] = {"status": "disconnected"}
+        except Exception as e:
+            db_health["databases"]["main"] = {"status": "error", "error": str(e)}
+
+        return db_health
+
+    async def _check_cache_health(self) -> Dict[str, Any]:
+        """Check cache system health"""
+        cache_health = {"caches": {}}
+
+        try:
+            from pydance.caching import get_cache_manager
+            cache_manager = get_cache_manager()
+            if cache_manager:
+                metrics = cache_manager.get_metrics()
+                cache_health["caches"]["main"] = {
+                    "status": "healthy",
+                    "hit_rate": metrics.get("hit_rate", 0),
+                    "total_hits": metrics.get("total_hits", 0)
+                }
+            else:
+                cache_health["caches"]["main"] = {"status": "disabled"}
+        except Exception as e:
+            cache_health["caches"]["main"] = {"status": "error", "error": str(e)}
+
+        return cache_health
+
+    async def _check_external_services(self) -> Dict[str, Any]:
+        """Check external service health"""
+        external_health = {"external_services": {}}
+
+        # Check Redis if configured
+        try:
+            from pydance.caching.cache_manager import RedisCache
+            redis_cache = RedisCache(None)
+            await redis_cache.initialize()
+            await redis_cache.close()
+            external_health["external_services"]["redis"] = {"status": "healthy"}
+        except Exception as e:
+            external_health["external_services"]["redis"] = {"status": "error", "error": str(e)}
+
+        return external_health

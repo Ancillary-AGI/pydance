@@ -1,6 +1,7 @@
 """
 Migration runner and manager for Pydance framework.
 Handles both database-stored and file-based migrations with comprehensive model diffing.
+Database-agnostic implementation supporting all database backends.
 """
 
 import asyncio
@@ -9,18 +10,19 @@ import logging
 import os
 import re
 import hashlib
-from typing import Dict, List, Any, Optional, Tuple, Set
+from typing import Dict, List, Any, Optional, Tuple, Set, Type
 from datetime import datetime
 from pathlib import Path
 from dataclasses import dataclass
 
 from pydance.db.connections import DatabaseConnection
 from pydance.db.config import DatabaseConfig
-from .base import BaseModel
+from pydance.db.models.base import BaseModel, Field
 from .migration import (
     Migration, MigrationFile, MigrationGenerator, MigrationOperationType,
     MigrationOperation, ModelMigration
 )
+from pydance.events import get_event_bus
 
 
 @dataclass
@@ -250,7 +252,7 @@ class Migrator:
         return True
 
     async def downgrade_model(self, model_class, target_version: int):
-        """Downgrade a model to a specific version"""
+        """Downgrade a model to a specific version using backend abstraction"""
         model_name = model_class.__name__
         current_version = self.applied_migrations.get(model_name, 0)
 
@@ -268,58 +270,87 @@ class Migrator:
 
         # Downgrade step by step from current version down to target version
         for version in range(current_version, target_version, -1):
-            downgrade_sql = self._generate_downgrade_sql(model_name, version)
+            operations = self._generate_downgrade_operations(model_name, version)
 
-            if not downgrade_sql:
+            if not operations:
                 print(f"No downgrade needed for {model_name} from v{version}")
                 continue
 
-            async with db.get_connection() as conn:
-                try:
-                    if self.db_config.engine == 'sqlite':
-                        # SQLite - execute each statement separately
-                        statements = [s.strip() for s in downgrade_sql.split(';') if s.strip()]
-                        for statement in statements:
-                            await conn.execute(statement)
+            try:
+                # Use backend abstraction for downgrade operations
+                await self._execute_downgrade_operations(model_class, operations, version)
 
-                        # Remove the migration record
-                        await conn.execute(
-                            "DELETE FROM migrations WHERE model_name = ? AND version = ?",
-                            (model_name, version)
-                        )
+                self.applied_migrations[model_name] = version - 1
+                if model_name in self.migration_schemas and version in self.migration_schemas[model_name]:
+                    del self.migration_schemas[model_name][version]
 
-                    elif self.db_config.engine == 'postgresql':
-                        # PostgreSQL - execute directly
-                        await conn.execute(downgrade_sql)
+                print(f"✓ Downgraded {model_name} from v{version} to v{version - 1}")
 
-                        # Remove the migration record
-                        await conn.execute(
-                            "DELETE FROM migrations WHERE model_name = $1 AND version = $2", model_name, version
-                        )
+            except Exception as e:
+                print(f"✗ Failed to downgrade {model_name} from v{version}: {e}")
+                raise
 
-                    elif self.db_config.engine == 'mysql':
-                        # MySQL - execute each statement separately
-                        statements = [s.strip() for s in downgrade_sql.split(';') if s.strip()]
-                        for statement in statements:
-                            await conn.execute(statement)
+    def _generate_downgrade_operations(self, model_name: str, from_version: int) -> Dict:
+        """Generate database-independent downgrade operations"""
+        # Get the operations that were performed for this version
+        migration_data = self.migration_schemas.get(model_name, {}).get(from_version, {})
+        if not migration_data:
+            return {}
 
-                        # Remove the migration record
-                        await conn.execute(
-                            "DELETE FROM migrations WHERE model_name = %s AND version = %s",
-                            (model_name, version)
-                        )
+        # Get the actual operations from the stored data
+        operations = migration_data.get('operations', {}) if isinstance(migration_data, dict) else {}
+        if not operations:
+            return {}
 
-                    self.applied_migrations[model_name] = version - 1
-                    if model_name in self.migration_schemas and version in self.migration_schemas[model_name]:
-                        del self.migration_schemas[model_name][version]
+        # Reverse the operations for downgrade
+        downgrade_operations = {
+            'removed_columns': operations.get('added_columns', []),
+            'added_columns': operations.get('removed_columns', []),
+            'modified_columns': operations.get('modified_columns', []),
+            'removed_indexes': operations.get('added_indexes', []),
+            'added_indexes': operations.get('removed_indexes', [])
+        }
 
-                    print(f"✓ Downgraded {model_name} from v{version} to v{version - 1}")
+        return downgrade_operations
 
-                except Exception as e:
-                    print(f"✗ Failed to downgrade {model_name} from v{version}: {e}")
-                    if self.db_config.engine == 'mysql':
-                        await conn.execute("ROLLBACK")
-                    raise
+    async def _execute_downgrade_operations(self, model_class, operations: Dict, version: int) -> bool:
+        """Execute downgrade operations using database connection"""
+        model_name = model_class.__name__
+
+        db = DatabaseConnection.get_instance(self.db_config)
+
+        try:
+            # Handle column removals (reverse of additions)
+            for col_info in operations.get('removed_columns', []):
+                field = Migration._deserialize_field(col_info['definition'])
+                await db.remove_field(model_name, col_info['name'])
+
+            # Handle column additions (reverse of removals)
+            for col_info in operations.get('added_columns', []):
+                field = Migration._deserialize_field(col_info['definition'])
+                await db.add_field(model_name, col_info['name'], field)
+
+            # Handle column modifications (revert to old definition)
+            for col_info in operations.get('modified_columns', []):
+                old_field = Migration._deserialize_field(col_info['old_definition'])
+                await db.alter_field(model_name, col_info['name'], old_field)
+
+            # Handle index removals (reverse of additions)
+            for index_info in operations.get('removed_indexes', []):
+                await db.drop_index(model_name, index_info['index_name'])
+
+            # Handle index additions (reverse of removals)
+            for index_info in operations.get('added_indexes', []):
+                await db.create_index(model_name, index_info['index_name'], [index_info['name']])
+
+            # Remove migration record using backend abstraction
+            await db.delete_migration_record(model_name, version)
+
+            return True
+
+        except Exception as e:
+            print(f"Failed to execute downgrade operations: {e}")
+            return False
 
     async def drop_table(self, model_class):
         """Completely drop the table/collection for this model using backend abstraction"""
@@ -784,69 +815,33 @@ class MigrationRunner:
         await self._ensure_migration_tables()
 
     async def _ensure_migration_tables(self):
-        """Ensure migration tracking tables exist"""
-        # Create migrations table if it doesn't exist
-        create_table_sql = """
-        CREATE TABLE IF NOT EXISTS migrations (
-            id VARCHAR(255) PRIMARY KEY,
-            name VARCHAR(255) NOT NULL,
-            description TEXT,
-            version INTEGER NOT NULL,
-            operations JSON,
-            dependencies JSON,
-            created_at DATETIME NOT NULL,
-            applied_at DATETIME,
-            checksum VARCHAR(64),
-            rollback_sql TEXT,
-            migration_file VARCHAR(500),
-            migration_type VARCHAR(50) DEFAULT 'auto'
-        )
-        """
+        """Ensure migration tracking tables exist using database-agnostic methods"""
+        # Use database connection's create_migrations_table method
+        await self.db_connection.create_migrations_table()
 
-        await self.db_connection.execute_query(create_table_sql)
-
-        # Create migration_files table for file-based migrations
-        create_files_table_sql = """
-        CREATE TABLE IF NOT EXISTS migration_files (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            migration_id VARCHAR(255) NOT NULL,
-            file_path VARCHAR(500) NOT NULL,
-            file_hash VARCHAR(64),
-            created_at DATETIME NOT NULL,
-            modified_at DATETIME,
-            FOREIGN KEY (migration_id) REFERENCES migrations (id)
-        )
-        """
-
-        await self.db_connection.execute_query(create_files_table_sql)
+        # Create migration_files table for file-based migrations using backend abstraction
+        await self.db_connection.create_migration_files_table()
 
     async def get_applied_migrations(self) -> Dict[str, Migration]:
-        """Get all applied migrations from database"""
-        query = """
-        SELECT id, name, description, version, operations, dependencies,
-               created_at, applied_at, checksum, rollback_sql, migration_file, migration_type
-        FROM migrations
-        WHERE applied_at IS NOT NULL
-        ORDER BY applied_at
-        """
-
-        results = await self.db_connection.execute_query(query)
+        """Get all applied migrations from database using backend abstraction"""
+        # Use database connection's get_applied_migrations method
+        applied_data = await self.db_connection.get_applied_migrations()
 
         migrations = {}
-        for row in results:
+        for data in applied_data:
             migration = Migration(
-                id=row['id'],
-                name=row['name'],
-                description=row['description'],
-                version=row['version'],
-                operations=[MigrationOperation.from_dict(op) for op in row['operations']],
-                dependencies=row['dependencies'],
-                created_at=row['created_at'],
-                applied_at=row['applied_at'],
-                checksum=row['checksum'],
-                rollback_sql=row['rollback_sql'],
-                migration_file=row['migration_file'],
-                migration_type=row['migration_type']
+                id=data['id'],
+                name=data['name'],
+                description=data['description'],
+                version=data['version'],
+                operations=[MigrationOperation.from_dict(op) for op in data['operations']],
+                dependencies=data['dependencies'],
+                created_at=data['created_at'],
+                applied_at=data['applied_at'],
+                checksum=data['checksum'],
+                rollback_sql=data['rollback_sql'],
+                migration_file=data['migration_file'],
+                migration_type=data['migration_type']
             )
             migrations[migration.id] = migration
 
@@ -960,19 +955,13 @@ class MigrationRunner:
                 raise ValueError(f"Migration {migration.id} depends on {dep_id} which is not applied")
 
     async def _save_migration_to_db(self, migration: Migration):
-        """Save migration record to database"""
+        """Save migration record to database using backend abstraction"""
         # Update applied_at and checksum
         migration.applied_at = datetime.now()
         migration.checksum = migration.calculate_checksum()
 
-        # Insert or update migration record
-        insert_sql = """
-        INSERT OR REPLACE INTO migrations
-        (id, name, description, version, operations, dependencies, created_at, applied_at, checksum, rollback_sql, migration_file, migration_type)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """
-
-        await self.db_connection.execute_query(insert_sql, (
+        # Use database connection's insert_migration_record method
+        await self.db_connection.insert_migration_record(
             migration.id,
             migration.name,
             migration.description,
@@ -985,10 +974,10 @@ class MigrationRunner:
             migration.rollback_sql,
             migration.migration_file,
             migration.migration_type
-        ))
+        )
 
     async def rollback_migration(self, migration_id: str) -> bool:
-        """Rollback a migration"""
+        """Rollback a migration using backend abstraction"""
         applied = await self.get_applied_migrations()
 
         if migration_id not in applied:
@@ -1002,9 +991,8 @@ class MigrationRunner:
             # Execute rollback operations
             await self._execute_rollback(migration)
 
-            # Mark as not applied
-            update_sql = "UPDATE migrations SET applied_at = NULL, checksum = NULL WHERE id = ?"
-            await self.db_connection.execute_query(update_sql, (migration_id,))
+            # Mark as not applied using backend abstraction
+            await self.db_connection.mark_migration_unapplied(migration_id)
 
             self.logger.info(f"Migration {migration_id} rolled back successfully")
             return True

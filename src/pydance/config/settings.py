@@ -7,8 +7,12 @@ settings and .env files, not from config classes.
 """
 
 import os
+import secrets
+import string
+import warnings
 from typing import Any, Dict, List, Optional, Union
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Laravel-style env() helper function (moved before Settings so Settings can use it)
 def env(key: str, default: Any = None) -> Any:
@@ -41,13 +45,28 @@ class Settings:
 
     def __init__(self):
         self._settings: Dict[str, Any] = {}
+        self._validate_environment()
         self._load_from_env()
 
     def _load_from_env(self) -> None:
-        """Load all settings from environment variables (Laravel style)."""
+        """Load all settings from environment variables and .env files (Laravel style)."""
+        # Load .env file first (lower priority)
+        load_dotenv(override=False)  # Don't override existing environment variables
+
+        # Load .env.local if it exists (for local overrides)
+        load_dotenv('.env.local', override=False)
+
+        # Load .env.{environment} if it exists (e.g., .env.production)
+        env_name = os.getenv('APP_ENV', 'local')
+        env_specific_file = f'.env.{env_name}'
+        if Path(env_specific_file).exists():
+            load_dotenv(env_specific_file, override=False)
+
+        # Now load settings from environment (highest priority)
         # Core Django-style settings
         self.DEBUG = env('DEBUG', 'False').lower() == 'true'
-        self.SECRET_KEY = env('SECRET_KEY', 'your-secret-key-change-in-production')
+        # CRITICAL SECURITY FIX: Generate a secure secret key if not provided
+        self.SECRET_KEY = env('SECRET_KEY', self._generate_secure_secret_key())
         self.ALLOWED_HOSTS = env('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
         # Enhanced Database Configuration - supports both URL and individual settings
@@ -139,17 +158,24 @@ class Settings:
         self.STATIC_ROOT = env('STATIC_ROOT', 'staticfiles')
         self.STATICFILES_DIRS = env('STATICFILES_DIRS', 'static').split(',')
 
-        # Templates (Django style)
+        # Template Engine Configuration
+        self.TEMPLATE_ENGINE = env('TEMPLATE_ENGINE', 'pydance.templating.languages.lean.LeanTemplateEngine')
+        self.TEMPLATES_DIRS = env('TEMPLATES_DIRS', 'templates').split(',')
+        self.TEMPLATE_DEBUG = env('TEMPLATE_DEBUG', 'False').lower() == 'true'
+        self.TEMPLATE_CACHE = env('TEMPLATE_CACHE', 'True').lower() == 'true'
+        self.TEMPLATE_AUTOESCAPE = env('TEMPLATE_AUTOESCAPE', 'True').lower() == 'true'
+
+        # Django-style template configuration (legacy support)
         self.TEMPLATES = [
             {
-                'BACKEND': 'pydance.templating.backends.django.DjangoTemplates',
-                'DIRS': ['templates'],
-                'APP_DIRS': True,
+                'BACKEND': env('TEMPLATE_BACKEND', 'pydance.templating.languages.lean.LeanTemplateEngine'),
+                'DIRS': self.TEMPLATES_DIRS,
+                'APP_DIRS': env('TEMPLATE_APP_DIRS', 'True').lower() == 'true',
                 'OPTIONS': {
-                    'context_processors': [
-                        'pydance.templating.context_processors.debug',
-                        'pydance.templating.context_processors.request',
-                    ],
+                    'context_processors': env('TEMPLATE_CONTEXT_PROCESSORS', 'pydance.templating.context_processors.debug,pydance.templating.context_processors.request').split(','),
+                    'debug': self.TEMPLATE_DEBUG,
+                    'cache': self.TEMPLATE_CACHE,
+                    'autoescape': self.TEMPLATE_AUTOESCAPE,
                 },
             },
         ]
@@ -161,6 +187,49 @@ class Settings:
             'pydance.middleware.csrf.CSRFMiddleware',
             'pydance.middleware.session.SessionMiddleware',
         ]
+
+        # Custom middleware aliases - users register their middleware here
+        self.MIDDLEWARE_ALIASES = {
+            # Laravel-style middleware aliases
+            'auth': 'pydance.contrib.auth.middleware.AuthenticationMiddleware',
+            'guest': 'pydance.contrib.auth.middleware.GuestMiddleware',
+            'throttle': 'pydance.middleware.throttle.ThrottleMiddleware',
+            'cors': 'pydance.middleware.cors.CORSMiddleware',
+            'csrf': 'pydance.middleware.csrf.CSRFMiddleware',
+            'session': 'pydance.middleware.session.SessionMiddleware',
+            'verify_csrf_token': 'pydance.middleware.csrf.CSRFMiddleware',
+            'encrypt_cookies': 'pydance.middleware.cookies.EncryptCookiesMiddleware',
+            'add_queued_cookies_to_response': 'pydance.middleware.cookies.QueueCookiesMiddleware',
+            'start_session': 'pydance.middleware.session.SessionMiddleware',
+            'share_errors_from_session': 'pydance.middleware.session.ShareErrorsFromSessionMiddleware',
+            'verify_post_size': 'pydance.middleware.body_size.VerifyPostSizeMiddleware',
+            'form_content_types': 'pydance.middleware.content_type.FormContentTypesMiddleware',
+        }
+
+        # Laravel-style middleware groups
+        self.MIDDLEWARE_GROUPS = {
+            'web': [
+                'verify_csrf_token',
+                'share_errors_from_session',
+                'start_session',
+                'form_content_types',
+                'verify_post_size',
+                'add_queued_cookies_to_response',
+                'encrypt_cookies',
+            ],
+            'api': [
+                'throttle:api',
+                'auth:sanctum',
+            ],
+            'guest': [
+                'guest',
+                'throttle:guest',
+            ],
+            'auth': [
+                'auth',
+                'throttle:user',
+            ],
+        }
 
         # Installed Apps (Django style)
         self.INSTALLED_APPS = [
@@ -192,6 +261,99 @@ class Settings:
 
         # Custom settings from .env
         self._load_custom_settings()
+
+        # Validate critical security settings after loading
+        self._validate_critical_settings()
+
+    def _validate_environment(self) -> None:
+        """Validate that required environment variables are properly set."""
+        # Check if .env file exists and warn if it doesn't
+        env_file = Path('.env')
+        if not env_file.exists():
+            warnings.warn(
+                "No .env file found. Using default settings. "
+                "For production, create a .env file with proper SECRET_KEY and other settings.",
+                UserWarning,
+                stacklevel=2
+            )
+
+    def _generate_secure_secret_key(self) -> str:
+        """Generate a cryptographically secure secret key."""
+        # Generate a 50-character secret key using letters, digits, and symbols
+        alphabet = string.ascii_letters + string.digits + '!@#$%^&*(-_=+)'
+        return ''.join(secrets.choice(alphabet) for _ in range(50))
+
+    def _validate_critical_settings(self) -> None:
+        """Validate critical security settings."""
+        errors = []
+        warnings_list = []
+
+        # Validate SECRET_KEY strength
+        if not self.SECRET_KEY or len(self.SECRET_KEY) < 32:
+            warnings_list.append(
+                f"SECRET_KEY is too weak (length: {len(self.SECRET_KEY)}). "
+                "Using auto-generated secure key."
+            )
+            self.SECRET_KEY = self._generate_secure_secret_key()
+
+        # CRITICAL: Check for development keys in production
+        dev_keys = ['your-secret-key', 'change-me', 'dev-key', 'test-key', 'example']
+        if any(dev_key in self.SECRET_KEY.lower() for dev_key in dev_keys):
+            errors.append(
+                "SECRET_KEY contains development/insecure patterns. "
+                "Set a proper SECRET_KEY environment variable."
+            )
+            self.SECRET_KEY = self._generate_secure_secret_key()
+
+        # Warn about debug mode in production-like environments
+        if self.DEBUG and self.APP_ENV in ['production', 'prod']:
+            warnings_list.append(
+                "DEBUG mode is enabled in production environment. "
+                "This may expose sensitive information."
+            )
+
+        # Validate database configuration
+        if not self.DATABASE_URL and not all([self.DB_ENGINE, self.DB_NAME]):
+            errors.append(
+                "Database configuration is incomplete. "
+                "Set DATABASE_URL or configure DB_ENGINE and DB_NAME."
+            )
+
+        # Validate database credentials in production
+        if self.APP_ENV in ['production', 'prod']:
+            if self.DB_PASSWORD in ['password', '123456', 'admin', '']:
+                errors.append(
+                    "Database password is insecure. "
+                    "Use a strong password for production environments."
+                )
+
+        # Validate server configuration
+        if self.APP_ENV in ['production', 'prod']:
+            if self.HOST in ['127.0.0.1', 'localhost']:
+                warnings_list.append(
+                    "Server is binding to localhost in production. "
+                    "Consider binding to 0.0.0.0 or a specific interface."
+                )
+
+        # Validate email configuration for production
+        if self.APP_ENV in ['production', 'prod']:
+            if not self.MAIL_PASSWORD or self.MAIL_PASSWORD in ['password', '123456']:
+                warnings_list.append(
+                    "Email password may be insecure. "
+                    "Configure proper email credentials for production."
+                )
+
+        # Show all errors (critical issues)
+        for error in errors:
+            print(f"CRITICAL ERROR: {error}")
+
+        # Show warnings (non-critical but important)
+        for warning in warnings_list:
+            warnings.warn(warning, UserWarning, stacklevel=3)
+
+        # Exit if critical errors found
+        if errors:
+            raise ValueError(f"Configuration validation failed with {len(errors)} critical errors")
 
     def _load_custom_settings(self) -> None:
         """Load any custom settings from .env file."""

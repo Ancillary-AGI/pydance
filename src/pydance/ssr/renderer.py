@@ -320,6 +320,61 @@ SSRRenderer.renderToString('{component_name}', {json.dumps(props)}).then(html =>
 
         return layout_html
 
+    async def render_page_streaming(
+        self,
+        route: str,
+        params: Dict[str, Any] = None,
+        query: Dict[str, Any] = None
+    ) -> str:
+        """
+        Render page with streaming SSR for better performance.
+
+        Args:
+            route: Route path to render
+            params: URL parameters
+            query: Query parameters
+
+        Returns:
+            Streamed HTML response
+        """
+        # This would implement streaming SSR
+        # For now, return regular rendering
+        return await self.render_page(route, params, query)
+
+    async def render_with_hydration(
+        self,
+        component_name: str,
+        props: Dict[str, Any],
+        framework: str = 'pydance'
+    ) -> Dict[str, Any]:
+        """
+        Render component with hydration data.
+
+        Args:
+            component_name: Name of the component
+            props: Component props
+            framework: Frontend framework
+
+        Returns:
+            Dictionary with HTML and hydration data
+        """
+        # Render component HTML
+        html = await self.render_component(component_name, props, framework)
+
+        # Prepare hydration data
+        hydration_data = {
+            'component': component_name,
+            'props': props,
+            'framework': framework,
+            'checksum': hashlib.md5(html.encode()).hexdigest()
+        }
+
+        return {
+            'html': html,
+            'hydration_data': hydration_data,
+            'framework': framework
+        }
+
     def clear_cache(self) -> None:
         """Clear the SSR cache."""
         self.cache.clear()

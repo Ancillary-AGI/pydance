@@ -16,10 +16,17 @@ export class Store {
     this.maxHistorySize = options.maxHistorySize || 50;
     this.persistenceKey = options.persistenceKey;
     this.debug = options.debug || false;
+    this.syncChannel = options.syncChannel; // For cross-tab synchronization
+    this.broadcastChannel = null;
 
     // Initialize persistence if key is provided
     if (this.persistenceKey) {
       this._loadPersistedState();
+    }
+
+    // Initialize cross-tab synchronization
+    if (this.syncChannel) {
+      this._initializeBroadcastChannel();
     }
 
     // Bind methods
@@ -372,6 +379,92 @@ export class Store {
     return () => this.listeners.delete(listener);
   }
 
+  // Cross-tab synchronization
+  _initializeBroadcastChannel() {
+    if (typeof BroadcastChannel === 'undefined') {
+      console.warn('BroadcastChannel not supported, cross-tab sync disabled');
+      return;
+    }
+
+    this.broadcastChannel = new BroadcastChannel(this.syncChannel);
+
+    this.broadcastChannel.addEventListener('message', (event) => {
+      const { type, data, source } = event.data;
+
+      // Ignore messages from this tab
+      if (source === this.name) return;
+
+      switch (type) {
+        case 'STATE_UPDATE':
+          this._handleRemoteStateUpdate(data);
+          break;
+        case 'ACTION_DISPATCH':
+          this._handleRemoteAction(data);
+          break;
+        case 'STATE_REQUEST':
+          this._sendStateResponse();
+          break;
+        case 'STATE_RESPONSE':
+          this._handleStateResponse(data);
+          break;
+      }
+    });
+
+    // Announce presence
+    this.broadcastChannel.postMessage({
+      type: 'STORE_JOIN',
+      source: this.name,
+      data: { name: this.name, initialState: this.initialState }
+    });
+  }
+
+  _handleRemoteStateUpdate(data) {
+    const { action, newState, prevState } = data;
+
+    // Apply the update without triggering local notifications
+    const currentState = { ...this.state };
+    this.state = { ...newState };
+
+    // Add to history if needed
+    this._addToHistory(prevState, newState, `REMOTE_${action}`);
+
+    if (this.debug) {
+      console.log(`[${this.name}] Remote state update:`, { action, newState });
+    }
+  }
+
+  _handleRemoteAction(data) {
+    const { action, payload } = data;
+
+    // Dispatch the action locally
+    this.dispatch({ type: action, payload });
+
+    if (this.debug) {
+      console.log(`[${this.name}] Remote action:`, { action, payload });
+    }
+  }
+
+  _sendStateResponse() {
+    if (this.broadcastChannel) {
+      this.broadcastChannel.postMessage({
+        type: 'STATE_RESPONSE',
+        source: this.name,
+        data: { state: this.state, timestamp: Date.now() }
+      });
+    }
+  }
+
+  _handleStateResponse(data) {
+    // Sync state if needed
+    if (!deepEqual(this.state, data.state)) {
+      this.state = { ...data.state };
+
+      if (this.debug) {
+        console.log(`[${this.name}] State synced from remote`);
+      }
+    }
+  }
+
   // Cleanup
   destroy() {
     this.listeners.clear();
@@ -381,6 +474,10 @@ export class Store {
 
     if (this.persistenceKey) {
       localStorage.removeItem(this.persistenceKey);
+    }
+
+    if (this.broadcastChannel) {
+      this.broadcastChannel.close();
     }
 
     if (this.debug) {

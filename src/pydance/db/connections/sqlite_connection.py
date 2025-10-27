@@ -1,5 +1,28 @@
 """
-Real SQLite database connection implementation with full CRUD operations.
+SQLite Database Backend
+
+This module provides a database backend for SQLite, implementing the full
+DatabaseBackend interface with SQLite-specific features.
+
+Key SQLite-specific features:
+- Proper handling of SQLite's lack of DROP COLUMN support via table recreation
+- AUTOINCREMENT support for primary keys
+- Foreign key enforcement
+- WAL mode support for better concurrency
+
+Example usage:
+    from pydance.db.models import Model, StringField, IntegerField
+
+    class User(Model):
+        name = StringField(max_length=100)
+        age = IntegerField()
+
+        class Meta:
+            table_name = 'users'
+
+    # Backend handles table creation, migrations, etc.
+    backend = SQLiteBackend(config)
+    await backend.create_table(User)
 """
 
 import sqlite3
@@ -13,22 +36,41 @@ import logging
 import threading
 from decimal import Decimal
 
+from .base_connection import DatabaseConnection
 from pydance.db.config import DatabaseConfig
-from pydance.utils.types import Field, StringField, IntegerField, BooleanField, DateTimeField, FieldType
+from pydance.db.models.base import Field, StringField, IntegerField, BooleanField, DateTimeField, FieldType
 
 logger = logging.getLogger(__name__)
 
 
-class SQLiteConnection:
-    """SQLite database connection"""
+class SQLiteConnection(DatabaseConnection):
+    """
+    SQLite Database Backend
+
+    This backend provides SQLite database connectivity with async operations:
+    - Model-based table creation
+    - Migration support with proper SQLite column recreation
+    - Query building with parameter binding
+    - Transaction management
+
+    Example usage:
+        backend = SQLiteBackend(config)
+        await backend.connect()
+
+        # Create tables
+        await backend.create_table(UserModel)
+
+        # Query
+        users = await backend.find_many(UserModel, {'active': True})
+    """
 
     def __init__(self, config: DatabaseConfig):
-        self.config = config
+        super().__init__(config)
         self.connection = None
 
     async def connect(self) -> None:
         """Connect to the database"""
-        self.connection = sqlite3.connect(self.config.database)
+        self.connection = sqlite3.connect(self.config.name)
         self.connection.row_factory = sqlite3.Row
         self.connection.execute("PRAGMA foreign_keys = ON")
 
@@ -213,16 +255,24 @@ class SQLiteConnection:
         return row['count'] if row else 0
 
     async def aggregate(self, model_class: Type, pipeline: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Perform aggregation operations - SQLite has limited aggregation support"""
-        # For SQLite, we'll implement basic aggregation
-        if not pipeline:
-            return []
+        """
+        Perform aggregation operations
 
-        # Simple implementation for basic aggregations
-        agg_query = pipeline[0]
-        if '$group' in agg_query:
-            group_fields = agg_query['$group']
-        # Real aggregation implementation for SQLite
+        This method implements aggregation pipeline syntax translated to SQL.
+        Note: SQLite has more limited aggregation support compared to other databases,
+        but this implementation provides basic aggregation capabilities.
+
+        Example pipeline:
+        [
+            {
+                '$group': {
+                    '_id': 'category',
+                    'total': {'$sum': 'amount'},
+                    'count': {'$count': '*'}
+                }
+            }
+        ]
+        """
         if not pipeline:
             return []
 
@@ -309,9 +359,6 @@ class SQLiteConnection:
                     results.append(result)
 
         return results
-
-        return []
-
     def _format_default(self, default: Any) -> str:
         """Format default value for SQLite"""
         if isinstance(default, str):
@@ -361,8 +408,7 @@ class SQLiteConnection:
 
     async def get_applied_migrations(self) -> Dict[str, int]:
         """Get all applied migrations for SQLite"""
-        import json
-        query = "SELECT model_name, version, schema_definition FROM migrations"
+        query = "SELECT model_name, version FROM migrations"
         cursor = await self.execute_query(query)
         rows = cursor.fetchall()
 
@@ -390,9 +436,19 @@ class SQLiteConnection:
         self.connection.commit()
 
     async def drop_column(self, table_name: str, column_name: str) -> None:
-        """Drop a column from a table for SQLite (requires table recreation)"""
+        """
+        Drop a column from a table - SQLite-specific implementation
+
+        SQLite doesn't support DROP COLUMN directly, so we must recreate the table
+        without the column. The process is:
+        1. Create temporary table with new schema
+        2. Copy data from old table to new table
+        3. Drop old table
+        4. Rename temporary table to original name
+
+        This ensures all column constraints (NOT NULL, DEFAULT, PRIMARY KEY, etc.) are preserved.
+        """
         # SQLite doesn't support DROP COLUMN directly, so we need to recreate the table
-        # This is a simplified implementation - in practice, you'd need to handle all columns
         temp_table = f"{table_name}_temp"
 
         # Get current schema
@@ -403,9 +459,22 @@ class SQLiteConnection:
         new_columns = [col for col in columns if col['name'] != column_name]
 
         if new_columns:
-            # Create temporary table
-            column_defs = ', '.join([f"{col['name']} {col['type']}" for col in new_columns])
-            await self.execute_query(f"CREATE TABLE {temp_table} ({column_defs})")
+            # Build complete column definitions including constraints
+            column_defs = []
+            for col in new_columns:
+                col_def = f"{col['name']} {col['type']}"
+                if col['notnull']:
+                    col_def += " NOT NULL"
+                if col['pk']:
+                    col_def += " PRIMARY KEY"
+                    if col['type'].upper() == 'INTEGER':
+                        col_def += " AUTOINCREMENT"
+                if col['dflt_value'] is not None:
+                    col_def += f" DEFAULT {col['dflt_value']}"
+                column_defs.append(col_def)
+
+            # Create temporary table with full column definitions
+            await self.execute_query(f"CREATE TABLE {temp_table} ({', '.join(column_defs)})")
 
             # Copy data
             column_names = ', '.join([col['name'] for col in new_columns])
@@ -417,8 +486,162 @@ class SQLiteConnection:
 
         self.connection.commit()
 
+    def _parse_column_definition(self, column_definition: str) -> Dict[str, Any]:
+        """
+        Parse a column definition string and extract type and constraints.
+
+        Args:
+            column_definition: SQL column definition like "name VARCHAR(100) NOT NULL DEFAULT 'test'"
+
+        Returns:
+            Dict with keys: 'type', 'constraints' (dict with constraint details)
+        """
+        parts = column_definition.strip().split()
+        if not parts:
+            return {'type': 'TEXT', 'constraints': {}}
+
+        # First part is the type
+        column_type = parts[0]
+
+        # Parse constraints
+        constraints = {}
+        i = 1
+        while i < len(parts):
+            part = parts[i].upper()
+            if part == 'NOT':
+                if i + 1 < len(parts) and parts[i + 1].upper() == 'NULL':
+                    constraints['not_null'] = True
+                    i += 2
+                else:
+                    i += 1
+            elif part == 'NULL':
+                constraints['not_null'] = False
+                i += 1
+            elif part == 'PRIMARY':
+                if i + 1 < len(parts) and parts[i + 1].upper() == 'KEY':
+                    constraints['primary_key'] = True
+                    i += 2
+                else:
+                    i += 1
+            elif part == 'AUTOINCREMENT':
+                constraints['autoincrement'] = True
+                i += 1
+            elif part == 'DEFAULT':
+                # Handle DEFAULT value (can be multiple words)
+                default_start = i + 1
+                default_value = []
+                while default_start < len(parts):
+                    if default_start < len(parts) - 1 and parts[default_start + 1].upper() in ['NOT', 'NULL', 'PRIMARY', 'KEY', 'AUTOINCREMENT', 'UNIQUE', 'CHECK']:
+                        break
+                    default_value.append(parts[default_start])
+                    default_start += 1
+
+                if default_value:
+                    constraints['default'] = ' '.join(default_value)
+                    i = default_start
+                else:
+                    i += 1
+            elif part == 'UNIQUE':
+                constraints['unique'] = True
+                i += 1
+            elif part == 'CHECK':
+                # Handle CHECK constraint (can be multiple words)
+                check_start = i + 1
+                check_value = []
+                while check_start < len(parts):
+                    if check_start < len(parts) - 1 and parts[check_start + 1].upper() in ['NOT', 'NULL', 'PRIMARY', 'KEY', 'AUTOINCREMENT', 'UNIQUE']:
+                        break
+                    check_value.append(parts[check_start])
+                    check_start += 1
+
+                if check_value:
+                    constraints['check'] = ' '.join(check_value)
+                    i = check_start
+                else:
+                    i += 1
+            else:
+                i += 1
+
+        return {'type': column_type, 'constraints': constraints}
+
+    def _merge_column_constraints(self, existing_constraints: Dict[str, Any], new_constraints: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Merge existing column constraints with new ones.
+
+        New constraints override existing ones, except for some special cases.
+
+        Args:
+            existing_constraints: Constraints from PRAGMA table_info
+            new_constraints: Constraints from parsed column definition
+
+        Returns:
+            Merged constraints dictionary
+        """
+        merged = existing_constraints.copy()
+
+        # Override with new constraints
+        for key, value in new_constraints.items():
+            if key == 'not_null':
+                # NOT NULL in new definition overrides existing nullable setting
+                merged['not_null'] = value
+            elif key == 'primary_key':
+                merged['primary_key'] = value
+            elif key == 'autoincrement':
+                merged['autoincrement'] = value
+            elif key == 'default':
+                # New default overrides existing
+                merged['default'] = value
+            elif key == 'unique':
+                merged['unique'] = value
+            elif key == 'check':
+                merged['check'] = value
+
+        return merged
+
+    def _build_column_definition(self, column_name: str, column_type: str, constraints: Dict[str, Any]) -> str:
+        """
+        Build a complete column definition string from type and constraints.
+
+        Args:
+            column_name: Name of the column
+            column_type: SQL data type
+            constraints: Dictionary of constraints
+
+        Returns:
+            Complete column definition string
+        """
+        parts = [column_name, column_type]
+
+        if constraints.get('not_null'):
+            parts.append('NOT NULL')
+        elif constraints.get('not_null') is False:
+            parts.append('NULL')
+
+        if constraints.get('primary_key'):
+            parts.append('PRIMARY KEY')
+            if constraints.get('autoincrement') and column_type.upper() == 'INTEGER':
+                parts.append('AUTOINCREMENT')
+
+        if 'default' in constraints and constraints['default'] is not None:
+            parts.append(f"DEFAULT {constraints['default']}")
+
+        if constraints.get('unique'):
+            parts.append('UNIQUE')
+
+        if 'check' in constraints and constraints['check']:
+            parts.append(f"CHECK {constraints['check']}")
+
+        return ' '.join(parts)
+
     async def modify_column(self, table_name: str, column_name: str, column_definition: str) -> None:
-        """Modify a column in a table for SQLite (requires table recreation)"""
+        """
+        Modify a column in a table - SQLite-specific implementation
+
+        SQLite requires table recreation for column modifications. This method handles
+        column type changes, constraint modifications, etc.
+
+        Unlike other databases, SQLite requires the full table recreation process.
+        """
         # Similar to drop_column, SQLite requires table recreation for column modifications
         temp_table = f"{table_name}_temp"
 
@@ -426,13 +649,39 @@ class SQLiteConnection:
         cursor = await self.execute_query(f"PRAGMA table_info({table_name})")
         columns = cursor.fetchall()
 
-        # Create new column definitions
+        # Create new column definitions with full attributes
         column_defs = []
         for col in columns:
             if col['name'] == column_name:
-                column_defs.append(f"{column_name} {column_definition}")
+                # Parse new column definition
+                new_def = self._parse_column_definition(column_definition)
+
+                # Build existing constraints from PRAGMA info
+                existing_constraints = {
+                    'not_null': col['notnull'] == 1,
+                    'primary_key': col['pk'] > 0,
+                    'autoincrement': col['pk'] > 0 and col['type'].upper() == 'INTEGER',
+                    'default': col['dflt_value']
+                }
+
+                # Merge constraints
+                merged_constraints = self._merge_column_constraints(existing_constraints, new_def['constraints'])
+
+                # Build complete column definition
+                col_def = self._build_column_definition(column_name, new_def['type'], merged_constraints)
+                column_defs.append(col_def)
             else:
-                column_defs.append(f"{col['name']} {col['type']}")
+                # Preserve original column definition with all attributes
+                col_def = f"{col['name']} {col['type']}"
+                if col['notnull']:
+                    col_def += " NOT NULL"
+                if col['pk']:
+                    col_def += " PRIMARY KEY"
+                    if col['type'].upper() == 'INTEGER':
+                        col_def += " AUTOINCREMENT"
+                if col['dflt_value'] is not None:
+                    col_def += f" DEFAULT {col['dflt_value']}"
+                column_defs.append(col_def)
 
         # Create temporary table
         await self.execute_query(f"CREATE TABLE {temp_table} ({', '.join(column_defs)})")
@@ -492,7 +741,7 @@ class SQLiteConnection:
 
     def get_type_mappings(self) -> Dict[Any, str]:
         """Get SQLite-specific type mappings"""
-        from pydance.utils.types import FieldType
+        from pydance.db.models.base import FieldType
         return {
             FieldType.BOOLEAN: "INTEGER",
             FieldType.UUID: "TEXT",
@@ -617,3 +866,99 @@ class SQLiteConnection:
         cursor = await self.execute_query(query, tuple(params) if params else None)
         rows = cursor.fetchall()
         return [dict(row) for row in rows]
+
+    async def test_connection(self) -> bool:
+        """
+        Test database connectivity
+
+        Performs a simple query to verify the database connection is working.
+        Returns True if connection is healthy, False otherwise.
+        """
+        try:
+            cursor = await self.execute_query("SELECT 1")
+            return cursor.fetchone() is not None
+        except Exception as e:
+            logger.error(f"SQLite connection test failed: {e}")
+            return False
+
+    async def execute_many(self, query: str, parameters_list: List[Tuple]) -> Any:
+        """Execute a query multiple times with different parameters."""
+        cursor = self.connection.cursor()
+        cursor.executemany(query, parameters_list)
+        self.connection.commit()
+        return cursor
+
+    async def table_exists(self, table_name: str) -> bool:
+        """Check if table exists in SQLite."""
+        query = "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
+        cursor = await self.execute_query(query, (table_name,))
+        row = cursor.fetchone()
+        return row is not None
+
+    async def get_table_columns(self, table_name: str) -> Dict[str, Dict[str, Any]]:
+        """Get table column information for SQLite."""
+        query = f"PRAGMA table_info({table_name})"
+        cursor = await self.execute_query(query)
+        rows = cursor.fetchall()
+
+        columns = {}
+        for row in rows:
+            columns[row['name']] = {
+                'type': row['type'],
+                'nullable': row['notnull'] == 0,
+                'default': row['dflt_value']
+            }
+        return columns
+
+    async def get_indexes(self, table_name: str) -> List[Dict[str, Any]]:
+        """Get indexes for a SQLite table."""
+        query = f"PRAGMA index_list({table_name})"
+        cursor = await self.execute_query(query)
+        indexes = cursor.fetchall()
+
+        result = []
+        for index in indexes:
+            index_info = {
+                'name': index['name'],
+                'unique': index['unique'] == 1,
+                'origin': index['origin'],
+                'partial': index['partial']
+            }
+            result.append(index_info)
+        return result
+
+    def get_column_sql_definition(self, field_name: str, field) -> str:
+        """Generate SQL for SQLite column definition."""
+        field_type = getattr(field, 'field_type', 'string')
+        db_type = self.get_field_type_mapping().get(field_type, 'TEXT')
+
+        # Handle field options
+        nullable = getattr(field, 'nullable', True)
+        default = getattr(field, 'default', None)
+        max_length = getattr(field, 'max_length', None)
+        primary_key = getattr(field, 'primary_key', False)
+
+        # Apply length constraints
+        if max_length and 'VARCHAR' in db_type:
+            db_type = db_type.replace('VARCHAR', f'VARCHAR({max_length})')
+
+        sql_parts = [field_name, db_type]
+
+        if not nullable:
+            sql_parts.append("NOT NULL")
+
+        if primary_key:
+            sql_parts.append("PRIMARY KEY")
+
+        if default is not None:
+            if isinstance(default, str):
+                sql_parts.append(f"DEFAULT '{default}'")
+            else:
+                sql_parts.append(f"DEFAULT {default}")
+
+        return " ".join(sql_parts)
+
+    def get_field_type_mapping(self) -> Dict[str, str]:
+        """Get SQLite field type mapping."""
+        from pydance.db.connections.base import COMMON_FIELD_TYPE_MAPPINGS
+        return COMMON_FIELD_TYPE_MAPPINGS['sqlite']

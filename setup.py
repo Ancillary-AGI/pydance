@@ -12,12 +12,6 @@ import subprocess
 
 def get_version():
     """Get version from __init__.py"""
-    version_file = Path(__file__).parent / "src" / "pydance" / "__init__.py"
-    if version_file.exists():
-        with open(version_file, 'r') as f:
-            for line in f:
-                if line.startswith("__version__"):
-                    return line.split("=")[1].strip().strip('"\'')
     return "0.1.0"
 
 def read_readme():
@@ -167,7 +161,7 @@ setup(
     version=get_version(),
     author="Pydance Team",
     author_email="team@pydance.dev",
-    description="Ultra-high-performance Python web framework with world-class efficiency",
+    description="Python web framework with ASGI support, middleware, and database ORM",
     long_description=read_readme(),
     long_description_content_type="text/markdown",
     url="https://github.com/ancillary-ai/pydance",
@@ -178,7 +172,7 @@ setup(
         "Changelog": "https://github.com/ancillary-ai/pydance/blob/main/CHANGELOG.md",
     },
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
@@ -191,10 +185,9 @@ setup(
         "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
         "Topic :: Software Development :: Libraries :: Application Frameworks",
-        "Topic :: Security",
         "Framework :: AsyncIO",
     ],
-    keywords="web framework http server enterprise security async",
+    keywords="web framework http server async database orm middleware",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     package_data={

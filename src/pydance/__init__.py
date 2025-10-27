@@ -40,16 +40,24 @@ from pydance.http import Request, Response
 from pydance.config.settings import settings
 from pydance.exceptions import HTTPException, ValidationError
 
-# Database components
-from pydance.db import DatabaseConfig
-from pydance.db.connections import DatabaseConnection
-from pydance.db.models import BaseModel
+# Database components (optional)
+try:
+    from pydance.db import DatabaseConfig
+    from pydance.db.connections import DatabaseConnection
+except ImportError:
+    DatabaseConfig = None
+    DatabaseConnection = None
 
-# Utility components
-from pydance.events import EventBus, Event, get_event_bus
-from pydance.plugins import PluginManager, Plugin, get_plugin_manager
-from pydance.storage import get_storage_manager
-from pydance.caching import get_cache_manager
+# Utility components (optional)
+try:
+    from pydance.events import get_event_bus
+except ImportError:
+    get_event_bus = None
+
+try:
+    from pydance.plugins import get_plugin_manager
+except ImportError:
+    get_plugin_manager = None
 
 __all__ = [
     # Core
@@ -65,8 +73,8 @@ __all__ = [
     # Utilities
     'EventBus', 'Event', 'get_event_bus',
     'PluginManager', 'Plugin', 'get_plugin_manager',
-    'get_storage_manager',
-    'get_cache_manager',
+    # 'get_storage_manager',  # Temporarily disabled
+    # 'get_cache_manager',  # Temporarily disabled
 
     # Exceptions
     'HTTPException', 'ValidationError',

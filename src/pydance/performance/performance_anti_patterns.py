@@ -295,7 +295,7 @@ class SafeConnectionPool:
     async def _create_connection(self):
         """Create a new connection"""
         # Implementation depends on connection type
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement _create_connection method")
 
     async def _is_connection_healthy(self, conn) -> bool:
         """Check if connection is healthy"""
@@ -390,7 +390,7 @@ class OptimizedCache:
     async def _fetch_value(self, key: str) -> Optional[Any]:
         """Fetch value from underlying storage"""
         # Should be implemented by subclass
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement _fetch_value method")
 
 
 class AsyncSafeMetrics:

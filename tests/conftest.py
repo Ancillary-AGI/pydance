@@ -10,7 +10,7 @@ from typing import AsyncGenerator, Generator
 import pytest
 from faker import Faker
 
-from pydance import Application, AppConfig
+from pydance import Application, settings
 
 
 @pytest.fixture(scope="session")
@@ -37,18 +37,27 @@ def temp_dir():
 @pytest.fixture
 def config():
     """Test application configuration."""
-    return AppConfig(
-        debug=True,
-        secret_key="test-secret-key",
-        host="127.0.0.1",
-        port=8000,
-        database_url="sqlite:///:memory:",
-    )
+    # Use settings-based configuration
+    test_settings = type('TestSettings', (), {
+        'DEBUG': True,
+        'SECRET_KEY': 'test-secret-key',
+        'HOST': '127.0.0.1',
+        'PORT': 8000,
+        'DATABASE_URL': 'sqlite:///:memory:',
+        'debug': True,  # lowercase for compatibility
+    })()
+    return test_settings
 
 
 @pytest.fixture
-async def app(config) -> AsyncGenerator[Application, None]:
-    """Test application instance."""
+def app(config) -> Application:
+    """Test application instance (synchronous)."""
+    return Application(config)
+
+
+@pytest.fixture
+async def async_app(config) -> AsyncGenerator[Application, None]:
+    """Test application instance (asynchronous)."""
     app = Application(config)
     yield app
 
@@ -80,10 +89,10 @@ def pytest_configure(config):
 
 
 # Register fixture plugins
-pytest_plugins = [
-    "tests.fixtures.database",
-    "tests.fixtures.http",
-]
+# pytest_plugins = [
+#     "tests.fixtures.database",
+#     "tests.fixtures.http",
+# ]
 
 
 

@@ -162,100 +162,8 @@ class APIResourceController(Controller, Generic[T]):
         return self.json({'message': 'Deleted successfully'}, 204)
 
 
-class APIView(Controller):
-    """Base API view class"""
-
-    def __init__(self, app):
-        super().__init__(app)
-        self.allowed_methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD']
-
-    def options(self):
-        """Handle OPTIONS request"""
-        return self.json({}, headers={
-            'Allow': ', '.join(self.allowed_methods),
-            'Access-Control-Allow-Methods': ', '.join(self.allowed_methods),
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-        })
-
-
-class Serializer:
-    """Base serializer class"""
-
-    def __init__(self, instance=None, data=None, many=False, **kwargs):
-        self.instance = instance
-        self.data = data or {}
-        self.many = many
-        self.errors = {}
-        self.validated_data = {}
-
-    def is_valid(self) -> bool:
-        """Validate the data"""
-        try:
-            self.validated_data = self.validate(self.data)
-            return True
-        except ValidationError as e:
-            self.errors = {e.field: [e.message]}
-            return False
-
-    def validate(self, data):
-        """Validate data - override in subclasses"""
-        return data
-
-    def save(self):
-        """Save the validated data"""
-        if self.instance:
-            return self.update(self.instance, self.validated_data)
-        return self.create(self.validated_data)
-
-    def create(self, validated_data):
-        """Create a new instance - override in subclasses"""
-        raise NotImplementedError("create() must be implemented")
-
-    def update(self, instance, validated_data):
-        """Update an existing instance - override in subclasses"""
-        raise NotImplementedError("update() must be implemented")
-
-
-class ModelSerializer(Serializer):
-    """Model serializer"""
-
-    model_class = None
-    fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if not self.model_class:
-            raise ValueError("model_class must be defined")
-
-    def get_fields(self):
-        """Get serializer fields"""
-        if self.fields == '__all__':
-            # Get all fields from model
-            return list(self.model_class._fields.keys())
-        return self.fields
-
-    def validate(self, data):
-        """Validate data against model fields"""
-        validated_data = {}
-        fields = self.get_fields()
-
-        for field_name in fields:
-            if field_name in data:
-                value = data[field_name]
-                # Basic validation - could be enhanced
-                validated_data[field_name] = value
-
-        return validated_data
-
-    def create(self, validated_data):
-        """Create model instance"""
-        return self.model_class(**validated_data)
-
-    def update(self, instance, validated_data):
-        """Update model instance"""
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
-        return instance
+# Note: APIView, Serializer, and ModelSerializer classes have been moved to src/pydance/api.py
+# to consolidate duplicate functionality. Import them from there instead.
 
 
 
@@ -336,10 +244,7 @@ class HeaderVersioning(APIVersioning):
     def get_version(self, request):
         """Get version from header"""
         return request.headers.get('X-API-Version', '1.0')
-
-
-
-
+    
 
 # API documentation helpers
 def api_view(methods: List[str] = None):
@@ -388,9 +293,6 @@ class UserAPIController(APIResourceController):
 # Export common classes
 __all__ = [
     'APIResourceController',
-    'APIView',
-    'Serializer',
-    'ModelSerializer',
     'FilterBackend',
     'OrderingFilter',
     'SearchFilter',
@@ -401,4 +303,3 @@ __all__ = [
     'api_schema',
     'UserAPIController'
 ]
-

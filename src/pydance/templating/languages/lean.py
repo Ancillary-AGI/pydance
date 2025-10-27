@@ -9,8 +9,8 @@ import math
 import json
 import functools
 
-from pydance.templating.engine import AbstractTemplateEngine
-from pydance.security_middleware import get_security_middleware
+from ..engine import AbstractTemplateEngine
+# from pydance.security_middleware import get_security_middleware  # Optional import
 
 class TemplateError(Exception):
     """Base exception for template errors"""
@@ -76,6 +76,12 @@ class LeanTemplateEngine(AbstractTemplateEngine):
         # Configuration options
         self.enable_cache = options.get('enable_cache', True)
         self.autoescape = options.get('autoescape', True)
+        self.enable_i18n = options.get('enable_i18n', False)
+        
+        # Initialize collections
+        self.custom_tags = {}
+        self.loaders = []
+        self.template_search_paths = [self.template_dir]
         
         # Built-in filters
         self.filters = self._initialize_filters()
@@ -203,6 +209,15 @@ class LeanTemplateEngine(AbstractTemplateEngine):
         # Process blocks
         content = await self._process_blocks(content, context)
 
+        # Process enhanced for loops
+        content = self._process_enhanced_for_loops(content, context)
+
+        # Process enhanced conditionals
+        content = self._process_enhanced_conditionals(content, context)
+
+        # Process advanced blocks
+        content = self._process_advanced_blocks(content, context)
+
         # Process filters
         content = await self._process_filters(content, context)
 
@@ -211,9 +226,10 @@ class LeanTemplateEngine(AbstractTemplateEngine):
 
         # Apply security sanitization if enabled
         try:
+            from pydance.security_middleware import get_security_middleware
             security_middleware = get_security_middleware()
             content = security_middleware.sanitize_template_output(content)
-        except Exception:
+        except ImportError:
             # If security middleware is not available, continue without sanitization
             pass
 
@@ -858,58 +874,78 @@ class LeanTemplateEngine(AbstractTemplateEngine):
 
     def _process_enhanced_for_loops(self, content: str, context: Dict[str, Any]) -> str:
         """Process enhanced for loops with filtering and unpacking"""
-        def process_for_loop(match):
-            full_match = match.group(0)
-            loop_vars = match.group(1)
-            iterable_expr = match.group(2)
-            filter_expr = match.group(3)
+        lines = content.split('\n')
+        output_lines = []
+        i = 0
 
-            # Parse loop variables (support unpacking)
-            if ',' in loop_vars:
-                var_names = [v.strip() for v in loop_vars.split(',')]
-            else:
-                var_names = [loop_vars.strip()]
+        while i < len(lines):
+            line = lines[i]
 
-            # Get iterable
-            iterable = self._evaluate_expression(iterable_expr, context)
+            # Check for for loop
+            for_match = re.match(self.patterns['for'], line)
+            if for_match:
+                loop_vars = for_match.group(1)
+                iterable_expr = for_match.group(2)
+                filter_expr = for_match.group(3)
 
-            # Apply filter if present
-            if filter_expr:
-                iterable = [item for item in iterable if self._evaluate_condition(filter_expr, {'item': item, **context})]
-
-            # Process loop
-            loop_output = []
-            for index, item in enumerate(iterable):
-                loop_context = context.copy()
-
-                # Handle unpacking
-                if len(var_names) > 1 and hasattr(item, '__iter__'):
-                    for i, var_name in enumerate(var_names):
-                        if i < len(item):
-                            loop_context[var_name] = item[i]
-                        else:
-                            loop_context[var_name] = None
+                # Parse loop variables (support unpacking)
+                if ',' in loop_vars:
+                    var_names = [v.strip() for v in loop_vars.split(',')]
                 else:
-                    loop_context[var_names[0]] = item
+                    var_names = [loop_vars.strip()]
 
-                # Add loop variables
-                loop_context['loop'] = {
-                    'index': index + 1,
-                    'index0': index,
-                    'first': index == 0,
-                    'last': index == len(iterable) - 1,
-                    'length': len(iterable),
-                    'previtem': iterable[index - 1] if index > 0 else None,
-                    'nextitem': iterable[index + 1] if index < len(iterable) - 1 else None,
-                }
+                # Get iterable
+                iterable = self._evaluate_expression(iterable_expr, context)
 
-                # Find loop content (this is a simplified version)
-                # In practice, this would need more sophisticated parsing
-                loop_output.append(f"<!-- Loop item {index} -->")
+                # Apply filter if present
+                if filter_expr:
+                    iterable = [item for item in iterable if self._evaluate_condition(filter_expr, {'item': item, **context})]
 
-            return '\n'.join(loop_output)
+                # Find endfor
+                endfor_index = i
+                while endfor_index < len(lines) and not re.search(r'\{%\s*endfor\s*%\}', lines[endfor_index]):
+                    endfor_index += 1
 
-        return re.sub(self.patterns['for'], process_for_loop, content)
+                # Process loop content for each item
+                loop_content = '\n'.join(lines[i+1:endfor_index])
+                loop_output = []
+
+                for index, item in enumerate(iterable or []):
+                    loop_context = context.copy()
+
+                    # Handle unpacking
+                    if len(var_names) > 1 and hasattr(item, '__iter__'):
+                        for j, var_name in enumerate(var_names):
+                            if j < len(item):
+                                loop_context[var_name] = item[j]
+                            else:
+                                loop_context[var_name] = None
+                    else:
+                        loop_context[var_names[0]] = item
+
+                    # Add loop variables
+                    loop_context['loop'] = {
+                        'index': index + 1,
+                        'index0': index,
+                        'first': index == 0,
+                        'last': index == len(iterable) - 1,
+                        'length': len(iterable),
+                        'previtem': iterable[index - 1] if index > 0 else None,
+                        'nextitem': iterable[index + 1] if index < len(iterable) - 1 else None,
+                    }
+
+                    # Render loop content
+                    rendered_content = self._render_content_sync(loop_content, loop_context, self.template_dir)
+                    loop_output.append(rendered_content)
+
+                output_lines.append('\n'.join(loop_output))
+                i = endfor_index + 1
+                continue
+
+            output_lines.append(line)
+            i += 1
+
+        return '\n'.join(output_lines)
 
     def _process_enhanced_conditionals(self, content: str, context: Dict[str, Any]) -> str:
         """Process enhanced if/elif/else conditionals"""
@@ -1031,3 +1067,38 @@ class LeanTemplateEngine(AbstractTemplateEngine):
 
         return errors
 
+    def add_custom_filter(self, name: str, filter_func: Callable):
+        """Add a custom filter to the engine"""
+        self.filters[name] = filter_func
+        return self
+
+    def add_custom_tag(self, name: str, tag_func: Callable):
+        """Add a custom template tag"""
+        self.custom_tags[name] = tag_func
+        return self
+
+    def set_autoescape(self, enabled: bool):
+        """Enable or disable autoescaping"""
+        self.autoescape = enabled
+        return self
+
+    def enable_performance_monitoring(self, enabled: bool = True):
+        """Enable performance monitoring"""
+        self.performance_monitoring = enabled
+        if enabled:
+            self.render_stats = {
+                'total_renders': 0,
+                'cache_hits': 0,
+                'total_time': 0.0,
+                'avg_time': 0.0
+            }
+        return self
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Get engine statistics"""
+        return {
+            'cache_size': len(self.cache),
+            'macro_count': len(self.macros),
+            'filter_count': len(self.filters),
+            'performance': self.render_stats if hasattr(self, 'performance_monitoring') and self.performance_monitoring else None
+        }

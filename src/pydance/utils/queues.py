@@ -57,14 +57,31 @@ class Job:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Job':
+    def from_dict(cls, data: Dict[str, Any], job_registry: Dict[str, Callable] = None) -> 'Job':
         """Create job from dictionary"""
-        # This would need to resolve the function from the name
-        # For now, return a placeholder
-        job = cls(lambda: None)
+        # Resolve the function from the name using registry
+        func_name = data.get('func_name', '')
+        func = None
+
+        if job_registry and func_name in job_registry:
+            func = job_registry[func_name]
+        elif '.' in func_name:
+            # Try to resolve from module path
+            try:
+                module_name, func_name = func_name.rsplit('.', 1)
+                module = __import__(module_name, fromlist=[func_name])
+                func = getattr(module, func_name)
+            except (ImportError, AttributeError):
+                pass
+
+        # If function not found, create a placeholder that raises an error
+        if func is None:
+            def missing_function(*args, **kwargs):
+                raise ValueError(f"Job function '{func_name}' not found in registry")
+            func = missing_function
+
+        job = cls(func, *data.get('args', []), **data.get('kwargs', {}))
         job.id = data['id']
-        job.args = data['args']
-        job.kwargs = data['kwargs']
         job.created_at = datetime.fromisoformat(data['created_at'])
         job.status = data['status']
         job.result = data['result']
@@ -73,7 +90,7 @@ class Job:
         job.max_retries = data['max_retries']
         job.priority = data['priority']
         job.queue_name = data['queue_name']
-        job.delay_until = datetime.fromisoformat(data['delay_until']) if data['delay_until'] else None
+        job.delay_until = datetime.fromisoformat(data['delay_until']) if data.get('delay_until') else None
         return job
 
     def should_retry(self) -> bool:
@@ -92,23 +109,23 @@ class QueueBackend:
 
     def enqueue(self, job: Job) -> bool:
         """Add job to queue"""
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement enqueue method")
 
     def dequeue(self, queue_name: str = 'default') -> Optional[Job]:
         """Get next job from queue"""
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement dequeue method")
 
     def get_job(self, job_id: str) -> Optional[Job]:
         """Get job by ID"""
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement get_job method")
 
     def update_job(self, job: Job) -> bool:
         """Update job status"""
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement update_job method")
 
     def get_queue_size(self, queue_name: str = 'default') -> int:
         """Get queue size"""
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement get_queue_size method")
 
 
 class MemoryQueueBackend(QueueBackend):
@@ -437,8 +454,112 @@ class CronScheduler:
 
     def _calculate_next_run(self, cron_expression: str) -> datetime:
         """Calculate next run time from cron expression"""
-        # Simplified cron parsing
-        # This would need a full cron parser for production
+        try:
+            schedule = self._parse_cron_expression(cron_expression)
+            return self._find_next_run(schedule)
+        except Exception as e:
+            logging.error(f"Error parsing cron expression '{cron_expression}': {e}")
+            # Fallback to simple parsing
+            return self._calculate_next_run_simple(cron_expression)
+
+    def _parse_cron_expression(self, cron_expression: str) -> Dict[str, Any]:
+        """Parse cron expression into schedule components"""
+        parts = cron_expression.split()
+        if len(parts) != 5 and len(parts) != 6:  # 5 parts + optional seconds
+            raise ValueError(f"Invalid cron expression: {cron_expression}")
+
+        # Handle optional seconds field
+        if len(parts) == 6:
+            seconds, minute, hour, day, month, day_of_week = parts
+        else:
+            seconds = '0'
+            minute, hour, day, month, day_of_week = parts
+
+        return {
+            'seconds': self._parse_cron_field(seconds, 0, 59),
+            'minutes': self._parse_cron_field(minute, 0, 59),
+            'hours': self._parse_cron_field(hour, 0, 23),
+            'days': self._parse_cron_field(day, 1, 31),
+            'months': self._parse_cron_field(month, 1, 12),
+            'days_of_week': self._parse_cron_field(day_of_week, 0, 6)
+        }
+
+    def _parse_cron_field(self, field: str, min_val: int, max_val: int) -> List[int]:
+        """Parse a single cron field (minute, hour, day, etc.)"""
+        if field == '*':
+            return list(range(min_val, max_val + 1))
+
+        result = []
+        for part in field.split(','):
+            part = part.strip()
+            if '/' in part:
+                # Step values: "*/5" or "10/5"
+                base, step = part.split('/', 1)
+                step = int(step)
+                if base == '*':
+                    values = list(range(min_val, max_val + 1))
+                else:
+                    values = self._parse_cron_range(base, min_val, max_val)
+                result.extend(values[::step])
+            elif '-' in part:
+                # Range: "1-5"
+                start, end = part.split('-', 1)
+                start, end = int(start), int(end)
+                result.extend(range(start, end + 1))
+            else:
+                # Single value
+                result.append(int(part))
+
+        # Remove duplicates and sort
+        result = sorted(list(set(result)))
+
+        # Validate ranges
+        result = [x for x in result if min_val <= x <= max_val]
+
+        return result
+
+    def _parse_cron_range(self, range_str: str, min_val: int, max_val: int) -> List[int]:
+        """Parse a cron range field"""
+        if range_str == '*':
+            return list(range(min_val, max_val + 1))
+        elif '-' in range_str:
+            start, end = range_str.split('-', 1)
+            start, end = int(start), int(end)
+            return list(range(start, end + 1))
+        else:
+            return [int(range_str)]
+
+    def _find_next_run(self, schedule: Dict[str, Any]) -> datetime:
+        """Find the next run time based on schedule"""
+        now = datetime.now()
+
+        # Start from current time
+        candidate = now.replace(second=0, microsecond=0)
+
+        # Find next minute that matches
+        for _ in range(525600):  # Max 1 year of iterations
+            if (candidate.month in schedule['months'] and
+                candidate.day in schedule['days'] and
+                candidate.hour in schedule['hours'] and
+                candidate.minute in schedule['minutes'] and
+                candidate.second in schedule['seconds']):
+
+                # Check day of week (0=Monday, 6=Sunday)
+                if candidate.weekday() in schedule['days_of_week']:
+                    return candidate
+
+            # Move to next minute
+            candidate += timedelta(minutes=1)
+
+            # If we've gone too far, reset to start of next day
+            if candidate > now + timedelta(days=365):
+                return now + timedelta(minutes=1)
+
+        # Fallback
+        return now + timedelta(minutes=1)
+
+    def _calculate_next_run_simple(self, cron_expression: str) -> datetime:
+        """Simple fallback cron parsing"""
         parts = cron_expression.split()
         if len(parts) >= 5:
             minute = parts[0]

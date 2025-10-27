@@ -5,9 +5,8 @@ This module provides Laravel-style middleware resolution, allowing middleware
 to be specified as strings and resolved to actual middleware instances.
 """
 
-from typing import Dict, Any, List, Union, Callable, Optional
+from typing import Dict, Any, List, Union, Callable, Optional, Type
 from .throttle import ThrottleMiddleware
-from .base import MiddlewareCallable
 
 
 class MiddlewareResolver:
@@ -32,6 +31,26 @@ class MiddlewareResolver:
     def register(self, name: str, resolver: Callable):
         """Register a custom middleware resolver"""
         self._middleware_map[name] = resolver
+
+    def register_alias(self, alias: str, middleware_class: Type, **default_kwargs):
+        """Register a middleware alias with default parameters"""
+        def alias_resolver(params: str = ''):
+            """Resolve middleware alias to actual middleware"""
+            try:
+                # Parse parameters if provided
+                kwargs = default_kwargs.copy()
+                if params:
+                    # Parse parameters like "key1=value1,key2=value2"
+                    for param in params.split(','):
+                        if '=' in param:
+                            key, value = param.split('=', 1)
+                            kwargs[key.strip()] = value.strip()
+
+                return middleware_class(**kwargs)
+            except Exception as e:
+                raise ValueError(f"Failed to resolve middleware alias '{alias}': {e}")
+
+        self.register(alias, alias_resolver)
 
     def resolve(self, middleware_spec: Union[str, Callable, type]) -> Optional[Callable]:
         """
@@ -83,11 +102,19 @@ class MiddlewareResolver:
         return ThrottleMiddleware.from_string(f"throttle:{params}")
 
     def _register_middleware_aliases(self):
-        """Register middleware aliases from the main middleware module"""
+        """Register middleware aliases from settings and built-in middleware"""
         try:
+            # Register built-in aliases from middleware module
             from . import MIDDLEWARE_ALIASES
             for alias, middleware_path in MIDDLEWARE_ALIASES.items():
                 self._register_alias_resolver(alias, middleware_path)
+
+            # Register custom aliases from settings
+            from pydance.config.settings import settings
+            if hasattr(settings, 'MIDDLEWARE_ALIASES'):
+                for alias, middleware_path in settings.MIDDLEWARE_ALIASES.items():
+                    self._register_alias_resolver(alias, middleware_path)
+
         except ImportError:
             # MIDDLEWARE_ALIASES not available yet
             pass

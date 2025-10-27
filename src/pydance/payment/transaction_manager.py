@@ -96,7 +96,7 @@ class TransactionManager:
 
     def _deserialize_transaction(self, data: Dict[str, Any]) -> Any:
         """Deserialize transaction data."""
-        from ..payment.payment_processor import PaymentTransaction, PaymentStatus, PaymentMethod
+        from pydance.payment.payment_processor import PaymentTransaction, PaymentStatus, PaymentMethod
         from decimal import Decimal
 
         return PaymentTransaction(
@@ -156,4 +156,3 @@ class TransactionManager:
 
             self.logger.info(f"Cleaned up {len(to_remove)} old transactions")
             return len(to_remove)
-

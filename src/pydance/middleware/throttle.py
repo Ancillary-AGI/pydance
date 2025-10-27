@@ -35,7 +35,7 @@ from pydance.utils.rate_limiting import (
 )
 from pydance.http.response import Response
 from pydance.middleware.base import HTTPMiddleware
-from pydance.types.routing import HandlerType
+from pydance.routing.types import HandlerType
 
 
 @dataclass
@@ -314,4 +314,3 @@ __all__ = [
     'throttle_per_user',
     'DEFAULT_THROTTLE_CONFIGS'
 ]
-

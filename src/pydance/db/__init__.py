@@ -5,14 +5,24 @@ Provides DatabaseConfig, DatabaseConnection, models, migrations, and type defini
 """
 
 from pydance.db.config import DatabaseConfig
-from pydance.db.connections import DatabaseConnection
+from pydance.db.connections.base_connection import DatabaseConnection
+
+# Types and fields
+from pydance.db.models.base import (
+    FieldType, RelationshipType, OrderDirection, PoolConfig, ConnectionStats,
+    DistributedCacheConfig, PaginationParams, PaginationMetadata, PaginationLink,
+    PaginatedResponse, AggregationResult, LazyLoad, Field, StringField,
+    IntegerField, BigIntegerField, BooleanField, DateTimeField, DateField,
+    TimeField, FloatField, DecimalField, UUIDField, JSONField, TextField,
+    BlobField, ByteaField, TimestampTZField, EmailField, PhoneField, URLField,
+    IPAddressField, PasswordField, ArrayField, EnumField, ForeignKeyField,
+    FileField, ImageField, Relationship, validate_email, validate_url,
+    validate_phone, validate_ip, get_field_from_type
+)
 
 # Models
-from pydance.db.models import (
-    BaseModel, Field, StringField, IntegerField, BooleanField, EmailField,
-    DateTimeField, DateField, TimeField, UUIDField, DecimalField, JSONField,
-    ModelFactory, QueryBuilder, BaseUser, UserRole, UserStatus
-)
+from pydance.db.models.base import BaseModel
+from pydance.db.models.query import QueryBuilder
 
 # Migrations
 from pydance.db.migrations import (
@@ -25,13 +35,20 @@ from pydance.db.migrations import (
 __all__ = [
     # Core database
     'DatabaseConfig', 'DatabaseConnection',
-    'FieldType', 'RelationshipType', 'OrderDirection',
-    'PoolConfig', 'ConnectionStats',
+
+    # Types and fields
+    'FieldType', 'RelationshipType', 'OrderDirection', 'PoolConfig', 'ConnectionStats',
+    'DistributedCacheConfig', 'PaginationParams', 'PaginationMetadata', 'PaginationLink',
+    'PaginatedResponse', 'AggregationResult', 'LazyLoad', 'Field', 'StringField',
+    'IntegerField', 'BigIntegerField', 'BooleanField', 'DateTimeField', 'DateField',
+    'TimeField', 'FloatField', 'DecimalField', 'UUIDField', 'JSONField', 'TextField',
+    'BlobField', 'ByteaField', 'TimestampTZField', 'EmailField', 'PhoneField', 'URLField',
+    'IPAddressField', 'PasswordField', 'ArrayField', 'EnumField', 'ForeignKeyField',
+    'FileField', 'ImageField', 'Relationship', 'validate_email', 'validate_url',
+    'validate_phone', 'validate_ip', 'get_field_from_type',
 
     # Models
-    'BaseModel', 'Field', 'StringField', 'IntegerField', 'BooleanField', 'EmailField',
-    'DateTimeField', 'DateField', 'TimeField', 'UUIDField', 'DecimalField', 'JSONField',
-    'ModelFactory', 'QueryBuilder', 'BaseUser', 'UserRole', 'UserStatus',
+    'BaseModel', 'QueryBuilder',
 
     # Migrations
     'Migration', 'MigrationOperation', 'MigrationOperationType',

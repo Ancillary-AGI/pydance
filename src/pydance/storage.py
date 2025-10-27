@@ -252,6 +252,8 @@ def get_storage_manager(config=None) -> StorageManager:
     return storage_manager
 
 
-
-
-
+# Additional exports for compatibility
+__all__ = [
+    'StorageBackend', 'LocalStorage', 'S3Storage', 'GoogleCloudStorage', 'AzureBlobStorage',
+    'StorageManager', 'get_storage_manager'
+]

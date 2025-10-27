@@ -1,5 +1,5 @@
 """
-Consolidated built-in middleware implementations for Pydance Framework.
+Consolidated built-in middleware implementations for Pydance.
 
 This module contains all the standard middleware implementations,
 consolidating duplicates and providing a single source of truth for
@@ -11,6 +11,7 @@ import logging
 import time
 import gzip
 import secrets
+import gc
 from typing import Dict, Any, Optional, Union, Callable, List
 from datetime import datetime
 import json
@@ -23,7 +24,7 @@ from pydance.http.response import Response
 # ==================== CORE HTTP MIDDLEWARE ====================
 
 class CORSMiddleware(HTTPMiddleware):
-    """CORS (Cross-Origin Resource Sharing) middleware - CONSOLIDATED"""
+    """CORS (Cross-Origin Resource Sharing) middleware"""
 
     def __init__(self,
                  allow_origins: Optional[List[str]] = None,
@@ -77,7 +78,7 @@ class CORSMiddleware(HTTPMiddleware):
 
 
 class SecurityHeadersMiddleware(HTTPMiddleware):
-    """Security headers middleware - CONSOLIDATED"""
+    """Security headers middleware"""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         super().__init__("SecurityHeadersMiddleware")
@@ -102,7 +103,7 @@ class SecurityHeadersMiddleware(HTTPMiddleware):
 
 
 class RequestLoggingMiddleware(HTTPMiddleware):
-    """Request logging middleware - CONSOLIDATED"""
+    """Request logging middleware"""
 
     def __init__(self, log_level: str = "INFO", logger_name: str = "pydance.middleware"):
         super().__init__("RequestLoggingMiddleware")
@@ -124,25 +125,79 @@ class RequestLoggingMiddleware(HTTPMiddleware):
 
 
 class PerformanceMonitoringMiddleware(HTTPMiddleware):
-    """Performance monitoring middleware - CONSOLIDATED"""
+    """Performance monitoring middleware"""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         super().__init__("PerformanceMonitoringMiddleware")
         self.config = config or {}
+        self.enable_memory_monitoring = self.config.get('enable_memory_monitoring', True)
+        self.enable_gc_monitoring = self.config.get('enable_gc_monitoring', True)
+        # Initialize metrics collector (will be None if not available)
+        try:
+            from pydance.monitoring import get_metrics_collector
+            self.metrics_collector = get_metrics_collector()
+        except ImportError:
+            self.metrics_collector = None
 
     async def process_request(self, request: Request) -> Request:
-        request.start_time = time.time()
+        """Monitor request start"""
+        request._perf_start_time = time.time()
+        request._perf_start_memory = self._get_memory_usage() if self.enable_memory_monitoring else 0
+        request._perf_start_gc = gc.get_stats() if self.enable_gc_monitoring else {}
         return request
 
     async def process_response(self, request: Request, response: Response) -> Response:
-        if hasattr(request, 'start_time') and hasattr(response, 'headers'):
-            execution_time = time.time() - request.start_time
-            response.headers['X-Execution-Time'] = f"{execution_time:.4f}s"
+        """Monitor request completion and collect metrics"""
+        if hasattr(request, '_perf_start_time'):
+            execution_time = time.time() - request._perf_start_time
+
+            # Add execution time header
+            if hasattr(response, 'headers'):
+                response.headers['X-Execution-Time'] = f"{execution_time:.4f}s"
+
+            # Record metrics
+            try:
+                # Request duration histogram
+                if hasattr(self.metrics_collector, 'create_histogram'):
+                    duration_metric = self.metrics_collector.get_metric('http_request_duration_seconds')
+                    if duration_metric:
+                        duration_metric.observe(execution_time)
+
+                # Memory usage if enabled
+                if self.enable_memory_monitoring and hasattr(request, '_perf_start_memory'):
+                    end_memory = self._get_memory_usage()
+                    memory_diff = end_memory - request._perf_start_memory
+
+                    memory_metric = self.metrics_collector.get_metric('http_request_memory_delta_mb')
+                    if memory_metric:
+                        memory_metric.set(memory_diff)
+
+                # GC stats if enabled
+                if self.enable_gc_monitoring and hasattr(request, '_perf_start_gc'):
+                    end_gc = gc.get_stats()
+                    for i, (start, end) in enumerate(zip(request._perf_start_gc.values(), end_gc.values())):
+                        gc_diff = end - start
+                        if gc_diff > 0:
+                            gc_metric = self.metrics_collector.get_metric(f'gc_collections_{i}')
+                            if gc_metric:
+                                gc_metric.increment(gc_diff)
+
+            except Exception as e:
+                # Don't let metrics collection break the request
+                logger.debug(f"Metrics collection error: {e}")
+
         return response
+
+    def _get_memory_usage(self) -> float:
+        """Get current memory usage in MB"""
+        try:
+            return self.process.memory_info().rss / 1024 / 1024  # MB
+        except Exception:
+            return 0.0
 
 
 class CompressionMiddleware(HTTPMiddleware):
-    """Response compression middleware - CONSOLIDATED"""
+    """Response compression middleware"""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         super().__init__("CompressionMiddleware")
@@ -175,7 +230,7 @@ class CompressionMiddleware(HTTPMiddleware):
 
 
 class AuthenticationMiddleware(HTTPMiddleware):
-    """Authentication middleware - CONSOLIDATED"""
+    """Authentication middleware"""
 
     def __init__(self, auth_backends: Optional[List[Callable]] = None, optional: bool = False):
         super().__init__("AuthenticationMiddleware")
@@ -208,7 +263,7 @@ class AuthenticationMiddleware(HTTPMiddleware):
 
 
 class CSRFMiddleware(HTTPMiddleware):
-    """CSRF protection middleware - CONSOLIDATED"""
+    """CSRF protection middleware"""
 
     def __init__(self, secret: str, cookie_name: str = "csrftoken", header_name: str = "X-CSRFToken"):
         super().__init__("CSRFMiddleware")
@@ -247,7 +302,7 @@ class CSRFMiddleware(HTTPMiddleware):
 
 
 class CachingMiddleware(HTTPMiddleware):
-    """Response caching middleware - CONSOLIDATED"""
+    """Response caching middleware"""
 
     def __init__(self, cache_duration: int = 300, cache_store: Optional[Any] = None):
         super().__init__("CachingMiddleware")
@@ -298,7 +353,7 @@ class CachingMiddleware(HTTPMiddleware):
 
 
 class ValidationMiddleware(HTTPMiddleware):
-    """Request validation middleware - CONSOLIDATED"""
+    """Request validation middleware"""
 
     def __init__(self, validators: Optional[Dict[str, Callable]] = None):
         super().__init__("ValidationMiddleware")
@@ -327,12 +382,16 @@ class ValidationMiddleware(HTTPMiddleware):
 
         return request
 
+    async def process_response(self, request: Request, response: Response) -> Response:
+        """Pass-through response processing for validation middleware."""
+        return response
+
     def _get_field_value(self, request: Request, field: str) -> Any:
         return getattr(request, field, None)
 
 
 class ErrorHandlingMiddleware(HTTPMiddleware):
-    """Error handling middleware - CONSOLIDATED"""
+    """Error handling middleware"""
 
     def __init__(self, debug: bool = False, error_handlers: Optional[Dict[type, Callable]] = None):
         super().__init__("ErrorHandlingMiddleware")
@@ -394,7 +453,7 @@ class ErrorHandlingMiddleware(HTTPMiddleware):
 
 
 class RateLimitingMiddleware(HTTPMiddleware):
-    """Rate limiting middleware - CONSOLIDATED"""
+    """Rate limiting middleware"""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         super().__init__("RateLimitingMiddleware")
@@ -411,6 +470,10 @@ class RateLimitingMiddleware(HTTPMiddleware):
 
         return request
 
+    async def process_response(self, request: Request, response: Response) -> Response:
+        """Pass-through response processing for rate limiting middleware."""
+        return response
+
     def _get_client_key(self, request: Request) -> str:
         if hasattr(request, 'remote_addr'):
             return request.remote_addr or 'unknown'
@@ -426,13 +489,17 @@ class RateLimitingMiddleware(HTTPMiddleware):
 # ==================== WEBSOCKET MIDDLEWARE ====================
 
 class WebSocketSecurityMiddleware(WebSocketMiddleware):
-    """WebSocket security middleware - CONSOLIDATED"""
+    """WebSocket security middleware"""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         super().__init__("WebSocketSecurityMiddleware")
         self.config = config or {}
         self.allowed_origins = self.config.get('allowed_origins', [])
         self.max_connections = self.config.get('max_connections', 1000)
+
+    async def __call__(self, websocket, call_next):
+        """WebSocket middleware call interface."""
+        return await self.process_websocket(websocket)
 
     async def process_websocket(self, websocket) -> Optional[Any]:
         origin = websocket.headers.get('origin')
@@ -442,7 +509,7 @@ class WebSocketSecurityMiddleware(WebSocketMiddleware):
 
 
 class WebSocketLoggingMiddleware(WebSocketMiddleware):
-    """WebSocket logging middleware - CONSOLIDATED"""
+    """WebSocket logging middleware"""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         super().__init__("WebSocketLoggingMiddleware")
@@ -450,6 +517,10 @@ class WebSocketLoggingMiddleware(WebSocketMiddleware):
         self.log_level = getattr(logging, self.config.get('level', 'INFO').upper(), logging.INFO)
         self.logger = logging.getLogger("pydance.middleware.websocket")
         self.logger.setLevel(self.log_level)
+
+    async def __call__(self, websocket, call_next):
+        """WebSocket middleware call interface."""
+        return await self.process_websocket(websocket)
 
     async def process_websocket(self, websocket) -> Optional[Any]:
         client_ip = getattr(websocket, 'client_ip', 'unknown')

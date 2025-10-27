@@ -1,6 +1,7 @@
 /**
  * Pydance Client - Modern Frontend Framework
  * Main entry point for the pydance-client framework
+ * World-class, scalable, and performant frontend solution
  */
 
 import { PydanceClient } from './core/PydanceClient.js';
@@ -14,6 +15,9 @@ import { NotificationManager } from './services/NotificationManager.js';
 import { ThemeManager } from './services/ThemeManager.js';
 import { CacheManager } from './services/CacheManager.js';
 import { SSRRenderer } from './core/SSRRenderer.js';
+import { PerformanceMonitor } from './core/PerformanceMonitor.js';
+import { AccessibilityManager } from './core/AccessibilityManager.js';
+import { Internationalization } from './core/Internationalization.js';
 
 // Core framework class
 class PydanceClientFramework {
@@ -65,6 +69,33 @@ class PydanceClientFramework {
   }
 
   async _initializeServices() {
+    // Performance Monitor (always enabled for optimization)
+    const performanceMonitor = new PerformanceMonitor({
+      enableProfiling: this.config.enableProfiling || false,
+      enableMetrics: this.config.enableMetrics !== false,
+      sampleRate: this.config.performanceSampleRate || 0.1
+    });
+    this.services.set('performance', performanceMonitor);
+
+    // Accessibility Manager (always enabled for inclusivity)
+    const accessibilityManager = new AccessibilityManager({
+      enableScreenReader: this.config.enableScreenReader !== false,
+      enableKeyboardNavigation: this.config.enableKeyboardNavigation !== false,
+      highContrast: this.config.highContrast || false
+    });
+    this.services.set('accessibility', accessibilityManager);
+
+    // Internationalization (if enabled)
+    if (this.config.enableI18n) {
+      const i18n = new Internationalization({
+        defaultLocale: this.config.defaultLocale || 'en',
+        fallbackLocale: this.config.fallbackLocale || 'en',
+        locales: this.config.locales || ['en'],
+        messages: this.config.messages || {}
+      });
+      this.services.set('i18n', i18n);
+    }
+
     // API Client
     const apiClient = new ApiClient({
       baseURL: `${this.config.baseURL}/api/${this.config.apiVersion}`,
@@ -283,6 +314,36 @@ class PydanceClientFramework {
     const themeManager = this.getService('theme');
     if (themeManager) {
       themeManager.setTheme(theme);
+    }
+  }
+
+  setLocale(locale) {
+    const i18n = this.getService('i18n');
+    if (i18n) {
+      i18n.setLocale(locale);
+    }
+  }
+
+  t(key, options = {}) {
+    const i18n = this.getService('i18n');
+    if (i18n) {
+      return i18n.t(key, options);
+    }
+    return key; // Fallback
+  }
+
+  getPerformanceMetrics() {
+    const performance = this.getService('performance');
+    if (performance) {
+      return performance.getMetrics();
+    }
+    return {};
+  }
+
+  enableAccessibility() {
+    const accessibility = this.getService('accessibility');
+    if (accessibility) {
+      accessibility.enable();
     }
   }
 

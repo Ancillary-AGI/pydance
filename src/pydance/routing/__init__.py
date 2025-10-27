@@ -10,6 +10,7 @@ Ultra-high-performance routing with advanced features:
 - Route model binding
 """
 
+from typing import Any
 from pydance.routing.route import Route, WebSocketRoute
 from pydance.routing.router import Router
 from pydance.routing.group import RouteGroup

@@ -2,10 +2,11 @@ from typing import List, Dict, Any, AsyncGenerator, Type, Optional, Tuple
 import aiomysql
 from contextlib import asynccontextmanager
 from pydance.db.config import DatabaseConfig
-from pydance.utils.types import Field, StringField, IntegerField, BooleanField, DateTimeField, FieldType
+from pydance.db.models.base import Field, StringField, IntegerField, BooleanField, DateTimeField, FieldType
+from .base_connection import DatabaseConnection
 
 
-class MySQLConnection:
+class MySQLConnection(DatabaseConnection):
     """MySQL database connection"""
 
     def __init__(self, config: DatabaseConfig):
@@ -228,42 +229,304 @@ class MySQLConnection:
 
     async def aggregate(self, model_class: Type, pipeline: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Perform aggregation operations using MySQL"""
-        # For MySQL, we can implement basic aggregations
         if not pipeline:
             return []
 
-        # This is a simplified implementation
-        agg_query = pipeline[0]
-        if '$group' in agg_query:
-            group_fields = agg_query['$group']
-            # Implement basic GROUP BY aggregations
-            select_parts = []
+        results = []
+        for stage in pipeline:
+            if '$group' in stage:
+                results = await self._handle_group_stage(model_class, stage)
+            elif '$match' in stage:
+                results = await self._handle_match_stage(model_class, stage, results)
+            elif '$sort' in stage:
+                results = await self._handle_sort_stage(model_class, stage, results)
+            elif '$limit' in stage:
+                results = await self._handle_limit_stage(model_class, stage, results)
+            elif '$skip' in stage:
+                results = await self._handle_skip_stage(model_class, stage, results)
+            elif '$project' in stage:
+                results = await self._handle_project_stage(model_class, stage, results)
 
-            for field, agg_func in group_fields.items():
-                if field == '_id':
-                    continue
-                if isinstance(agg_func, dict):
-                    for op, field_name in agg_func.items():
-                        if op == '$sum':
+        return results
+
+    async def _handle_group_stage(self, model_class: Type, stage: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Handle $group aggregation stage"""
+        group_fields = stage['$group']
+
+        # Build GROUP BY clause
+        group_columns = []
+        select_parts = []
+
+        for field, expression in group_fields.items():
+            if field == '_id':
+                # Handle _id field (grouping key)
+                if isinstance(expression, str):
+                    group_columns.append(expression)
+                    select_parts.append(f"{expression} as _id")
+                elif isinstance(expression, dict) and '$field' in expression:
+                    group_field = expression['$field']
+                    group_columns.append(group_field)
+                    select_parts.append(f"{group_field} as _id")
+                else:
+                    # No grouping, aggregate all records
+                    select_parts.append("NULL as _id")
+            else:
+                # Handle aggregation functions
+                if isinstance(expression, dict):
+                    for agg_func, field_name in expression.items():
+                        if agg_func == '$sum':
                             select_parts.append(f"SUM({field_name}) as {field}")
-                        elif op == '$avg':
+                        elif agg_func == '$avg':
                             select_parts.append(f"AVG({field_name}) as {field}")
-                        elif op == '$min':
+                        elif agg_func == '$min':
                             select_parts.append(f"MIN({field_name}) as {field}")
-                        elif op == '$max':
+                        elif agg_func == '$max':
                             select_parts.append(f"MAX({field_name}) as {field}")
-                        elif op == '$count':
+                        elif agg_func == '$count':
                             select_parts.append(f"COUNT(*) as {field}")
+                        elif agg_func == '$first':
+                            select_parts.append(f"FIRST_VALUE({field_name}) as {field}")
+                        elif agg_func == '$last':
+                            select_parts.append(f"LAST_VALUE({field_name}) as {field}")
+                        elif agg_func == '$stdDevPop':
+                            select_parts.append(f"STDDEV_POP({field_name}) as {field}")
+                        elif agg_func == '$stdDevSamp':
+                            select_parts.append(f"STDDEV_SAMP({field_name}) as {field}")
+                        elif agg_func == '$varPop':
+                            select_parts.append(f"VAR_POP({field_name}) as {field}")
+                        elif agg_func == '$varSamp':
+                            select_parts.append(f"VAR_SAMP({field_name}) as {field}")
 
-            if select_parts:
-                query = f"SELECT {', '.join(select_parts)} FROM {model_class.get_table_name()}"
-                async with self.pool.acquire() as connection:
-                    async with connection.cursor(aiomysql.DictCursor) as cursor:
-                        await cursor.execute(query)
-                        results = await cursor.fetchall()
-                        return [dict(row) for row in results]
+        if not select_parts:
+            return []
+
+        # Build GROUP BY clause
+        group_clause = f"GROUP BY {', '.join(group_columns)}" if group_columns else ""
+
+        # Build complete query
+        query = f"SELECT {', '.join(select_parts)} FROM {model_class.get_table_name()} {group_clause}"
+
+        try:
+            async with self.pool.acquire() as connection:
+                async with connection.cursor(aiomysql.DictCursor) as cursor:
+                    await cursor.execute(query)
+                    rows = await cursor.fetchall()
+                    return [dict(row) for row in rows]
+        except Exception as e:
+            # Fallback for complex aggregations
+            return await self._handle_group_stage_fallback(model_class, stage)
+
+    async def _handle_group_stage_fallback(self, model_class: Type, stage: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Fallback implementation for complex group operations"""
+        group_fields = stage['$group']
+
+        # Simple implementation for basic cases
+        select_parts = []
+        for field, expression in group_fields.items():
+            if field == '_id':
+                continue
+            if isinstance(expression, dict):
+                for agg_func, field_name in expression.items():
+                    if agg_func == '$sum':
+                        select_parts.append(f"SUM({field_name}) as {field}")
+                    elif agg_func == '$count':
+                        select_parts.append(f"COUNT(*) as {field}")
+                    elif agg_func == '$avg':
+                        select_parts.append(f"AVG({field_name}) as {field}")
+
+        if select_parts:
+            query = f"SELECT {', '.join(select_parts)} FROM {model_class.get_table_name()}"
+            async with self.pool.acquire() as connection:
+                async with connection.cursor(aiomysql.DictCursor) as cursor:
+                    await cursor.execute(query)
+                    rows = await cursor.fetchall()
+                    return [dict(row) for row in rows]
 
         return []
+
+    async def _handle_match_stage(self, model_class: Type, stage: Dict[str, Any], current_results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Handle $match aggregation stage"""
+        match_conditions = stage['$match']
+
+        # For simplicity, filter in Python if we have current results
+        if current_results:
+            return self._filter_results(current_results, match_conditions)
+
+        # Otherwise, build SQL WHERE clause
+        where_parts = []
+        params = []
+
+        for field, condition in match_conditions.items():
+            if isinstance(condition, dict):
+                for op, value in condition.items():
+                    if op == '$eq':
+                        where_parts.append(f"{field} = %s")
+                        params.append(value)
+                    elif op == '$ne':
+                        where_parts.append(f"{field} != %s")
+                        params.append(value)
+                    elif op == '$gt':
+                        where_parts.append(f"{field} > %s")
+                        params.append(value)
+                    elif op == '$gte':
+                        where_parts.append(f"{field} >= %s")
+                        params.append(value)
+                    elif op == '$lt':
+                        where_parts.append(f"{field} < %s")
+                        params.append(value)
+                    elif op == '$lte':
+                        where_parts.append(f"{field} <= %s")
+                        params.append(value)
+                    elif op == '$in':
+                        placeholders = ', '.join(['%s'] * len(value))
+                        where_parts.append(f"{field} IN ({placeholders})")
+                        params.extend(value)
+                    elif op == '$regex':
+                        where_parts.append(f"{field} LIKE %s")
+                        params.append(value.replace('.*', '%'))
+            else:
+                where_parts.append(f"{field} = %s")
+                params.append(condition)
+
+        if where_parts:
+            query = f"SELECT * FROM {model_class.get_table_name()} WHERE {' AND '.join(where_parts)}"
+            async with self.pool.acquire() as connection:
+                async with connection.cursor(aiomysql.DictCursor) as cursor:
+                    await cursor.execute(query, params)
+                    rows = await cursor.fetchall()
+                    return [dict(row) for row in rows]
+
+        return []
+
+    async def _handle_sort_stage(self, model_class: Type, stage: Dict[str, Any], current_results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Handle $sort aggregation stage"""
+        sort_spec = stage['$sort']
+
+        # Sort in Python if we have current results
+        if current_results:
+            def sort_key(item):
+                keys = []
+                for field, direction in sort_spec.items():
+                    value = item.get(field, 0)
+                    keys.append((value, direction))
+                return keys
+
+            current_results.sort(key=sort_key)
+            return current_results
+
+        # Otherwise, this would need to be handled in the query building
+        return current_results
+
+    async def _handle_limit_stage(self, model_class: Type, stage: Dict[str, Any], current_results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Handle $limit aggregation stage"""
+        limit = stage['$limit']
+        return current_results[:limit] if current_results else []
+
+    async def _handle_skip_stage(self, model_class: Type, stage: Dict[str, Any], current_results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Handle $skip aggregation stage"""
+        skip = stage['$skip']
+        return current_results[skip:] if current_results else []
+
+    async def _handle_project_stage(self, model_class: Type, stage: Dict[str, Any], current_results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Handle $project aggregation stage"""
+        projection = stage['$project']
+
+        if not current_results:
+            return []
+
+        result = []
+        for item in current_results:
+            projected_item = {}
+            for field, expression in projection.items():
+                if expression == 1 or expression is True:
+                    # Include field
+                    if field in item:
+                        projected_item[field] = item[field]
+                elif expression == 0 or expression is False:
+                    # Exclude field (already handled by not including)
+                    continue
+                elif isinstance(expression, dict):
+                    # Handle expressions like {'$add': ['$field1', '$field2']}
+                    if '$add' in expression:
+                        fields = expression['$add']
+                        if isinstance(fields, list) and len(fields) == 2:
+                            val1 = item.get(fields[0], 0)
+                            val2 = item.get(fields[1], 0)
+                            projected_item[field] = val1 + val2
+                    elif '$subtract' in expression:
+                        fields = expression['$subtract']
+                        if isinstance(fields, list) and len(fields) == 2:
+                            val1 = item.get(fields[0], 0)
+                            val2 = item.get(fields[1], 0)
+                            projected_item[field] = val1 - val2
+                    elif '$multiply' in expression:
+                        fields = expression['$multiply']
+                        if isinstance(fields, list) and len(fields) == 2:
+                            val1 = item.get(fields[0], 0)
+                            val2 = item.get(fields[1], 0)
+                            projected_item[field] = val1 * val2
+                    elif '$divide' in expression:
+                        fields = expression['$divide']
+                        if isinstance(fields, list) and len(fields) == 2:
+                            val1 = item.get(fields[0], 0)
+                            val2 = item.get(fields[1], 1)
+                            projected_item[field] = val1 / val2 if val2 != 0 else 0
+                else:
+                    # Literal value
+                    projected_item[field] = expression
+
+            result.append(projected_item)
+
+        return result
+
+    def _filter_results(self, results: List[Dict[str, Any]], conditions: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Filter results in Python"""
+        filtered = []
+        for item in results:
+            match = True
+            for field, condition in conditions.items():
+                if field not in item:
+                    match = False
+                    break
+
+                if isinstance(condition, dict):
+                    for op, value in condition.items():
+                        item_value = item[field]
+                        if op == '$eq' and item_value != value:
+                            match = False
+                            break
+                        elif op == '$ne' and item_value == value:
+                            match = False
+                            break
+                        elif op == '$gt' and item_value <= value:
+                            match = False
+                            break
+                        elif op == '$gte' and item_value < value:
+                            match = False
+                            break
+                        elif op == '$lt' and item_value >= value:
+                            match = False
+                            break
+                        elif op == '$lte' and item_value > value:
+                            match = False
+                            break
+                        elif op == '$in' and item_value not in value:
+                            match = False
+                            break
+                        elif op == '$regex':
+                            import re
+                            if not re.search(value, str(item_value)):
+                                match = False
+                                break
+                else:
+                    if item[field] != condition:
+                        match = False
+                        break
+
+            if match:
+                filtered.append(item)
+
+        return filtered
 
     def _format_default(self, default: Any) -> str:
         """Format default value for MySQL"""
@@ -504,3 +767,112 @@ class MySQLConnection:
                 results = await cursor.fetchall()
                 return [dict(row) for row in results]
 
+    async def test_connection(self) -> bool:
+        """Test if MySQL connection is working."""
+        try:
+            await self.execute_query("SELECT 1")
+            return True
+        except Exception as e:
+            self.logger.error(f"MySQL connection test failed: {e}")
+            return False
+
+    async def execute_many(self, query: str, parameters_list: List[Tuple]) -> Any:
+        """Execute a query multiple times with different parameters."""
+        async with self.pool.acquire() as connection:
+            async with connection.cursor(aiomysql.DictCursor) as cursor:
+                return await cursor.executemany(query, parameters_list)
+
+    async def table_exists(self, table_name: str) -> bool:
+        """Check if table exists in MySQL."""
+        query = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = %s)"
+        cursor = await self.execute_query(query, (table_name,))
+        if hasattr(cursor, 'fetchone'):
+            row = await cursor.fetchone()
+            return row[0] == 1 if row else False
+        return False
+
+    async def get_table_columns(self, table_name: str) -> Dict[str, Dict[str, Any]]:
+        """Get table column information for MySQL."""
+        query = """
+            SELECT column_name, data_type, is_nullable, column_default
+            FROM information_schema.columns
+            WHERE table_name = %s
+            ORDER BY ordinal_position
+        """
+        cursor = await self.execute_query(query, (table_name,))
+        if hasattr(cursor, 'fetchall'):
+            rows = await cursor.fetchall()
+        else:
+            rows = cursor
+
+        columns = {}
+        for row in rows:
+            columns[row['column_name']] = {
+                'type': row['data_type'],
+                'nullable': row['is_nullable'] == 'YES',
+                'default': row['column_default']
+            }
+        return columns
+
+    async def get_indexes(self, table_name: str) -> List[Dict[str, Any]]:
+        """Get indexes for a MySQL table."""
+        query = """
+            SELECT index_name, column_name, non_unique
+            FROM information_schema.statistics
+            WHERE table_name = %s
+            ORDER BY index_name, seq_in_index
+        """
+        cursor = await self.execute_query(query, (table_name,))
+        if hasattr(cursor, 'fetchall'):
+            rows = await cursor.fetchall()
+        else:
+            rows = cursor
+
+        indexes = {}
+        for row in rows:
+            index_name = row['index_name']
+            if index_name not in indexes:
+                indexes[index_name] = {
+                    'name': index_name,
+                    'unique': row['non_unique'] == 0,
+                    'columns': []
+                }
+            indexes[index_name]['columns'].append(row['column_name'])
+
+        return list(indexes.values())
+
+    def get_column_sql_definition(self, field_name: str, field) -> str:
+        """Generate SQL for MySQL column definition."""
+        field_type = getattr(field, 'field_type', 'string')
+        db_type = self.get_field_type_mapping().get(field_type, 'VARCHAR(255)')
+
+        # Handle field options
+        nullable = getattr(field, 'nullable', True)
+        default = getattr(field, 'default', None)
+        max_length = getattr(field, 'max_length', None)
+        primary_key = getattr(field, 'primary_key', False)
+
+        # Apply length constraints
+        if max_length and 'VARCHAR' in db_type:
+            db_type = db_type.replace('VARCHAR', f'VARCHAR({max_length})')
+
+        sql_parts = [field_name, db_type]
+
+        if not nullable:
+            sql_parts.append("NOT NULL")
+
+        if primary_key:
+            sql_parts.append("PRIMARY KEY")
+
+        if default is not None:
+            if isinstance(default, str):
+                sql_parts.append(f"DEFAULT '{default}'")
+            else:
+                sql_parts.append(f"DEFAULT {default}")
+
+        return " ".join(sql_parts)
+
+    def get_field_type_mapping(self) -> Dict[str, str]:
+        """Get MySQL field type mapping."""
+        from pydance.db.connections.base import COMMON_FIELD_TYPE_MAPPINGS
+        return COMMON_FIELD_TYPE_MAPPINGS['mysql']

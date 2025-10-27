@@ -3,10 +3,7 @@ Query builder for database operations.
 """
 
 import json
-from bson import ObjectId
-from pymongo import ASCENDING, DESCENDING
 from typing import Dict, List, Optional, Any, Tuple, Union, Type, TypeVar, Generic
-from pydantic import BaseModel as PydanticBaseModel, create_model, validator
 from datetime import datetime
 import asyncio
 from contextlib import asynccontextmanager
@@ -15,11 +12,10 @@ import inspect
 
 from pydance.db.config import DatabaseConfig
 from pydance.db.connections import DatabaseConnection
-from .base import Field, Relationship, RelationshipType, OrderDirection, PaginatedResponse, AggregationResult, LazyLoad
+from pydance.db.models.base import Field, Relationship, RelationshipType, OrderDirection, PaginatedResponse, AggregationResult, LazyLoad, BaseModel
 from pydance.utils.collections import Collection
 
-T = TypeVar('T')
-M = TypeVar('M', bound=PydanticBaseModel)
+T = TypeVar('T', bound=BaseModel)
 
 
 class QueryBuilder(Generic[T]):
@@ -39,6 +35,7 @@ class QueryBuilder(Generic[T]):
         self._group_by: List[str] = []
         self._having_conditions: List[str] = []
         self._having_params: List[Any] = []
+        self._joins: List[Dict[str, Any]] = []
         self._param_counter = 1
         self._lazy_loading_enabled: bool = True
         self._filter_criteria: Dict[str, Any] = {}
@@ -152,6 +149,27 @@ class QueryBuilder(Generic[T]):
         self._having_conditions.append(condition)
         self._having_params.extend(params)
         return self
+
+    def join(self, model_class: Type[BaseModel], on_condition: str, join_type: str = 'INNER') -> 'QueryBuilder[T]':
+        """Add JOIN clause and return self"""
+        self._joins.append({
+            'model_class': model_class,
+            'on_condition': on_condition,
+            'join_type': join_type
+        })
+        return self
+
+    def left_join(self, model_class: Type[BaseModel], on_condition: str) -> 'QueryBuilder[T]':
+        """Add LEFT JOIN clause and return self"""
+        return self.join(model_class, on_condition, 'LEFT')
+
+    def right_join(self, model_class: Type[BaseModel], on_condition: str) -> 'QueryBuilder[T]':
+        """Add RIGHT JOIN clause and return self"""
+        return self.join(model_class, on_condition, 'RIGHT')
+
+    def full_join(self, model_class: Type[BaseModel], on_condition: str) -> 'QueryBuilder[T]':
+        """Add FULL OUTER JOIN clause and return self"""
+        return self.join(model_class, on_condition, 'FULL')
 
     async def execute(self) -> List[T]:
         """Execute the query and return results using unified db interface"""

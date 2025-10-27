@@ -2,8 +2,66 @@ import asyncio
 import signal
 import logging
 from typing import Optional
-from hypercorn.asyncio import serve
-from hypercorn.config import Config as HyperConfig
+try:
+    from hypercorn.asyncio import serve
+    from hypercorn.config import Config as HyperConfig
+    HYPERCORN_AVAILABLE = True
+except ImportError:
+    HYPERCORN_AVAILABLE = False
+    # Fallback server implementation
+    class HyperConfig:
+        def __init__(self):
+            self.bind = ["127.0.0.1:8000"]
+            self.backlog = 100
+            self.keep_alive_timeout = 5
+            self.max_connections = 1000
+            self.use_reloader = False
+            self.accesslog = None
+            self.errorlog = None
+            self.certfile = None
+            self.keyfile = None
+
+    async def serve(app, config, shutdown_trigger=None):
+        """Fallback server implementation"""
+        import socket
+
+        # Simple fallback server
+        host, port = config.bind[0].split(':')
+        port = int(port)
+
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server_socket.bind((host, port))
+        server_socket.listen(config.backlog)
+        server_socket.setblocking(False)
+
+        print(f"Fallback server listening on {host}:{port}")
+
+        loop = asyncio.get_event_loop()
+
+        async def handle_client(client_socket):
+            try:
+                # Simple HTTP response
+                response = b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nHello from Pydance!"
+                await loop.sock_sendall(client_socket, response)
+            except Exception as e:
+                print(f"Error handling client: {e}")
+            finally:
+                client_socket.close()
+
+        try:
+            while not shutdown_trigger or not await shutdown_trigger():
+                try:
+                    client_socket, addr = await asyncio.wait_for(
+                        loop.sock_accept(server_socket), timeout=1.0
+                    )
+                    asyncio.create_task(handle_client(client_socket))
+                except asyncio.TimeoutError:
+                    continue
+        except Exception as e:
+            print(f"Server error: {e}")
+        finally:
+            server_socket.close()
 
 from pydance.config import AppConfig
 from typing import TYPE_CHECKING

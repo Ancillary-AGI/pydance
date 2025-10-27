@@ -1,43 +1,74 @@
-"""Routing-related type definitions."""
-
-from typing import Dict, Any, Callable, Optional, List, Set
-from dataclasses import dataclass, field
+from typing import Callable, Any, TYPE_CHECKING, Awaitable
 from enum import Enum
 
+if TYPE_CHECKING:
+    from pydance.http.request import Request
+    from pydance.http.response import Response
 
+
+class HandlerType(Enum):
+    """Handler type enumeration."""
+    HTTP = "http"
+    WEBSOCKET = "websocket"
+    MIDDLEWARE = "middleware"
+    ASYNC = "async"
+    SYNC = "sync"
+
+
+# Type aliases for better code readability
+RouteHandler = Callable[['Request'], 'Response']
+AsyncRouteHandler = Callable[['Request'], Awaitable['Response']]
+WebSocketHandler = Callable[[Any], Any]
+MiddlewareHandler = Callable[[Any, Callable], Any]
+ErrorHandler = Callable[[Exception], 'Response']
+
+# Additional routing types
+RouteMiddleware = Callable[[Any, Callable], Awaitable[Any]]
+RouteDecorator = Callable[[Callable], Callable]
+RouteCondition = Callable[['Request'], bool]
+
+# Route configuration and matching types
 class RouteType(Enum):
-    """Types of routes."""
-    NORMAL = "normal"
+    """Route type enumeration."""
+    HTTP = "http"
+    WEBSOCKET = "websocket"
+    STATIC = "static"
     REDIRECT = "redirect"
-    VIEW = "view"
-    FALLBACK = "fallback"
-    INTENDED = "intended"
 
-
-@dataclass
 class RouteMatch:
-    """Route match result with enhanced metadata."""
-    handler: Callable
-    params: Dict[str, Any] = field(default_factory=dict)
-    route: Optional['Route'] = None
-    middleware: List[Callable] = field(default_factory=list)
+    """Route match result."""
+    def __init__(self, route_handler: Callable, params: dict = None, route_type: RouteType = RouteType.HTTP):
+        self.route_handler = route_handler
+        self.params = params or {}
+        self.route_type = route_type
 
-
-@dataclass
 class RouteConfig:
-    """Configuration for route behavior."""
-    methods: Set[str] = field(default_factory=lambda: {"GET"})
-    name: Optional[str] = None
-    middleware: List[Callable] = field(default_factory=list)
-    cache_timeout: Optional[int] = None
-    priority: int = 0
-
-
-# Type aliases
-RouteMethods = List[str]
-RouteParams = Dict[str, Any]
+    """Route configuration."""
+    def __init__(self,
+                 path: str,
+                 handler: Callable,
+                 methods: list = None,
+                 name: str = None,
+                 middleware: list = None,
+                 route_type: RouteType = RouteType.HTTP):
+        self.path = path
+        self.handler = handler
+        self.methods = methods or ['GET']
+        self.name = name
+        self.middleware = middleware or []
+        self.route_type = route_type
 
 __all__ = [
-    'RouteType', 'RouteMatch', 'RouteConfig',
-    'RouteMethods', 'RouteParams'
+    'HandlerType',
+    'RouteHandler',
+    'AsyncRouteHandler',
+    'WebSocketHandler',
+    'MiddlewareHandler',
+    'ErrorHandler',
+    'RouteMiddleware',
+    'RouteDecorator',
+    'RouteCondition',
+    'RouteType',
+    'RouteMatch',
+    'RouteConfig'
 ]

@@ -1,11 +1,10 @@
 # Pydance Framework
 
-![Pydance Logo](https://img.shields.io/badge/Pydance-High--Performance-blue?style=for-the-badge)
+![Pydance Logo](https://img.shields.io/badge/Pydance-Web--Framework-blue?style=for-the-badge)
 ![Python](https://img.shields.io/badge/Python-3.8+-green?style=flat-square)
-![C/C++](https://img.shields.io/badge/C%2FC%2B%2B-Extensions-orange?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-red?style=flat-square)
 
-**Pydance** is a modern, production-ready web framework with enterprise-grade features, advanced security, and comprehensive architecture. Built with performance, security, and developer experience in mind.
+**Pydance** is a modern Python web framework with ASGI support, middleware system, database ORM, and comprehensive features for building web applications.
 
 ## 🎯 **Framework Status: Production Ready**
 
@@ -30,38 +29,27 @@ The Pydance framework has been completely refactored with a modern architecture 
 
 ## 🚀 Key Features
 
-### ⚡ High Performance
-- **C/C++ HTTP Server Core** with epoll/kqueue support
-- **SIMD Optimizations** for cryptographic operations
-- **Memory Pool Management** for efficient allocations
-- **Zero-Copy Operations** where possible
-- **Thread Pool Execution** for CPU-bound tasks
+### ⚡ Core Features
+- **ASGI-compliant** web framework
+- **Middleware system** with flexible configuration
+- **Database ORM** with multiple backend support
+- **Template engine** with Jinja2 integration
+- **Session management** with multiple storage backends
+- **WebSocket support** for real-time applications
 
-### 🔒 Enterprise Security
-- **IAM (Identity & Access Management)** with RBAC/ABAC
-- **Elliptic Curve Cryptography (ECC)** with SHA3 hashing
-- **Zero Trust Network Architecture**
-- **Hardware Security Module (HSM)** integration
-- **Automated Certificate Management**
-- **SIEM Integration** for centralized monitoring
-- **Compliance Automation** (GDPR, HIPAA, SOC2)
-- **Defense in Depth** security layers
+### 🔒 Security Features
+- **CSRF protection** middleware
+- **Session security** with encryption
+- **Input validation** and sanitization
+- **Secure cookie handling**
+- **Rate limiting** capabilities
 
-### 🌐 Web3 & Blockchain
-- **Multi-Blockchain Support** (Ethereum, Polygon, BSC, etc.)
-- **Smart Contract Integration**
-- **DeFi Protocol Support** (lending, staking, yield farming)
-- **NFT Management** and trading
-- **DAO Governance** tools
-- **Decentralized Identity**
-
-### 📊 Monitoring & Observability
-- **Real-time Metrics Collection**
-- **Distributed Tracing**
-- **Structured Logging**
-- **Performance Monitoring**
-- **Health Checks**
-- **Alert Management**
+### 🏗️ Architecture
+- **MVC pattern** support
+- **Dependency injection** container
+- **Plugin system** for extensibility
+- **Event-driven** architecture
+- **RESTful API** development tools
 
 ### 🏗️ Modern Architecture
 - **MVC Pattern** with clean separation
@@ -107,31 +95,24 @@ pip install -e .
 
 ### Basic HTTP Server
 ```python
-from pydance.core.server_bindings import create_default_server
+from pydance import Application
 
-# Create server with default routes
-server = create_default_server()
+# Create application
+app = Application()
 
-# Add custom routes
-@server.get("/api/users")
-def get_users(request):
-    return {
-        'status_code': 200,
-        'content_type': 'application/json',
-        'body': '{"users": [{"id": 1, "name": "John"}]}'
-    }
+# Add routes
+@app.route('/api/users', methods=['GET'])
+async def get_users(request):
+    return {'users': [{'id': 1, 'name': 'John'}]}
 
-@server.post("/api/users")
-def create_user(request):
-    return {
-        'status_code': 201,
-        'content_type': 'application/json',
-        'body': '{"message": "User created"}'
-    }
+@app.route('/api/users', methods=['POST'])
+async def create_user(request):
+    data = await request.json()
+    return {'message': 'User created', 'user': data}, 201
 
 # Start server
 if __name__ == "__main__":
-    server.run()
+    app.run()
 ```
 
 ### MVC Application

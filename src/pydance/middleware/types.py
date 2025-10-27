@@ -1,15 +1,45 @@
 """Middleware-related type definitions."""
 
-from typing import Callable, Any, Union, Coroutine
-from pydance.http.types import Handler, AsyncHandler
+from typing import Callable, Any, Union, Type, Coroutine
 
-# Middleware types
-Middleware = Callable[[Handler], Handler]
-AsyncMiddleware = Callable[[AsyncHandler], AsyncHandler]
-MiddlewareCallable = Callable[[Any, Callable], Coroutine[Any, Any, Any]]
-MiddlewareType = Union[MiddlewareCallable, type]
+# Import all middleware types from base.py to consolidate
+from .base import (
+    BaseMiddleware,
+    HTTPMiddleware,
+    WebSocketMiddleware,
+    MiddlewareScope,
+    MiddlewareContext,
+)
+
+# Consolidated middleware types (merged from base.py)
+from pydance.http.request import Request
+from pydance.http.response import Response
+
+MiddlewareCallable = Callable[[Request, Callable], Coroutine[Any, Any, Response]]
+MiddlewareClass = Union[MiddlewareCallable, type[HTTPMiddleware], type[WebSocketMiddleware]]
+
+# Unified middleware type that supports all middleware forms
+MiddlewareType = Union[
+    MiddlewareCallable,     # Function middleware
+    Type[BaseMiddleware],   # Class middleware (not callable)
+    str                     # String aliases
+]
+
+# Alias for backward compatibility
+Middleware = BaseMiddleware
+
+# Middleware registration and resolution types
+MiddlewareAlias = str  # String alias like 'auth', 'throttle:100,10'
+MiddlewareGroup = list[MiddlewareAlias]  # Group of middleware aliases
 
 __all__ = [
-    'Middleware', 'AsyncMiddleware',
-    'MiddlewareCallable', 'MiddlewareType'
+    # Core middleware types
+    'BaseMiddleware', 'HTTPMiddleware', 'WebSocketMiddleware',
+    'MiddlewareCallable', 'MiddlewareType', 'MiddlewareClass',
+
+    # Enums and contexts
+    'MiddlewareScope', 'MiddlewareContext',
+
+    # Registration types
+    'MiddlewareAlias', 'MiddlewareGroup'
 ]
