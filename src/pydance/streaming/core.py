@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Modern Python Streaming Core
 High-performance async streaming processor for real-time data handling.
@@ -17,7 +19,7 @@ import threading
 import queue
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

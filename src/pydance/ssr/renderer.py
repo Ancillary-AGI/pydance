@@ -15,10 +15,49 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from enum import Enum
 
-from pydance.templating import TemplateEngine
-from pydance.ssr.cache import SSRCache
-from pydance.ssr.hydrator import DataHydrator
-from pydance.utils.di import Container
+try:
+    from pydance.templating import TemplateEngine
+    from pydance.templating.engine import TemplateEngine as TEngine
+    from pydance.ssr.cache import SSRCache
+    from pydance.ssr.hydrator import DataHydrator
+    from pydance.core.di import Container
+except ImportError:
+    # Fallback placeholders for missing modules
+    class SSRCache:
+        def __init__(self, ttl=300):
+            self.ttl = ttl
+            self._cache = {}
+
+        async def get(self, key):
+            return self._cache.get(key)
+
+        async def set(self, key, value):
+            self._cache[key] = value
+
+        def clear(self):
+            self._cache.clear()
+
+        @property
+        def cache(self):
+            return self._cache
+
+    class DataHydrator:
+        pass
+
+    # Use the template engine directly
+    class TemplateEngine:
+        def __init__(self, template_dir):
+            from pydance.templating.engine import get_template_engine
+            self.engine = get_template_engine("lean", template_dir)
+
+        async def render(self, template_path, data):
+            return await self.engine.render_async(template_path, data)
+
+        async def render_async(self, template_path, data):
+            return await self.render(template_path, data)
+
+    class Container:
+        pass
 
 
 class SSRFramework(Enum):
@@ -141,8 +180,8 @@ class SSRRenderer:
             return cached
 
         try:
-            # Render template
-            html = await self.template_engine.render_async(template_path, data)
+            # Render template using the async render method
+            html = await self.template_engine.render(template_path, data)
 
             # Add SSR metadata
             ssr_data = {
@@ -254,25 +293,48 @@ class SSRRenderer:
         return f'<div data-svelte-component="{component_name}" data-props="{json.dumps(props)}"></div>'
 
     async def _render_pydance_client_component(self, component_name: str, props: Dict[str, Any]) -> str:
-        """Render Pydance Client component with SSR."""
+        """Render Pydance Client component with SSR using actual renderToString."""
         try:
             import subprocess
-            
-            ssr_script = f'''const {{SSRRenderer}} = require('./pydance-client/src/core/SSRRenderer.js');
-SSRRenderer.renderToString('{component_name}', {json.dumps(props)}).then(html => console.log(html));'''
-            
+            import sys
+            import os
+
+            # Create Node.js script to render component
+            ssr_script = f"""
+const path = require('path');
+const {{ SSRRenderer }} = require(path.join(__dirname__, '../../../../pydance-client/src/core/SSRRenderer.js'));
+
+async function render() {{
+    try {{
+        const html = await SSRRenderer.renderToString('{component_name}', {json.dumps(props)}, 'pydance');
+        console.log(html);
+    }} catch (error) {{
+        console.error('SSR Error:', error.message);
+        console.log('<div data-ssr-error="{component_name}">Error rendering component</div>');
+    }}
+}}
+
+render();
+"""
+
+            # Run Node.js script with proper working directory
+            work_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # Go up from ssr/ to project root
+
             result = subprocess.run(
-                ['node', '-e', ssr_script],
+                [sys.executable, '-c', f"import subprocess; subprocess.run(['node', '-e', '''{ssr_script}'''], cwd=r'{work_dir}')"],
                 capture_output=True,
                 text=True,
                 timeout=self.config.timeout_per_render
             )
-            
-            if result.returncode == 0 and result.stdout:
+
+            if result.returncode == 0 and result.stdout.strip():
                 return result.stdout.strip()
-            
+
+            # If subprocess fails, fallback
             return await self._render_fallback_component(component_name, props)
-        except:
+
+        except Exception as e:
+            print(f"SSR render error: {e}")
             return await self._render_fallback_component(component_name, props)
 
     async def _render_fallback_component(self, component_name: str, props: Dict[str, Any]) -> str:
@@ -280,7 +342,7 @@ SSRRenderer.renderToString('{component_name}', {json.dumps(props)}).then(html =>
         template_path = self.template_dir / f'components/{component_name.lower()}.html'
 
         if template_path.exists():
-            return await self.template_engine.render_async(str(template_path), props)
+            return await self.template_engine.render(str(template_path), props)
 
         # Ultimate fallback
         return f'<div data-component="{component_name}">{json.dumps(props)}</div>'

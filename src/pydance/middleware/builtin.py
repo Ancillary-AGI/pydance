@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Consolidated built-in middleware implementations for Pydance.
 
@@ -107,7 +109,7 @@ class RequestLoggingMiddleware(HTTPMiddleware):
 
     def __init__(self, log_level: str = "INFO", logger_name: str = "pydance.middleware"):
         super().__init__("RequestLoggingMiddleware")
-        self.logger = logging.getLogger(logger_name)
+        self.logger = get_logger(logger_name)
         self.logger.setLevel(getattr(logging, log_level.upper(), logging.INFO))
 
     async def process_request(self, request: Request) -> Request:
@@ -515,7 +517,7 @@ class WebSocketLoggingMiddleware(WebSocketMiddleware):
         super().__init__("WebSocketLoggingMiddleware")
         self.config = config or {}
         self.log_level = getattr(logging, self.config.get('level', 'INFO').upper(), logging.INFO)
-        self.logger = logging.getLogger("pydance.middleware.websocket")
+        self.logger = get_logger("pydance.middleware.websocket")
         self.logger.setLevel(self.log_level)
 
     async def __call__(self, websocket, call_next):

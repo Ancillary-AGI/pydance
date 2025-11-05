@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Plugin System for Pydance Framework
 
@@ -28,7 +30,7 @@ from enum import Enum
 from pathlib import Path
 import json
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class PluginState(str, Enum):
@@ -374,7 +376,7 @@ class PluginManager:
                 context = PluginContext(
                     app=None,  # Will be set by application
                     config=self._get_plugin_config(plugin_name),
-                    logger=logging.getLogger(f"plugin.{plugin_name}")
+                    logger=get_logger(f"plugin.{plugin_name}")
                 )
 
                 try:

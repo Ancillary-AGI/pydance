@@ -1,6 +1,7 @@
 # server_framework/core/middleware.py
 import time
 import logging
+from pydance.utils.logging import get_logger
 from abc import ABC, abstractmethod
 from typing import Callable, Any, Optional, Union, Coroutine, Dict, List
 from dataclasses import dataclass, field
@@ -56,7 +57,7 @@ class BaseMiddleware(ABC):
         self.priority = MiddlewarePriority.NORMAL
         self.enabled = True
         self.conditions: List[Callable] = []
-        self.logger = logging.getLogger(f"middleware.{self.name}")
+        self.logger = get_logger(f"middleware.{self.name}")
 
     def set_priority(self, priority: MiddlewarePriority):
         """Set middleware execution priority"""

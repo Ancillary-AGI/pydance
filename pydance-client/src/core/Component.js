@@ -70,15 +70,7 @@ export class JSXElement {
   }
 }
 
-// JSX Fragment
-export class JSXFragment {
-  constructor(children = [], props = {}) {
-    this.$$typeof = Symbol.for('pydance.fragment');
-    this.children = children.flat();
-    this.props = props;
-    this.key = props?.key || null;
-  }
-}
+// JSX Fragment (moved to bottom to avoid duplicate declaration)
 
 // Component Pool for scaling - object pooling for component reuse
 class ComponentPool {
@@ -374,6 +366,10 @@ export class ComponentInstance {
     this.mounted = false;
     this.cleanup = null;
     this.effects = new Set();
+
+    // Lifecycle hooks
+    this.onMount = null;
+    this.onUnmount = null;
 
     // Performance monitoring
     this.performanceMetrics = {
@@ -762,9 +758,11 @@ export class ComponentInstance {
     }
 
     try {
-      // Call onMount hook if provided
+      // Call onMount hook if provided in props or on component
       if (this.props.value.onMount) {
         this.props.value.onMount.call(this);
+      } else if (this.onMount) {
+        this.onMount.call(this);
       }
 
       // Create initial DOM
@@ -831,15 +829,30 @@ export class ComponentInstance {
     if (!this.mounted) return;
 
     try {
-      // Call onUnmount hook
+      // Call onUnmount hook if provided in props or on component
       if (this.props.value.onUnmount) {
         this.props.value.onUnmount.call(this);
+      } else if (this.onUnmount) {
+        this.onUnmount.call(this);
       }
 
-      // Clean up effects
+      // Clean up all hook cleanup functions
+      this.hooks.forEach(hook => {
+        if (hook && typeof hook === 'object' && hook.cleanup && typeof hook.cleanup === 'function') {
+          try {
+            hook.cleanup();
+          } catch (err) {
+            console.error('Hook cleanup error:', err);
+          }
+        }
+      });
+
+      // Clean up all effects
       this.effects.forEach(effect => {
         try {
-          effect.stop();
+          if (effect && typeof effect.stop === 'function') {
+            effect.stop();
+          }
         } catch (err) {
           console.error('Effect cleanup error:', err);
         }
@@ -848,7 +861,7 @@ export class ComponentInstance {
 
       // Clean up DOM
       if (this.element) {
-        // Remove event listeners
+        // Remove event listeners by cloning and replacing
         const clone = this.element.cloneNode(true);
         if (this.element.parentNode) {
           this.element.parentNode.replaceChild(clone, this.element);
@@ -1497,28 +1510,38 @@ const JSX_CACHE_SIZE = 1000;
 export const jsx = (tag, props, ...children) => {
   // Handle function components
   if (typeof tag === 'function') {
-    return tag({ ...props, children: children.flat() });
-  }
+    // For function components, merge children into props
+    const allChildren = children.flat();
+    const finalProps = props ? { ...props } : {};
+    if (allChildren.length > 0) {
+      finalProps.children = allChildren;
+    }
 
-  // Create JSX element with caching for performance
-  const cacheKey = `${tag}:${JSON.stringify(props)}:${children.length}`;
-
-  if (JSX_CACHE.has(cacheKey)) {
-    const cached = JSX_CACHE.get(cacheKey);
-    // Update children if they've changed
-    if (cached.children.length === children.length) {
-      return cached;
+    // For function components, create a component instance and get its rendered value
+    try {
+      const componentInstance = tag(finalProps);
+      if (componentInstance && componentInstance.rendered) {
+        return componentInstance.rendered.value;
+      }
+      // If it's not a component instance, call it as a function
+      return tag(finalProps);
+    } catch (error) {
+      // If it fails, try calling as a regular function
+      return tag(finalProps);
     }
   }
 
-  const element = new JSXElement(tag, props, children);
+  // Handle children - they can be in props.children or as separate arguments
+  let finalChildren = children.flat();
 
-  // Cache the element (simple LRU cache)
-  if (JSX_CACHE.size >= JSX_CACHE_SIZE) {
-    const firstKey = JSX_CACHE.keys().next().value;
-    JSX_CACHE.delete(firstKey);
+  // If children are in props, merge them with the arguments
+  if (props && props.children !== undefined) {
+    const propChildren = Array.isArray(props.children) ? props.children : [props.children];
+    finalChildren = [...propChildren, ...finalChildren];
   }
-  JSX_CACHE.set(cacheKey, element);
+
+  // Create JSX element - disable caching for now to avoid test interference
+  const element = new JSXElement(tag, props, finalChildren);
 
   return element;
 };
@@ -1528,8 +1551,22 @@ export const jsxs = (tag, props) => {
 };
 
 export const Fragment = (props) => {
-  return new JSXFragment(props.children || [], props);
+  return {
+    $$typeof: Symbol.for('pydance.fragment'),
+    children: props ? props.children : [],
+    props
+  };
 };
+
+// Fix JSXFragment to properly handle children with nested structure
+class JSXFragment {
+  constructor(children = [], props = {}) {
+    this.$$typeof = Symbol.for('pydance.fragment');
+    this.children = Array.isArray(children) ? children.filter(child => child != null) : (children != null ? [children] : []);
+    this.props = props;
+    this.key = props?.key || null;
+  }
+}
 
 // Context system
 export class Context {

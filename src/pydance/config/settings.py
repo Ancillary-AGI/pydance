@@ -149,9 +149,148 @@ class Settings:
         self.CSRF_PROTECTION = env('CSRF_PROTECTION', 'True').lower() == 'true'
         self.SECURITY_HEADERS = env('SECURITY_HEADERS', 'True').lower() == 'true'
 
-        # Logging (Laravel style)
+        # Logging Configuration (Laravel/Django style)
         self.LOG_CHANNEL = env('LOG_CHANNEL', 'stack')
         self.LOG_LEVEL = env('LOG_LEVEL', 'debug' if self.DEBUG else 'error')
+        self.LOG_STACK = env('LOG_STACK', 'single').split(',')  # Multiple channels for stack
+        self.LOG_DEPRECATIONS = env('LOG_DEPRECATIONS', 'True').lower() == 'true'
+        self.LOG_PROCESSOR = env('LOG_PROCESSOR', 'sync')  # sync or async
+
+        # Log Handlers Configuration
+        self.LOG_HANDLERS = {
+            'console': {
+                'enabled': env('LOG_CONSOLE_ENABLED', 'True').lower() == 'true',
+                'level': env('LOG_CONSOLE_LEVEL', self.LOG_LEVEL),
+                'formatter': env('LOG_CONSOLE_FORMATTER', 'colored'),
+                'stream': env('LOG_CONSOLE_STREAM', 'stdout'),
+            },
+            'file': {
+                'enabled': env('LOG_FILE_ENABLED', 'True').lower() == 'true',
+                'level': env('LOG_FILE_LEVEL', 'info'),
+                'formatter': env('LOG_FILE_FORMATTER', 'detailed'),
+                'filename': env('LOG_FILE_PATH', 'logs/pydance.log'),
+                'max_bytes': env('LOG_FILE_MAX_BYTES', 10*1024*1024),  # 10MB
+                'backup_count': env('LOG_FILE_BACKUP_COUNT', 5),
+                'encoding': env('LOG_FILE_ENCODING', 'utf-8'),
+            },
+            'error_file': {
+                'enabled': env('LOG_ERROR_FILE_ENABLED', 'True').lower() == 'true',
+                'level': env('LOG_ERROR_LEVEL', 'error'),
+                'formatter': env('LOG_ERROR_FORMATTER', 'detailed'),
+                'filename': env('LOG_ERROR_PATH', 'logs/pydance-error.log'),
+                'max_bytes': env('LOG_ERROR_MAX_BYTES', 10*1024*1024),
+                'backup_count': env('LOG_ERROR_BACKUP_COUNT', 5),
+                'encoding': env('LOG_ERROR_ENCODING', 'utf-8'),
+            },
+            'json_file': {
+                'enabled': env('LOG_JSON_ENABLED', 'False').lower() == 'true',
+                'level': env('LOG_JSON_LEVEL', 'info'),
+                'formatter': env('LOG_JSON_FORMATTER', 'json'),
+                'filename': env('LOG_JSON_PATH', 'logs/pydance.json'),
+                'max_bytes': env('LOG_JSON_MAX_BYTES', 50*1024*1024),  # 50MB
+                'backup_count': env('LOG_JSON_BACKUP_COUNT', 10),
+                'encoding': env('LOG_JSON_ENCODING', 'utf-8'),
+            },
+            'syslog': {
+                'enabled': env('LOG_SYSLOG_ENABLED', 'False').lower() == 'true',
+                'level': env('LOG_SYSLOG_LEVEL', 'info'),
+                'formatter': env('LOG_SYSLOG_FORMATTER', 'simple'),
+                'address': env('LOG_SYSLOG_ADDRESS', '/dev/log'),
+                'facility': env('LOG_SYSLOG_FACILITY', 'user'),
+            },
+            'email': {
+                'enabled': env('LOG_EMAIL_ENABLED', 'False').lower() == 'true',
+                'level': env('LOG_EMAIL_LEVEL', 'error'),
+                'formatter': env('LOG_EMAIL_FORMATTER', 'detailed'),
+                'mailhost': env('LOG_EMAIL_HOST', 'localhost'),
+                'fromaddr': env('LOG_EMAIL_FROM', 'noreply@pydance.dev'),
+                'toaddrs': env('LOG_EMAIL_TO', '').split(','),
+                'subject': env('LOG_EMAIL_SUBJECT', 'Pydance Application Error'),
+                'credentials': (env('LOG_EMAIL_USER', ''), env('LOG_EMAIL_PASS', '')),
+                'secure': env('LOG_EMAIL_SECURE', None),
+            },
+        }
+
+        # Log Formatters Configuration
+        self.LOG_FORMATTERS = {
+            'simple': {
+                'format': env('LOG_FORMAT_SIMPLE', '%(levelname)s: %(message)s'),
+            },
+            'detailed': {
+                'format': env('LOG_FORMAT_DETAILED', '[%(asctime)s] %(levelname)s %(name)s %(module)s.%(funcName)s:%(lineno)d - %(message)s'),
+                'datefmt': env('LOG_DATE_FORMAT', '%Y-%m-%d %H:%M:%S'),
+            },
+            'colored': {
+                '()': 'pydance.utils.logging.PydanceFormatter',
+                'format_type': 'colored',
+                'colors': env('LOG_COLORS_ENABLED', 'True').lower() == 'true',
+            },
+            'json': {
+                '()': 'pydance.utils.logging.PydanceFormatter',
+                'format_type': 'json',
+            },
+        }
+
+        # Log Filters Configuration
+        self.LOG_FILTERS = {
+            'debug_only': {
+                '()': 'pydance.utils.logging.PydanceFilter',
+                'level': 'DEBUG',
+            },
+            'production_filter': {
+                '()': 'pydance.utils.logging.PydanceFilter',
+                'exclude_modules': ['urllib3', 'requests'],
+            },
+        }
+
+        # Logger-specific configurations
+        self.LOG_LOGGERS = {
+            'pydance': {
+                'level': env('LOG_PYDANCE_LEVEL', 'DEBUG'),
+                'handlers': env('LOG_PYDANCE_HANDLERS', 'console,file').split(','),
+                'propagate': env('LOG_PYDANCE_PROPAGATE', 'False').lower() == 'true',
+            },
+            'pydance.db': {
+                'level': env('LOG_DB_LEVEL', 'INFO'),
+                'handlers': env('LOG_DB_HANDLERS', 'console,file').split(','),
+                'propagate': env('LOG_DB_PROPAGATE', 'False').lower() == 'true',
+            },
+            'pydance.auth': {
+                'level': env('LOG_AUTH_LEVEL', 'INFO'),
+                'handlers': env('LOG_AUTH_HANDLERS', 'console,file').split(','),
+                'propagate': env('LOG_AUTH_PROPAGATE', 'False').lower() == 'true',
+            },
+            'pydance.graphql': {
+                'level': env('LOG_GRAPHQL_LEVEL', 'INFO'),
+                'handlers': env('LOG_GRAPHQL_HANDLERS', 'console,file').split(','),
+                'propagate': env('LOG_GRAPHQL_PROPAGATE', 'False').lower() == 'true',
+            },
+            'pydance.cache': {
+                'level': env('LOG_CACHE_LEVEL', 'INFO'),
+                'handlers': env('LOG_CACHE_HANDLERS', 'console,file').split(','),
+                'propagate': env('LOG_CACHE_PROPAGATE', 'False').lower() == 'true',
+            },
+            'pydance.request': {
+                'level': env('LOG_REQUEST_LEVEL', 'INFO'),
+                'handlers': env('LOG_REQUEST_HANDLERS', 'console,file').split(','),
+                'propagate': env('LOG_REQUEST_PROPAGATE', 'False').lower() == 'true',
+            },
+            'pydance.error': {
+                'level': env('LOG_ERROR_LOGGER_LEVEL', 'ERROR'),
+                'handlers': env('LOG_ERROR_LOGGER_HANDLERS', 'console,error_file').split(','),
+                'propagate': env('LOG_ERROR_LOGGER_PROPAGATE', 'False').lower() == 'true',
+            },
+            'django': {  # For Django compatibility
+                'level': env('LOG_DJANGO_LEVEL', 'INFO'),
+                'handlers': env('LOG_DJANGO_HANDLERS', 'console').split(','),
+                'propagate': env('LOG_DJANGO_PROPAGATE', 'False').lower() == 'true',
+            },
+            'sqlalchemy': {  # For SQLAlchemy compatibility
+                'level': env('LOG_SQLALCHEMY_LEVEL', 'WARNING'),
+                'handlers': env('LOG_SQLALCHEMY_HANDLERS', 'console').split(','),
+                'propagate': env('LOG_SQLALCHEMY_PROPAGATE', 'False').lower() == 'true',
+            },
+        }
 
         # Static Files (Django style)
         self.STATIC_URL = env('STATIC_URL', '/static/')

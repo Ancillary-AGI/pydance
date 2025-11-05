@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Session Management System for Pydance Framework
 
@@ -26,7 +28,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from abc import ABC, abstractmethod
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SessionState(str, Enum):

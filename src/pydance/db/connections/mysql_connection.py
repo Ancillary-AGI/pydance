@@ -3,7 +3,7 @@ import aiomysql
 from contextlib import asynccontextmanager
 from pydance.db.config import DatabaseConfig
 from pydance.db.models.base import Field, StringField, IntegerField, BooleanField, DateTimeField, FieldType
-from .base_connection import DatabaseConnection
+from .base import DatabaseConnection
 
 
 class MySQLConnection(DatabaseConnection):

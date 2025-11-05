@@ -4,7 +4,7 @@ Unit tests for database connections
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from pydance.db.config import DatabaseConfig
-from pydance.db.connections.base_connection import DatabaseConnection, ConnectionState, ConnectionStats
+from pydance.db.connections.base import DatabaseConnection, ConnectionState, ConnectionStats
 
 
 class TestDatabaseConnection:

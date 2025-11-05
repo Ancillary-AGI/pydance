@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Core payment processing system for Pydance.
 Handles multiple payment providers with security and compliance features.
@@ -73,7 +75,7 @@ class PaymentProcessor:
 
     def __init__(self, config: PaymentConfig):
         self.config = config
-        self.logger = logging.getLogger("payment_processor")
+        self.logger = get_logger("payment_processor")
         self.transaction_manager = TransactionManager()
         self.security_manager = PaymentSecurity()
         self.webhook_handler = WebhookHandler(config.webhook_secret)

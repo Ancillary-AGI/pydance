@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 WebSocket P2P communication for IoT devices with Django Channels-like features.
 Provides peer-to-peer communication through WebSocket with channel layers and consumers.
@@ -225,7 +227,7 @@ class WebSocketP2P:
 
     def __init__(self, config: P2PConfig):
         self.config = config
-        self.logger = logging.getLogger("websocket_p2p")
+        self.logger = get_logger("websocket_p2p")
         self.websocket = None
         self.is_connected = False
         self.peers: Dict[str, Dict[str, Any]] = {}

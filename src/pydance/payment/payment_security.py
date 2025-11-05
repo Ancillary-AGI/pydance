@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Payment security and PCI compliance features.
 """
@@ -25,7 +27,7 @@ class PaymentSecurity:
 
     def __init__(self, config: PCICompliance):
         self.config = config
-        self.logger = logging.getLogger("payment_security")
+        self.logger = get_logger("payment_security")
 
     async def encrypt_card_data(self, card_data: Dict[str, Any]) -> str:
         """Encrypt sensitive card data."""

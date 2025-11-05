@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 PayPal payment processor implementation.
 """
@@ -16,7 +18,7 @@ class PayPalProcessor:
 
     def __init__(self, config):
         self.config = config
-        self.logger = logging.getLogger("paypal_processor")
+        self.logger = get_logger("paypal_processor")
         self.paypal = None
 
     async def initialize(self):

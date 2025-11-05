@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Internationalization and localization system for Pydance applications.
 
@@ -46,7 +48,7 @@ class TranslationManager:
         self.translations: Dict[str, Dict[str, str]] = {}
         self.current_language = self.config.default_language
         self.fallback_language = self.config.default_language
-        self.logger = logging.getLogger("translation_manager")
+        self.logger = get_logger("translation_manager")
 
         # Load translations
         self._load_translations()

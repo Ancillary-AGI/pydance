@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Event System for Pydance Framework
 
@@ -21,7 +23,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class EventPriority(int, Enum):

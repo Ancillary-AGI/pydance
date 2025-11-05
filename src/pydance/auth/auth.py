@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Authentication and Authorization system for Pydance  framework.
 Provides session management, token authentication, OAuth, and RBAC.
@@ -537,7 +539,7 @@ class AuthSecurityMiddleware:
 
     def __init__(self, config: Dict[str, Any] = None):
         self.config = config or {}
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__)
 
         # Security settings
         self.max_login_attempts = self.config.get('max_login_attempts', 5)

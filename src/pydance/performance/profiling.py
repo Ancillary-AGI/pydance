@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Advanced profiling and benchmarking system for Pydance framework.
 
@@ -31,7 +33,7 @@ from pathlib import Path
 from pydance.db.connections import DatabaseConnection
 from pydance.db.config import DatabaseConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -79,7 +81,7 @@ class PerformanceProfiler:
     """Advanced performance profiler"""
 
     def __init__(self, db_config: Optional[DatabaseConfig] = None):
-        self.logger = logging.getLogger("PerformanceProfiler")
+        self.logger = get_logger("PerformanceProfiler")
         self._active_profiles: Dict[str, cProfile.Profile] = {}
         self._memory_snapshots: Dict[str, tracemalloc.Snapshot] = {}
         self._executor = ThreadPoolExecutor(max_workers=4)
@@ -350,7 +352,7 @@ class LoadTester:
     """Advanced load testing system"""
 
     def __init__(self):
-        self.logger = logging.getLogger("LoadTester")
+        self.logger = get_logger("LoadTester")
         self._active_tests: Dict[str, asyncio.Task] = {}
 
     async def run_load_test(self, scenario: LoadTestScenario) -> BenchmarkResult:
@@ -530,7 +532,7 @@ class RegressionDetector:
 
     def __init__(self, baseline_file: str = "performance_baseline.json"):
         self.baseline_file = Path(baseline_file)
-        self.logger = logging.getLogger("RegressionDetector")
+        self.logger = get_logger("RegressionDetector")
         self.baselines: Dict[str, BenchmarkResult] = {}
 
         # Load existing baselines

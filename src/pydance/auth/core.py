@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Core Authentication Module for Pydance Framework
 
@@ -24,7 +26,7 @@ from pydance.exceptions import HTTPException, Unauthorized, Forbidden, RateLimit
 from pydance.config.settings import settings
 from pydance.events import get_event_bus
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AuthManager:

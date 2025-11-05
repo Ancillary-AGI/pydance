@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Performance optimizer for Pydance applications.
 Automatically optimizes performance based on monitoring data.
@@ -26,7 +28,7 @@ class PerformanceOptimizer:
     def __init__(self):
         self.rules: List[OptimizationRule] = []
         self.is_optimizing = False
-        self.logger = logging.getLogger("performance_optimizer")
+        self.logger = get_logger("performance_optimizer")
         self._setup_default_rules()
 
     def _setup_default_rules(self):

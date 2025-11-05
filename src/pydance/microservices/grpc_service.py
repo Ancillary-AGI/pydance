@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 gRPC Services for Pydance Framework
 
@@ -27,7 +29,7 @@ from functools import wraps
 from concurrent.futures import ThreadPoolExecutor
 import json
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class GRPCServiceType(str, Enum):
@@ -100,7 +102,7 @@ class GRPCManager:
 
     def __init__(self, config: GRPCServiceConfig = None):
         self.config = config or GRPCServiceConfig()
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__)
         self._services: Dict[str, Any] = {}
         self._server: Optional[grpc.Server] = None
         self._running = False
@@ -283,7 +285,7 @@ class GRPCClientManager:
     """gRPC client manager for service discovery and load balancing"""
 
     def __init__(self):
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__)
         self._channels: Dict[str, grpc.Channel] = {}
         self._stubs: Dict[str, Dict[str, Any]] = {}
         self._service_endpoints: Dict[str, List[str]] = {}

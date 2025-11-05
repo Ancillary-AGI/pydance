@@ -36,7 +36,7 @@ class RequiredValidator(Validator):
 
     def validate(self, value: Any, field_name: str = None) -> Any:
         if value is None or (isinstance(value, str) and not value.strip()):
-            raise ValidationError(self.message, field_name)
+            raise ValidationError(self.message, field=field_name)
         return value
 
 
@@ -57,11 +57,11 @@ class LengthValidator(Validator):
 
         if self.min_length is not None and length < self.min_length:
             message = self.message or f"Minimum length is {self.min_length}"
-            raise ValidationError(message, field_name)
+            raise ValidationError(message, field=field_name)
 
         if self.max_length is not None and length > self.max_length:
             message = self.message or f"Maximum length is {self.max_length}"
-            raise ValidationError(message, field_name)
+            raise ValidationError(message, field=field_name)
 
         return value
 
@@ -79,7 +79,7 @@ class RegexValidator(Validator):
 
         if not self.pattern.match(value):
             message = self.message or "Invalid format"
-            raise ValidationError(message, field_name)
+            raise ValidationError(message, field=field_name)
 
         return value
 
@@ -124,15 +124,15 @@ class RangeValidator(Validator):
         try:
             num_value = float(value)
         except (ValueError, TypeError):
-            raise ValidationError("Value must be numeric", field_name)
+            raise ValidationError("Value must be numeric", field=field_name)
 
         if self.min_value is not None and num_value < self.min_value:
             message = self.message or f"Value must be at least {self.min_value}"
-            raise ValidationError(message, field_name)
+            raise ValidationError(message, field=field_name)
 
         if self.max_value is not None and num_value > self.max_value:
             message = self.message or f"Value must be at most {self.max_value}"
-            raise ValidationError(message, field_name)
+            raise ValidationError(message, field=field_name)
 
         return num_value
 
@@ -147,7 +147,7 @@ class ChoiceValidator(Validator):
     def validate(self, value: Any, field_name: str = None) -> Any:
         if value not in self.choices:
             message = self.message or f"Value must be one of: {self.choices}"
-            raise ValidationError(message, field_name)
+            raise ValidationError(message, field=field_name)
         return value
 
 
@@ -169,7 +169,7 @@ class DateValidator(Validator):
         try:
             return datetime.strptime(value, self.date_format).date()
         except ValueError:
-            raise ValidationError(self.message, field_name)
+            raise ValidationError(self.message, field=field_name)
 
 
 class FileValidator(Validator):
@@ -191,7 +191,7 @@ class FileValidator(Validator):
                 ext = filename.split('.')[-1].lower() if '.' in filename else ''
                 if ext not in self.allowed_extensions:
                     message = self.message or f"File type not allowed. Allowed: {self.allowed_extensions}"
-                    raise ValidationError(message, field_name)
+                    raise ValidationError(message, field=field_name)
 
             # Check file size
             if self.max_size:
@@ -199,7 +199,7 @@ class FileValidator(Validator):
                 value.seek(0)  # Reset file pointer
                 if len(content) > self.max_size:
                     message = self.message or f"File too large. Max size: {self.max_size} bytes"
-                    raise ValidationError(message, field_name)
+                    raise ValidationError(message, field=field_name)
 
         return value
 
@@ -223,7 +223,7 @@ class Field:
         """Validate the field value"""
         if value is None or (isinstance(value, str) and not value.strip()):
             if self.required:
-                raise ValidationError("This field is required", field_name)
+                raise ValidationError("This field is required", field=field_name)
             return self.default
 
         for validator in self.validators:
@@ -459,7 +459,7 @@ class IntegerField(Field):
             try:
                 value = int(value)
             except (ValueError, TypeError):
-                raise ValidationError("Value must be an integer", field_name)
+                raise ValidationError("Value must be an integer", field=field_name)
         return super().validate(value, field_name)
 
 
@@ -475,7 +475,7 @@ class FloatField(Field):
             try:
                 value = float(value)
             except (ValueError, TypeError):
-                raise ValidationError("Value must be a number", field_name)
+                raise ValidationError("Value must be a number", field=field_name)
         return super().validate(value, field_name)
 
 

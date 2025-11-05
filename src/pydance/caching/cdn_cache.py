@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 CDN cache implementation for global content delivery.
 """
@@ -19,7 +21,7 @@ class CDNCache:
     def __init__(self, config: CacheConfig):
         self.config = config
         self.cdn_client = None
-        self.logger = logging.getLogger("cdn_cache")
+        self.logger = get_logger("cdn_cache")
 
     async def initialize(self):
         """Initialize CDN connection."""

@@ -36,7 +36,7 @@ class TestHTTPEndpoints:
         response = await client.get('/')
         assert response.status_code == 200
         data = response.json()
-        assert data['message'] == 'Welcome to Pydance '
+        assert data['message'] == 'Welcome to Pydance'
         assert data['status'] == 'ok'
 
     @pytest.mark.asyncio
@@ -63,7 +63,3 @@ class TestHTTPEndpoints:
         """Test 404 error handling"""
         response = await client.get('/nonexistent')
         assert response.status_code == 404
-
-
-
-

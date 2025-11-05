@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 MCP (Model Context Protocol) Integration Module for NeuralForge
 
@@ -10,7 +12,7 @@ import logging
 from .llm_engine import LLMEngine
 from .agent_system import NeuralAgent
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class MCPServer:

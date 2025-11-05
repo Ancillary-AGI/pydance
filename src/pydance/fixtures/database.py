@@ -7,7 +7,7 @@ import pytest
 
 from pydance.db.connections import DatabaseConnection
 from pydance.db.config import DatabaseConfig
-from pydance.models.base import BaseModel
+from pydance.db.models.base import BaseModel
 
 
 @pytest.fixture

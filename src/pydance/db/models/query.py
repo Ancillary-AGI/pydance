@@ -56,6 +56,7 @@ class QueryBuilder(Generic[T]):
         new_builder._having_params = self._having_params.copy()
         new_builder._param_counter = self._param_counter
         new_builder._lazy_loading_enabled = self._lazy_loading_enabled
+        new_builder._filter_criteria = self._filter_criteria.copy()
         return new_builder
 
     def disable_lazy_loading(self) -> 'QueryBuilder[T]':
@@ -75,12 +76,14 @@ class QueryBuilder(Generic[T]):
     def filter(self, **kwargs) -> 'QueryBuilder[T]':
         """Add filter conditions and return self for chaining"""
         # Use backend-agnostic filtering
+        print(f"DEBUG QueryBuilder.filter: kwargs={kwargs}")
         for key, value in kwargs.items():
             if '__' in key:
                 field, operator = key.split('__', 1)
                 self._add_filter_condition(field, operator, value)
             else:
                 self._add_filter_condition(key, 'eq', value)
+        print(f"DEBUG QueryBuilder.filter: _filter_criteria={self._filter_criteria}")
         return self
 
     def _add_filter_condition(self, field: str, operator: str, value: Any):

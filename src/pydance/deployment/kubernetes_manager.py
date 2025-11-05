@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Kubernetes orchestration manager for deployment.
 """
@@ -12,7 +14,7 @@ class KubernetesManager:
     """
 
     def __init__(self):
-        self.logger = logging.getLogger("kubernetes_manager")
+        self.logger = get_logger("kubernetes_manager")
 
     async def create_service(self, name: str, image: str, replicas: int, resources: Dict[str, Any]) -> bool:
         """Create Kubernetes service."""

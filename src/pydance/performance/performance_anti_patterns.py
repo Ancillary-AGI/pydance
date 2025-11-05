@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Performance Anti-Patterns and Best Practices for Pydance  Framework
 
@@ -30,7 +32,7 @@ class PerformanceAntiPatterns:
     """Detector and fixer for performance anti-patterns"""
 
     def __init__(self):
-        self.logger = logging.getLogger("PerformanceAntiPatterns")
+        self.logger = get_logger("PerformanceAntiPatterns")
         self.detected_patterns: List[AntiPattern] = []
         self._pattern_detectors = {
             "cache_stampede": self._detect_cache_stampede,

@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Advanced retry mechanisms with exponential backoff and jitter.
 """
@@ -42,7 +44,7 @@ class RetryMechanism:
 
     def __init__(self, config: RetryConfig):
         self.config = config
-        self.logger = logging.getLogger(f"retry.{config.strategy.value}")
+        self.logger = get_logger(f"retry.{config.strategy.value}")
 
     async def execute(self, func: Callable, *args, **kwargs) -> Any:
         """Execute function with retry logic."""
@@ -155,7 +157,7 @@ class RetryManager:
 
     def __init__(self):
         self.retry_mechanisms: Dict[str, RetryMechanism] = {}
-        self.logger = logging.getLogger("retry_manager")
+        self.logger = get_logger("retry_manager")
 
     def create_retry_mechanism(self, name: str, config: RetryConfig) -> RetryMechanism:
         """Create a new retry mechanism."""

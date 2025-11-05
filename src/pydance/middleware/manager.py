@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Enhanced Middleware Manager for Pydance Framework
 
@@ -23,7 +25,7 @@ from enum import Enum
 from functools import wraps
 from contextlib import asynccontextmanager
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class MiddlewarePriority(int, Enum):

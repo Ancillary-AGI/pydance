@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Enhanced observability for Pydance  framework.
 
@@ -17,7 +19,7 @@ import threading
 from pydance.microservices.service import Service, ServiceStatus
 
 # Configure logging
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

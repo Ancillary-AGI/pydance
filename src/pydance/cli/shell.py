@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Interactive shell and database shell for Pydance framework.
 Provides Django/Laravel-style shell commands for development and debugging.
@@ -27,7 +29,7 @@ class PydanceShell:
     """
 
     def __init__(self):
-        self.logger = logging.getLogger("pydance.shell")
+        self.logger = get_logger("pydance.shell")
         self.db_connection = None
         self.cache_manager = None
 
@@ -112,7 +114,7 @@ class DatabaseShell:
 
     def __init__(self, database_url: Optional[str] = None):
         self.database_url = database_url or os.getenv('DATABASE_URL')
-        self.logger = logging.getLogger("pydance.dbshell")
+        self.logger = get_logger("pydance.dbshell")
         self.connection = None
 
     async def start_dbshell(self):
@@ -238,7 +240,7 @@ class ShellCommand:
     """
 
     def __init__(self):
-        self.logger = logging.getLogger("pydance.shell_command")
+        self.logger = get_logger("pydance.shell_command")
 
     def shell(self):
         """Start the Python shell."""

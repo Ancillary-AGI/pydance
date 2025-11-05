@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Webhook handler for payment provider notifications.
 """
@@ -17,7 +19,7 @@ class WebhookHandler:
 
     def __init__(self, webhook_secret: str):
         self.webhook_secret = webhook_secret
-        self.logger = logging.getLogger("webhook_handler")
+        self.logger = get_logger("webhook_handler")
 
     async def handle_webhook(self, provider: str, payload: Dict[str, Any]) -> bool:
         """Handle webhook from payment provider."""

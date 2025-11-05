@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Structured logging system for Pydance  framework.
 """
@@ -25,7 +27,7 @@ class Logger:
         self.name = name
         self.level = level
         self.context = context or {}
-        self._logger = logging.getLogger(name)
+        self._logger = get_logger(name)
         self._logger.setLevel(level)
 
         # Remove existing handlers to avoid duplicates

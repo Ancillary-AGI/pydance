@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Enhanced microservices architecture for Pydance  framework.
 
@@ -174,7 +176,7 @@ class ServiceRegistry:
     def __init__(self, db_config: Optional[DatabaseConfig] = None):
         self.services: Dict[str, List[ServiceInstance]] = {}
         self.heartbeat_intervals: Dict[str, float] = {}
-        self.logger = logging.getLogger("ServiceRegistry")
+        self.logger = get_logger("ServiceRegistry")
         self._running = False
         self._health_check_task: Optional[asyncio.Task] = None
         self._cleanup_task: Optional[asyncio.Task] = None
@@ -414,7 +416,7 @@ class ServiceDiscovery:
 
     def __init__(self, registry: Optional[ServiceRegistry] = None):
         self.registry = registry or ServiceRegistry()
-        self.logger = logging.getLogger("ServiceDiscovery")
+        self.logger = get_logger("ServiceDiscovery")
         self._discovery_cache: Dict[str, Tuple[ServiceInstance, float]] = {}
         self._cache_ttl = 30.0  # 30 second cache TTL
 
@@ -513,7 +515,7 @@ class LoadBalancer:
 
     def __init__(self, strategy: str = "round_robin"):
         self.strategy = strategy
-        self.logger = logging.getLogger("LoadBalancer")
+        self.logger = get_logger("LoadBalancer")
         self._round_robin_counters: Dict[str, int] = {}
         self._healthy_instances: Dict[str, List[ServiceInstance]] = {}
 

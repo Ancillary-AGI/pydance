@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Transaction manager for payment processing.
 Handles transaction storage, retrieval, and lifecycle management.
@@ -17,7 +19,7 @@ class TransactionManager:
 
     def __init__(self):
         self.transactions: Dict[str, Any] = {}
-        self.logger = logging.getLogger("transaction_manager")
+        self.logger = get_logger("transaction_manager")
         self._lock = asyncio.Lock()
 
     async def create_transaction(self, transaction) -> bool:

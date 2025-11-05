@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Migration framework integration for Pydance.
 Provides high-level migration functions and model introspection.
@@ -23,7 +25,7 @@ class MigrationFramework:
     def __init__(self, db_config: DatabaseConfig = None):
         self.db_config = db_config
         self.migration_manager = MigrationManager(db_config)
-        self.logger = logging.getLogger("migration_framework")
+        self.logger = get_logger("migration_framework")
 
     async def initialize(self):
         """Initialize the migration framework"""

@@ -463,7 +463,8 @@ class UUIDField(Field):
     """UUID field with automatic generation"""
 
     def __init__(self, **kwargs):
-        if 'default' not in kwargs:
+        # Don't set default for primary keys - let database handle auto-generation
+        if 'default' not in kwargs and not kwargs.get('primary_key', False):
             kwargs['default'] = str(uuid.uuid4())
         super().__init__(FieldType.UUID, **kwargs)
 
@@ -800,11 +801,18 @@ class BaseModel(metaclass=ModelMeta):
                         value = None
                 elif field.default is not None:
                     value = field.default
-                elif field.primary_key and field.field_type in [FieldType.UUID, FieldType.TEXT]:
-                    value = str(uuid.uuid4())
+                # Don't auto-generate primary keys in __init__ - let the database handle it
 
             if value is not None:
                 try:
+                    # Special handling for enum fields - convert strings to enum objects
+                    if isinstance(field, EnumField) and isinstance(value, str):
+                        # Convert string to enum object
+                        for enum_member in field.enum_class:
+                            if enum_member.value == value:
+                                value = enum_member
+                                break
+
                     validated_value = field.validate(value)
                     setattr(self, col_name, validated_value)
                 except Exception as e:
@@ -925,6 +933,14 @@ class BaseModel(metaclass=ModelMeta):
         return None
 
     @classmethod
+    def get_db_connection(cls):
+        """Get database connection for this model"""
+        if cls._db_config is not None:
+            from pydance.db.connections import DatabaseConnection
+            return DatabaseConnection.get_instance(cls._db_config)
+        return None
+
+    @classmethod
     def query(cls):
         """Return a new QueryBuilder instance"""
         from pydance.db.models.query import QueryBuilder
@@ -948,19 +964,53 @@ class BaseModel(metaclass=ModelMeta):
             if hasattr(self, 'created_at'):
                 self.created_at = now
 
-        # Convert instance to dict for backend
+        # Convert instance to dict for backend - only include actual fields
         if update_fields:
             # Only include specified fields plus updated_at
             data = {}
             for field in update_fields:
-                if hasattr(self, field):
+                if field in self._fields and hasattr(self, field):
                     value = getattr(self, field)
                     if isinstance(value, (datetime, date, time)):
                         data[field] = value.isoformat()
                     else:
                         data[field] = value
         else:
-            data = self.to_dict()
+            # Only include actual fields, not properties
+            data = {}
+            for field_name, field in self._fields.items():
+                value = getattr(self, field_name, None)
+                if value is not None:
+                    if isinstance(field, (DateTimeField, DateField, TimeField)):
+                        if isinstance(value, (datetime, date, time)):
+                            data[field_name] = value.isoformat()
+                        else:
+                            data[field_name] = value
+                    elif isinstance(field, (DecimalField, FloatField)):
+                        if isinstance(value, Decimal):
+                            data[field_name] = float(value)
+                        else:
+                            data[field_name] = value
+                    elif isinstance(field, UUIDField):
+                        if isinstance(value, uuid.UUID):
+                            data[field_name] = str(value)
+                        elif isinstance(value, str):
+                            data[field_name] = value
+                        else:
+                            data[field_name] = str(value) if value else None
+                    elif isinstance(field, JSONField):
+                        if isinstance(value, str):
+                            data[field_name] = value
+                        else:
+                            data[field_name] = json.dumps(value)
+                    elif isinstance(field, EnumField):
+                        # Handle enum fields - convert to value for database
+                        if hasattr(value, 'value'):
+                            data[field_name] = value.value
+                        else:
+                            data[field_name] = value
+                    else:
+                        data[field_name] = value
 
         # Get primary key field name
         primary_key = self.get_primary_key()
@@ -973,10 +1023,24 @@ class BaseModel(metaclass=ModelMeta):
             if not success:
                 raise ValueError("Record not found or not modified")
         else:
-            # Insert new record
+            # Insert new record - generate UUID for primary key if needed
+            if primary_key:
+                primary_field = self._fields[primary_key]
+                if isinstance(primary_field, UUIDField) and primary_key not in data:
+                    # Generate UUID for primary key
+                    data[primary_key] = str(uuid.uuid4())
+                    setattr(self, primary_key, data[primary_key])
+
             result = await db.insert_one(self.__class__, data)
-            if primary_key and result:
-                setattr(self, primary_key, result)
+            if primary_key:
+                primary_field = self._fields[primary_key]
+                if isinstance(primary_field, UUIDField):
+                    # For UUID fields, we generated the UUID above, so use that
+                    if primary_key in data:
+                        setattr(self, primary_key, data[primary_key])
+                elif result is not None and isinstance(result, int):
+                    # For autoincrement fields, result is the new ID
+                    setattr(self, primary_key, result)
 
     @classmethod
     async def get(cls, id: Union[int, str]):
@@ -1003,11 +1067,12 @@ class BaseModel(metaclass=ModelMeta):
         if not primary_key or not hasattr(self, primary_key):
             raise ValueError("Cannot delete object without primary key")
 
+        from pydance.db.connections import DatabaseConnection
         db = DatabaseConnection.get_instance(self._db_config)
 
         # Use backend delete method
         filters = {primary_key: getattr(self, primary_key)}
-        success = await db.backend.delete_one(self.__class__, filters)
+        success = await db.delete_one(self.__class__, filters)
         if not success:
             raise ValueError("Record not found")
 

@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Circuit Breaker Pattern Implementation for Pydance
 
@@ -53,7 +55,7 @@ class CircuitBreaker:
         self.state = CircuitBreakerState.CLOSED
         self.metrics = CircuitBreakerMetrics()
         self.last_state_change = time.time()
-        self.logger = logging.getLogger(f"CircuitBreaker-{config.name}")
+        self.logger = get_logger(f"CircuitBreaker-{config.name}")
 
     def _should_attempt_reset(self) -> bool:
         """Check if we should attempt to reset the circuit"""
@@ -180,7 +182,7 @@ class CircuitBreakerRegistry:
 
     def __init__(self):
         self._breakers: Dict[str, CircuitBreaker] = {}
-        self.logger = logging.getLogger("CircuitBreakerRegistry")
+        self.logger = get_logger("CircuitBreakerRegistry")
 
     def get_circuit_breaker(self, name: str, config: Optional[CircuitBreakerConfig] = None) -> CircuitBreaker:
         """Get or create circuit breaker"""

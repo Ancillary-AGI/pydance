@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Economy System Module for NeuralForge
 
@@ -10,7 +12,7 @@ import json
 import logging
 from decimal import Decimal, ROUND_DOWN
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class Transaction:

@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 In-memory cache implementation with LRU eviction.
 """
@@ -33,7 +35,7 @@ class MemoryCache:
         self.cache: Dict[str, CacheItem] = {}
         self.access_order: List[Tuple[float, str]] = []  # (access_time, key) for LRU
         self.current_size = 0
-        self.logger = logging.getLogger("memory_cache")
+        self.logger = get_logger("memory_cache")
         self._lock = asyncio.Lock()
 
     async def get(self, key: str) -> Optional[Any]:

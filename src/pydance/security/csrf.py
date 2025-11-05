@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 CSRF (Cross-Site Request Forgery) protection system.
 """
@@ -28,7 +30,7 @@ class CSRFProtection:
         self.token_expiry = token_expiry  # seconds
         self.tokens: Dict[str, CSRFToken] = {}  # token -> CSRFToken
         self.session_tokens: Dict[str, str] = {}  # session_id -> token
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__)
 
     def generate_token(self, session_id: Optional[str] = None) -> str:
         """Generate a new CSRF token."""

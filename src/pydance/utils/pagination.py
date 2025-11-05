@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Unified Pagination Module for Pydance  Framework.
 
@@ -12,7 +14,7 @@ from typing import Dict, Any, Optional, List, Union, TypeVar, Generic, Callable
 from urllib.parse import urlencode, urlparse, parse_qs, urlunparse
 import logging
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 T = TypeVar('T')
 

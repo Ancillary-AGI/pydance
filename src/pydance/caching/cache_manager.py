@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Advanced cache manager with multiple cache levels and strategies.
 """
@@ -93,7 +95,7 @@ class CacheManager:
         self.config = config
         self.caches: Dict[CacheLevel, Any] = {}
         self.metrics = CacheMetricsCollector()
-        self.logger = logging.getLogger("cache_manager")
+        self.logger = get_logger("cache_manager")
         self._lock = asyncio.Lock()
 
     async def initialize(self):

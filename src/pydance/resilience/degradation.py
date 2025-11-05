@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Graceful degradation system for maintaining service availability.
 """
@@ -34,7 +36,7 @@ class GracefulDegradation:
     def __init__(self):
         self.rules: List[DegradationRule] = []
         self.cache: Dict[str, Tuple[Any, float]] = {}
-        self.logger = logging.getLogger("graceful_degradation")
+        self.logger = get_logger("graceful_degradation")
 
     def add_rule(self, rule: DegradationRule):
         """Add a degradation rule."""

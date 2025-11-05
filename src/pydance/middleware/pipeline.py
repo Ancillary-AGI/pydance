@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Enhanced middleware pipeline system for Pydance Framework.
 
@@ -338,7 +340,7 @@ def create_logging_middleware(logger_name: str = "pipeline"):
     """Create middleware that logs requests"""
     import logging
 
-    logger = logging.getLogger(logger_name)
+    logger = get_logger(logger_name)
 
     @middleware(PipelineStage.REQUEST_HANDLING)
     async def logging_middleware(request, call_next):

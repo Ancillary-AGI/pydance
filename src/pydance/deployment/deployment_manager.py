@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Deployment manager for automated application deployment.
 Handles containerization, orchestration, and deployment strategies.
@@ -73,7 +75,7 @@ class DeploymentManager:
 
     def __init__(self, config: DeploymentConfig):
         self.config = config
-        self.logger = logging.getLogger("deployment_manager")
+        self.logger = get_logger("deployment_manager")
         self.docker_manager = DockerManager()
         self.kubernetes_manager = KubernetesManager()
         self.deployment_monitor = DeploymentMonitor()

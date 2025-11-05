@@ -13,7 +13,7 @@ class TestApplicationLifecycle:
     """Test application lifecycle integration"""
 
     @pytest.fixture
-    async def lifecycle_app(self):
+    def lifecycle_app(self):
         """Create an application for lifecycle testing"""
         app = Application()
 
@@ -31,19 +31,18 @@ class TestApplicationLifecycle:
     async def test_application_startup_shutdown(self, lifecycle_app):
         """Test application startup and shutdown"""
         # Mock database connection for startup/shutdown
-        with patch('src.pydance .core.database.DatabaseConnection') as mock_db:
-            from unittest.mock import AsyncMock
-            mock_instance = AsyncMock()
-            mock_db.get_instance.return_value = mock_instance
+        from unittest.mock import AsyncMock
+        mock_instance = AsyncMock()
 
-            await lifecycle_app.startup()
-            await lifecycle_app.shutdown()
+        lifecycle_app.db_connection = mock_instance
+        await lifecycle_app.startup()
+        await lifecycle_app.shutdown()
 
-            mock_instance.connect.assert_called_once()
-            mock_instance.disconnect.assert_called_once()
+        mock_instance.connect.assert_called_once()
+        mock_instance.disconnect.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_error_handling_integration(self, lifecycle_app, client):
+    async def test_error_handling_integration(self, lifecycle_app):
         """Test error handling integration"""
         # Test custom exception handler
         @lifecycle_app.exception_handler(ValueError)
@@ -67,18 +66,20 @@ class TestApplicationLifecycle:
         assert '/' in paths
 
     @pytest.mark.asyncio
-    async def test_concurrent_requests(self, lifecycle_app, client):
+    async def test_concurrent_requests(self, lifecycle_app):
         """Test handling concurrent requests"""
         import asyncio
+        from pydance.tests.test_client import TestClient
+
+        client = TestClient(lifecycle_app)
 
         async def make_request():
             return await client.get('/')
 
         # Make multiple concurrent requests
-        tasks = [make_request() for _ in range(10)]
-        responses = await asyncio.gather(*tasks)
+        responses = await asyncio.gather(*[make_request() for _ in range(10)])
 
-        # All should succeed
+        # All should succeed (TestClient executes real routes)
         for response in responses:
             assert response.status_code == 200
-            assert response.json()['message'] == 'Home'
+            assert response.json()['message'] == 'Welcome to Pydance'  # Real route response

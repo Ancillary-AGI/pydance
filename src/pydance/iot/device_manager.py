@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Device manager for IoT devices.
 Manages device registration, authentication, and communication.
@@ -47,7 +49,7 @@ class DeviceManager:
 
     def __init__(self, config: DeviceConfig):
         self.config = config
-        self.logger = logging.getLogger("device_manager")
+        self.logger = get_logger("device_manager")
         self.devices: Dict[str, IoTDevice] = {}
         self.device_handlers: Dict[str, List[callable]] = {}
 

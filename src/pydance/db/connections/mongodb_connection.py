@@ -3,7 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from contextlib import asynccontextmanager
 from pymongo import ASCENDING, DESCENDING
 from bson import ObjectId
-from pydance.db.connections.base_connection import DatabaseConnection
+from pydance.db.connections.base import DatabaseConnection
 from pydance.db.config import DatabaseConfig
 from pydance.db.models.base import Field
 

@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Stripe payment processor implementation.
 """
@@ -16,7 +18,7 @@ class StripeProcessor:
 
     def __init__(self, config):
         self.config = config
-        self.logger = logging.getLogger("stripe_processor")
+        self.logger = get_logger("stripe_processor")
         self.stripe = None
 
     async def initialize(self):

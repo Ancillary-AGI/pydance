@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Base service class for Pydance framework.
 
@@ -14,7 +16,7 @@ from datetime import datetime
 
 from pydance.exceptions import BaseFrameworkException
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 T = TypeVar('T')
 
@@ -71,7 +73,7 @@ class ServiceBase(ABC):
 
     def __init__(self, config: ServiceConfig = None):
         self.config = config or ServiceConfig(name=self.__class__.__name__)
-        self.logger = logging.getLogger(f"{self.__class__.__name__}")
+        self.logger = get_logger(f"{self.__class__.__name__}")
         self._dependencies: Dict[str, 'ServiceBase'] = {}
         self._is_initialized = False
         self._is_started = False

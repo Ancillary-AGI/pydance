@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Database Migration System - Database Agnostic Migration Framework
 
@@ -25,7 +27,7 @@ from pathlib import Path
 from abc import ABC, abstractmethod
 
 from pydance.db.connections import DatabaseConnection
-from pydance.db.connections.base_connection import DatabaseBackend
+from pydance.db.connections.base import DatabaseBackend
 from pydance.db.config import DatabaseConfig
 from pydance.db.models.base import BaseModel, Field
 
@@ -160,6 +162,24 @@ class Migration:
     rollback_sql: Optional[str] = None
     migration_file: Optional[str] = None
     migration_type: str = "auto"  # auto, manual, data
+    model_class: Optional[type] = None  # Addition for test compatibility
+    from_version: int = 0  # Addition for test compatibility
+
+    def is_upgrade(self) -> bool:
+        """Check if this is an upgrade migration (test compatibility)"""
+        return not any(op.operation_type == MigrationOperationType.DELETE_MODEL for op in self.operations)
+
+    def is_downgrade(self) -> bool:
+        """Check if this is a downgrade migration (test compatibility)"""
+        return not self.is_upgrade()
+
+    def get_added_columns(self) -> List[str]:
+        """Get names of columns added in this migration (test compatibility)"""
+        columns = []
+        for op in self.operations:
+            if op.operation_type == MigrationOperationType.ADD_FIELD:
+                columns.append(op.field_name)
+        return columns
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert migration to dictionary"""
@@ -224,7 +244,7 @@ class Migration:
 
     async def execute(self, db_connection: DatabaseBackend) -> bool:
         """Execute migration operations"""
-        logger = logging.getLogger("migration_executor")
+        logger = get_logger("migration_executor")
 
         try:
             logger.info(f"Executing migration {self.id}: {self.name}")
@@ -484,7 +504,7 @@ class MigrationGenerator:
     def __init__(self, migrations_dir: Path = None):
         self.migrations_dir = migrations_dir or Path("migrations")
         self.migrations_dir.mkdir(exist_ok=True)
-        self.logger = logging.getLogger("migration_generator")
+        self.logger = get_logger("migration_generator")
 
     def generate_migration_id(self) -> str:
         """Generate unique migration ID"""
@@ -598,7 +618,7 @@ class MigrationExecutor:
 
     def __init__(self, db_connection: DatabaseConnection):
         self.db_connection = db_connection
-        self.logger = logging.getLogger("migration_executor")
+        self.logger = get_logger("migration_executor")
         self.results: List[MigrationResult] = []
 
     async def execute_migration(self, migration: Migration, db_connection: DatabaseConnection) -> MigrationResult:

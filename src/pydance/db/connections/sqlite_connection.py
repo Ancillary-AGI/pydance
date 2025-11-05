@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 SQLite Database Backend
 
@@ -36,11 +38,11 @@ import logging
 import threading
 from decimal import Decimal
 
-from .base_connection import DatabaseConnection
+from .base import DatabaseConnection
 from pydance.db.config import DatabaseConfig
 from pydance.db.models.base import Field, StringField, IntegerField, BooleanField, DateTimeField, FieldType
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SQLiteConnection(DatabaseConnection):
@@ -66,27 +68,54 @@ class SQLiteConnection(DatabaseConnection):
 
     def __init__(self, config: DatabaseConfig):
         super().__init__(config)
-        self.connection = None
+        self._connected = False
+        self._database_path = None
+        self._connection_lock = threading.Lock()
+        self._connections = {}  # Thread-local connections
 
     async def connect(self) -> None:
-        """Connect to the database"""
-        self.connection = sqlite3.connect(self.config.name)
-        self.connection.row_factory = sqlite3.Row
-        self.connection.execute("PRAGMA foreign_keys = ON")
+        """Connect to the database - wrapper for synchronous connect"""
+        if not self._connected:
+            # Access the correct database path from config
+            database_path = getattr(self.config, 'name', ':memory:')
+            if database_path == '' or database_path is None:
+                database_path = ':memory:'
+            self._database_path = database_path
+            self._connected = True
+        return None  # Return None but make it an async method
+
+    def _get_connection(self) -> sqlite3.Connection:
+        """Get or create a thread-local connection"""
+        thread_id = threading.get_ident()
+        if thread_id not in self._connections:
+            conn = sqlite3.connect(self._database_path)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA foreign_keys = ON")
+            self._connections[thread_id] = conn
+        return self._connections[thread_id]
 
     async def disconnect(self) -> None:
         """Disconnect from the database"""
-        if self.connection:
-            self.connection.close()
+        for conn in self._connections.values():
+            conn.close()
+        self._connections.clear()
 
     async def execute_query(self, query: str, params: tuple = None) -> Any:
-        """Execute a SQL query"""
-        cursor = self.connection.cursor()
-        if params:
-            cursor.execute(query, params)
-        else:
-            cursor.execute(query)
-        return cursor
+        """Execute a SQL query in the same thread as connection creation"""
+        import asyncio
+
+        def _execute():
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            if params:
+                cursor.execute(query, params)
+            else:
+                cursor.execute(query)
+            return cursor
+
+        # Execute in the same thread pool to avoid SQLite threading issues
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, _execute)
 
     async def execute_raw(self, query: str, params: tuple = None) -> Any:
         """Execute a raw query and return cursor for advanced usage (Django-like cursor API)."""
@@ -94,32 +123,52 @@ class SQLiteConnection(DatabaseConnection):
 
     async def begin_transaction(self) -> Any:
         """Begin SQLite transaction."""
-        cursor = self.connection.cursor()
-        cursor.execute("BEGIN")
-        return cursor
+        def _begin():
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute("BEGIN")
+            return cursor
+
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, _begin)
 
     async def commit_transaction(self, transaction: Any) -> None:
         """Commit SQLite transaction."""
-        self.connection.commit()
+        def _commit():
+            conn = self._get_connection()
+            conn.commit()
+
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, _commit)
 
     async def rollback_transaction(self, transaction: Any) -> None:
         """Rollback SQLite transaction."""
-        self.connection.rollback()
+        def _rollback():
+            conn = self._get_connection()
+            conn.rollback()
+
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, _rollback)
 
     async def execute_in_transaction(self, query: str, params: tuple = None) -> Any:
         """Execute SQLite query within transaction context."""
-        try:
-            cursor = self.connection.cursor()
-            cursor.execute("BEGIN")
-            if params:
-                cursor.execute(query, params)
-            else:
-                cursor.execute(query)
-            self.connection.commit()
-            return cursor
-        except Exception as e:
-            self.connection.rollback()
-            raise e
+        def _execute_in_transaction():
+            conn = self._get_connection()
+            try:
+                cursor = conn.cursor()
+                cursor.execute("BEGIN")
+                if params:
+                    cursor.execute(query, params)
+                else:
+                    cursor.execute(query)
+                conn.commit()
+                return cursor
+            except Exception as e:
+                conn.rollback()
+                raise e
+
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, _execute_in_transaction)
 
     async def _create_connection(self) -> Any:
         """Create a new SQLite connection for pooling"""
@@ -145,18 +194,24 @@ class SQLiteConnection(DatabaseConnection):
             fields.append(field_def)
 
         query = f"CREATE TABLE IF NOT EXISTS {model_class.get_table_name()} ({', '.join(fields)})"
-        await self.execute_query(query)
-        self.connection.commit()
+
+        def _create_and_commit():
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(query)
+            conn.commit()
+            return cursor
+
+        # Execute in the same thread pool to avoid SQLite threading issues
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, _create_and_commit)
 
     @asynccontextmanager
     async def get_connection(self) -> AsyncGenerator[Any, None]:
         """Get a database connection context manager"""
-        if not self.connection:
-            await self.connect()
-        try:
-            yield self.connection
-        finally:
-            pass  # SQLite connections are not pooled
+        # For SQLite, we don't need to manage connections in the same way
+        # since we use thread-local connections
+        yield None
 
     async def get_param_placeholder(self, index: int) -> str:
         """Get parameter placeholder for SQLite"""
@@ -186,46 +241,82 @@ class SQLiteConnection(DatabaseConnection):
         """Insert a single record"""
         fields = list(data.keys())
         values = list(data.values())
-        placeholders = ', '.join([self.get_param_placeholder(i+1) for i in range(len(fields))])
+        # For SQLite, parameter placeholder is always "?"
+        placeholder = "?"
+        placeholders = ', '.join([placeholder for _ in range(len(fields))])
         query = f"INSERT INTO {model_class.get_table_name()} ({', '.join(fields)}) VALUES ({placeholders})"
 
-        cursor = await self.execute_query(query, tuple(values))
-        self.connection.commit()
-        return cursor.lastrowid
+        # Convert parameter values to SQLite-compatible types
+        params = tuple([self._convert_param_value(v) for v in values])
+
+        def _insert_and_commit():
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(query, params)
+            conn.commit()
+            return cursor.lastrowid
+
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, _insert_and_commit)
 
     async def update_one(self, model_class: Type, filters: Dict[str, Any], data: Dict[str, Any]) -> bool:
         """Update a single record"""
-        set_clause = ', '.join([f"{k} = {self.get_param_placeholder(i+1)}" for i, k in enumerate(data.keys())])
-        where_clause = ' AND '.join([f"{k} = {self.get_param_placeholder(len(data) + i + 1)}" for i, k in enumerate(filters.keys())])
+        # For SQLite, parameter placeholder is always "?"
+        placeholder = "?"
+        set_clause = ', '.join([f"{k} = {placeholder}" for k in data.keys()])
+        where_clause = ' AND '.join([f"{k} = {placeholder}" for k in filters.keys()])
         query = f"UPDATE {model_class.get_table_name()} SET {set_clause} WHERE {where_clause}"
 
-        params = tuple(list(data.values()) + list(filters.values()))
-        cursor = await self.execute_query(query, params)
-        self.connection.commit()
-        return cursor.rowcount > 0
+        # Convert parameter values to SQLite-compatible types
+        params = tuple([self._convert_param_value(v) for v in list(data.values()) + list(filters.values())])
+
+        def _update_and_commit():
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(query, params)
+            conn.commit()
+            return cursor.rowcount > 0
+
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, _update_and_commit)
 
     async def delete_one(self, model_class: Type, filters: Dict[str, Any]) -> bool:
         """Delete a single record"""
-        where_clause = ' AND '.join([f"{k} = {self.get_param_placeholder(i+1)}" for i, k in enumerate(filters.keys())])
+        # For SQLite, parameter placeholder is always "?"
+        placeholder = "?"
+        where_clause = ' AND '.join([f"{k} = {placeholder}" for k in filters.keys()])
         query = f"DELETE FROM {model_class.get_table_name()} WHERE {where_clause}"
 
-        cursor = await self.execute_query(query, tuple(filters.values()))
-        self.connection.commit()
-        return cursor.rowcount > 0
+        params = tuple([self._convert_param_value(v) for v in filters.values()])
+
+        def _delete_and_commit():
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(query, params)
+            conn.commit()
+            return cursor.rowcount > 0
+
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, _delete_and_commit)
 
     async def find_one(self, model_class: Type, filters: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Find a single record"""
-        where_clause = ' AND '.join([f"{k} = {self.get_param_placeholder(i+1)}" for i, k in enumerate(filters.keys())])
+        # For SQLite, parameter placeholder is always "?"
+        placeholder = "?"
+        where_clause = ' AND '.join([f"{k} = {placeholder}" for k in filters.keys()])
         query = f"SELECT * FROM {model_class.get_table_name()} WHERE {where_clause} LIMIT 1"
 
-        cursor = await self.execute_query(query, tuple(filters.values()))
+        params = tuple([self._convert_param_value(v) for v in filters.values()])
+        cursor = await self.execute_query(query, params)
         row = cursor.fetchone()
         return dict(row) if row else None
 
     async def find_many(self, model_class: Type, filters: Dict[str, Any], limit: Optional[int] = None,
                        offset: Optional[int] = None, sort: Optional[List[Tuple[str, int]]] = None) -> List[Dict[str, Any]]:
         """Find multiple records"""
-        where_clause = ' AND '.join([f"{k} = {self.get_param_placeholder(i+1)}" for i, k in enumerate(filters.keys())]) if filters else ""
+        # For SQLite, parameter placeholder is always "?"
+        placeholder = "?"
+        where_clause = ' AND '.join([f"{k} = {placeholder}" for k in filters.keys()]) if filters else ""
         order_clause = ""
         if sort:
             order_parts = [f"{field} {'DESC' if direction == -1 else 'ASC'}" for field, direction in sort]
@@ -239,18 +330,22 @@ class SQLiteConnection(DatabaseConnection):
             query += f" WHERE {where_clause}"
         query += order_clause + limit_clause + offset_clause
 
-        cursor = await self.execute_query(query, tuple(filters.values()) if filters else None)
+        params = tuple([self._convert_param_value(v) for v in filters.values()]) if filters else None
+        cursor = await self.execute_query(query, params)
         rows = cursor.fetchall()
         return [dict(row) for row in rows]
 
     async def count(self, model_class: Type, filters: Dict[str, Any]) -> int:
         """Count records matching filters"""
-        where_clause = ' AND '.join([f"{k} = {self.get_param_placeholder(i+1)}" for i, k in enumerate(filters.keys())]) if filters else ""
+        # For SQLite, parameter placeholder is always "?"
+        placeholder = "?"
+        where_clause = ' AND '.join([f"{k} = {placeholder}" for k in filters.keys()]) if filters else ""
         query = f"SELECT COUNT(*) as count FROM {model_class.get_table_name()}"
         if where_clause:
             query += f" WHERE {where_clause}"
 
-        cursor = await self.execute_query(query, tuple(filters.values()) if filters else None)
+        params = tuple([self._convert_param_value(v) for v in filters.values()]) if filters else None
+        cursor = await self.execute_query(query, params)
         row = cursor.fetchone()
         return row['count'] if row else 0
 
@@ -359,6 +454,22 @@ class SQLiteConnection(DatabaseConnection):
                     results.append(result)
 
         return results
+    def _convert_param_value(self, value: Any) -> Any:
+        """Convert parameter values to database-compatible types"""
+        if hasattr(value, 'value'):  # Enum
+            return value.value
+        elif hasattr(value, 'name'):  # Enum with name attribute
+            return value.name
+        elif isinstance(value, bool):
+            return 1 if value else 0
+        elif isinstance(value, (int, float, str)):
+            return value
+        elif value is None:
+            return None
+        else:
+            # For complex objects, try to convert to string
+            return str(value)
+
     def _format_default(self, default: Any) -> str:
         """Format default value for SQLite"""
         if isinstance(default, str):
@@ -385,8 +496,16 @@ class SQLiteConnection(DatabaseConnection):
                 UNIQUE(model_name, version)
             )
         '''
-        await self.execute_query(query)
-        self.connection.commit()
+
+        def _create_and_commit():
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(query)
+            conn.commit()
+            return cursor
+
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, _create_and_commit)
 
     async def insert_migration_record(self, model_name: str, version: int, schema_definition: dict, operations: dict, migration_id: str = None) -> None:
         """Insert a migration record for SQLite"""
@@ -403,8 +522,16 @@ class SQLiteConnection(DatabaseConnection):
                 VALUES (?, ?, ?, ?)
             '''
             params = (model_name, version, json.dumps(schema_definition), json.dumps(operations))
-        await self.execute_query(query, params)
-        self.connection.commit()
+
+        def _insert_and_commit():
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(query, params)
+            conn.commit()
+            return cursor
+
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, _insert_and_commit)
 
     async def get_applied_migrations(self) -> Dict[str, int]:
         """Get all applied migrations for SQLite"""
@@ -420,20 +547,44 @@ class SQLiteConnection(DatabaseConnection):
     async def delete_migration_record(self, model_name: str, version: int) -> None:
         """Delete a migration record for SQLite"""
         query = "DELETE FROM migrations WHERE model_name = ? AND version = ?"
-        await self.execute_query(query, (model_name, version))
-        self.connection.commit()
+
+        def _delete_and_commit():
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(query, (model_name, version))
+            conn.commit()
+            return cursor
+
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, _delete_and_commit)
 
     async def drop_table(self, table_name: str) -> None:
         """Drop a table for SQLite"""
         query = f"DROP TABLE IF EXISTS {table_name}"
-        await self.execute_query(query)
-        self.connection.commit()
+
+        def _drop_and_commit():
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(query)
+            conn.commit()
+            return cursor
+
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, _drop_and_commit)
 
     async def add_column(self, table_name: str, column_name: str, column_definition: str) -> None:
         """Add a column to a table for SQLite"""
         query = f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition}"
-        await self.execute_query(query)
-        self.connection.commit()
+
+        def _add_and_commit():
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(query)
+            conn.commit()
+            return cursor
+
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, _add_and_commit)
 
     async def drop_column(self, table_name: str, column_name: str) -> None:
         """
@@ -448,43 +599,49 @@ class SQLiteConnection(DatabaseConnection):
 
         This ensures all column constraints (NOT NULL, DEFAULT, PRIMARY KEY, etc.) are preserved.
         """
-        # SQLite doesn't support DROP COLUMN directly, so we need to recreate the table
-        temp_table = f"{table_name}_temp"
+        def _drop_column():
+            conn = self._get_connection()
+            # SQLite doesn't support DROP COLUMN directly, so we need to recreate the table
+            temp_table = f"{table_name}_temp"
 
-        # Get current schema
-        cursor = await self.execute_query(f"PRAGMA table_info({table_name})")
-        columns = cursor.fetchall()
+            # Get current schema
+            cursor = conn.cursor()
+            cursor.execute(f"PRAGMA table_info({table_name})")
+            columns = cursor.fetchall()
 
-        # Create new column list without the dropped column
-        new_columns = [col for col in columns if col['name'] != column_name]
+            # Create new column list without the dropped column
+            new_columns = [col for col in columns if col['name'] != column_name]
 
-        if new_columns:
-            # Build complete column definitions including constraints
-            column_defs = []
-            for col in new_columns:
-                col_def = f"{col['name']} {col['type']}"
-                if col['notnull']:
-                    col_def += " NOT NULL"
-                if col['pk']:
-                    col_def += " PRIMARY KEY"
-                    if col['type'].upper() == 'INTEGER':
-                        col_def += " AUTOINCREMENT"
-                if col['dflt_value'] is not None:
-                    col_def += f" DEFAULT {col['dflt_value']}"
-                column_defs.append(col_def)
+            if new_columns:
+                # Build complete column definitions including constraints
+                column_defs = []
+                for col in new_columns:
+                    col_def = f"{col['name']} {col['type']}"
+                    if col['notnull']:
+                        col_def += " NOT NULL"
+                    if col['pk']:
+                        col_def += " PRIMARY KEY"
+                        if col['type'].upper() == 'INTEGER':
+                            col_def += " AUTOINCREMENT"
+                    if col['dflt_value'] is not None:
+                        col_def += f" DEFAULT {col['dflt_value']}"
+                    column_defs.append(col_def)
 
-            # Create temporary table with full column definitions
-            await self.execute_query(f"CREATE TABLE {temp_table} ({', '.join(column_defs)})")
+                # Create temporary table with full column definitions
+                cursor.execute(f"CREATE TABLE {temp_table} ({', '.join(column_defs)})")
 
-            # Copy data
-            column_names = ', '.join([col['name'] for col in new_columns])
-            await self.execute_query(f"INSERT INTO {temp_table} ({column_names}) SELECT {column_names} FROM {table_name}")
+                # Copy data
+                column_names = ', '.join([col['name'] for col in new_columns])
+                cursor.execute(f"INSERT INTO {temp_table} ({column_names}) SELECT {column_names} FROM {table_name}")
 
-            # Drop old table and rename new one
-            await self.execute_query(f"DROP TABLE {table_name}")
-            await self.execute_query(f"ALTER TABLE {temp_table} RENAME TO {table_name}")
+                # Drop old table and rename new one
+                cursor.execute(f"DROP TABLE {table_name}")
+                cursor.execute(f"ALTER TABLE {temp_table} RENAME TO {table_name}")
 
-        self.connection.commit()
+            conn.commit()
+
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, _drop_column)
 
     def _parse_column_definition(self, column_definition: str) -> Dict[str, Any]:
         """
@@ -642,72 +799,94 @@ class SQLiteConnection(DatabaseConnection):
 
         Unlike other databases, SQLite requires the full table recreation process.
         """
-        # Similar to drop_column, SQLite requires table recreation for column modifications
-        temp_table = f"{table_name}_temp"
+        def _modify_column():
+            conn = self._get_connection()
+            # Similar to drop_column, SQLite requires table recreation for column modifications
+            temp_table = f"{table_name}_temp"
 
-        # Get current schema
-        cursor = await self.execute_query(f"PRAGMA table_info({table_name})")
-        columns = cursor.fetchall()
+            # Get current schema
+            cursor = conn.cursor()
+            cursor.execute(f"PRAGMA table_info({table_name})")
+            columns = cursor.fetchall()
 
-        # Create new column definitions with full attributes
-        column_defs = []
-        for col in columns:
-            if col['name'] == column_name:
-                # Parse new column definition
-                new_def = self._parse_column_definition(column_definition)
+            # Create new column definitions with full attributes
+            column_defs = []
+            for col in columns:
+                if col['name'] == column_name:
+                    # Parse new column definition
+                    new_def = self._parse_column_definition(column_definition)
 
-                # Build existing constraints from PRAGMA info
-                existing_constraints = {
-                    'not_null': col['notnull'] == 1,
-                    'primary_key': col['pk'] > 0,
-                    'autoincrement': col['pk'] > 0 and col['type'].upper() == 'INTEGER',
-                    'default': col['dflt_value']
-                }
+                    # Build existing constraints from PRAGMA info
+                    existing_constraints = {
+                        'not_null': col['notnull'] == 1,
+                        'primary_key': col['pk'] > 0,
+                        'autoincrement': col['pk'] > 0 and col['type'].upper() == 'INTEGER',
+                        'default': col['dflt_value']
+                    }
 
-                # Merge constraints
-                merged_constraints = self._merge_column_constraints(existing_constraints, new_def['constraints'])
+                    # Merge constraints
+                    merged_constraints = self._merge_column_constraints(existing_constraints, new_def['constraints'])
 
-                # Build complete column definition
-                col_def = self._build_column_definition(column_name, new_def['type'], merged_constraints)
-                column_defs.append(col_def)
-            else:
-                # Preserve original column definition with all attributes
-                col_def = f"{col['name']} {col['type']}"
-                if col['notnull']:
-                    col_def += " NOT NULL"
-                if col['pk']:
-                    col_def += " PRIMARY KEY"
-                    if col['type'].upper() == 'INTEGER':
-                        col_def += " AUTOINCREMENT"
-                if col['dflt_value'] is not None:
-                    col_def += f" DEFAULT {col['dflt_value']}"
-                column_defs.append(col_def)
+                    # Build complete column definition
+                    col_def = self._build_column_definition(column_name, new_def['type'], merged_constraints)
+                    column_defs.append(col_def)
+                else:
+                    # Preserve original column definition with all attributes
+                    col_def = f"{col['name']} {col['type']}"
+                    if col['notnull']:
+                        col_def += " NOT NULL"
+                    if col['pk']:
+                        col_def += " PRIMARY KEY"
+                        if col['type'].upper() == 'INTEGER':
+                            col_def += " AUTOINCREMENT"
+                    if col['dflt_value'] is not None:
+                        col_def += f" DEFAULT {col['dflt_value']}"
+                    column_defs.append(col_def)
 
-        # Create temporary table
-        await self.execute_query(f"CREATE TABLE {temp_table} ({', '.join(column_defs)})")
+            # Create temporary table
+            cursor.execute(f"CREATE TABLE {temp_table} ({', '.join(column_defs)})")
 
-        # Copy data
-        column_names = ', '.join([col['name'] for col in columns])
-        await self.execute_query(f"INSERT INTO {temp_table} ({column_names}) SELECT {column_names} FROM {table_name}")
+            # Copy data
+            column_names = ', '.join([col['name'] for col in columns])
+            cursor.execute(f"INSERT INTO {temp_table} ({column_names}) SELECT {column_names} FROM {table_name}")
 
-        # Drop old table and rename new one
-        await self.execute_query(f"DROP TABLE {table_name}")
-        await self.execute_query(f"ALTER TABLE {temp_table} RENAME TO {table_name}")
+            # Drop old table and rename new one
+            cursor.execute(f"DROP TABLE {table_name}")
+            cursor.execute(f"ALTER TABLE {temp_table} RENAME TO {table_name}")
 
-        self.connection.commit()
+            conn.commit()
+
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, _modify_column)
 
     async def create_index(self, table_name: str, index_name: str, columns: List[str]) -> None:
         """Create an index on a table for SQLite"""
         column_list = ', '.join(columns)
         query = f"CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} ({column_list})"
-        await self.execute_query(query)
-        self.connection.commit()
+
+        def _create_and_commit():
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(query)
+            conn.commit()
+            return cursor
+
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, _create_and_commit)
 
     async def drop_index(self, table_name: str, index_name: str) -> None:
         """Drop an index from a table for SQLite"""
         query = f"DROP INDEX IF EXISTS {index_name}"
-        await self.execute_query(query)
-        self.connection.commit()
+
+        def _drop_and_commit():
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(query)
+            conn.commit()
+            return cursor
+
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, _drop_and_commit)
 
     async def add_field(self, model_name: str, field_name: str, field: Field) -> None:
         """Add a field to an existing model/table for SQLite"""
@@ -726,8 +905,16 @@ class SQLiteConnection(DatabaseConnection):
             column_definition += f" DEFAULT {self._format_default(field.default)}"
 
         query = f"ALTER TABLE {table_name} ADD COLUMN {column_definition}"
-        await self.execute_query(query)
-        self.connection.commit()
+
+        def _add_and_commit():
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(query)
+            conn.commit()
+            return cursor
+
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, _add_and_commit)
 
     async def remove_field(self, model_name: str, field_name: str) -> None:
         """Remove a field from an existing model/table for SQLite"""
@@ -773,99 +960,117 @@ class SQLiteConnection(DatabaseConnection):
 
     async def execute_query_builder(self, model_class: Type, query_params: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Execute a complex query built by QueryBuilder for SQLite"""
-        # Extract query parameters
-        select_fields = query_params.get('select_fields', [])
-        distinct = query_params.get('distinct', False)
-        filters = query_params.get('filters', {})
-        limit = query_params.get('limit')
-        offset = query_params.get('offset')
-        order_by = query_params.get('order_by', [])
-        group_by = query_params.get('group_by', [])
-        having = query_params.get('having', [])
 
-        # Build SELECT clause
-        select_clause = "SELECT "
-        if distinct:
-            select_clause += "DISTINCT "
-        if select_fields:
-            select_clause += ', '.join(select_fields)
-        else:
-            select_clause += '*'
+        def _execute_query_builder():
+            conn = self._get_connection()
+            # Extract query parameters
+            select_fields = query_params.get('select_fields', [])
+            distinct = query_params.get('distinct', False)
+            filters = query_params.get('filters', {})
+            limit = query_params.get('limit')
+            offset = query_params.get('offset')
+            order_by = query_params.get('order_by', [])
+            group_by = query_params.get('group_by', [])
+            having = query_params.get('having', [])
 
-        # Build FROM clause
-        from_clause = f"FROM {model_class.get_table_name()}"
+            # Debug: print filters
+            print(f"DEBUG: Filters received: {filters}")
 
-        # Build WHERE clause
-        where_clause = ""
-        params = []
-        if filters:
-            conditions = []
-            for key, value in filters.items():
-                if isinstance(value, dict):
-                    # Handle MongoDB-style operators
-                    for op, val in value.items():
-                        if op == '$gt':
-                            conditions.append(f"{key} > ?")
-                            params.append(val)
-                        elif op == '$lt':
-                            conditions.append(f"{key} < ?")
-                            params.append(val)
-                        elif op == '$gte':
-                            conditions.append(f"{key} >= ?")
-                            params.append(val)
-                        elif op == '$lte':
-                            conditions.append(f"{key} <= ?")
-                            params.append(val)
-                        elif op == '$ne':
-                            conditions.append(f"{key} != ?")
-                            params.append(val)
-                        elif op == '$in':
-                            placeholders = ', '.join(['?' for _ in val])
-                            conditions.append(f"{key} IN ({placeholders})")
-                            params.extend(val)
-                        elif op == '$regex':
-                            conditions.append(f"{key} LIKE ?")
-                            params.append(val.replace('.*', '%'))
-                else:
-                    conditions.append(f"{key} = ?")
-                    params.append(value)
-            if conditions:
-                where_clause = f"WHERE {' AND '.join(conditions)}"
+            # Build SELECT clause
+            select_clause = "SELECT "
+            if distinct:
+                select_clause += "DISTINCT "
+            if select_fields:
+                select_clause += ', '.join(select_fields)
+            else:
+                select_clause += '*'
 
-        # Build GROUP BY clause
-        group_clause = ""
-        if group_by:
-            group_clause = f"GROUP BY {', '.join(group_by)}"
+            # Build FROM clause
+            from_clause = f"FROM {model_class.get_table_name()}"
 
-        # Build HAVING clause
-        having_clause = ""
-        if having:
-            having_conditions = []
-            for condition in having:
-                # Simple parsing - in practice, you'd need more sophisticated parsing
-                having_conditions.append(condition)
-            if having_conditions:
-                having_clause = f"HAVING {' AND '.join(having_conditions)}"
+            # Build WHERE clause
+            where_clause = ""
+            params = []
+            if filters:
+                conditions = []
+                for key, value in filters.items():
+                    if isinstance(value, dict):
+                        # Handle MongoDB-style operators
+                        for op, val in value.items():
+                            if op == '$gt':
+                                conditions.append(f"{key} > ?")
+                                params.append(self._convert_param_value(val))
+                            elif op == '$lt':
+                                conditions.append(f"{key} < ?")
+                                params.append(self._convert_param_value(val))
+                            elif op == '$gte':
+                                conditions.append(f"{key} >= ?")
+                                params.append(self._convert_param_value(val))
+                            elif op == '$lte':
+                                conditions.append(f"{key} <= ?")
+                                params.append(self._convert_param_value(val))
+                            elif op == '$ne':
+                                conditions.append(f"{key} != ?")
+                                params.append(self._convert_param_value(val))
+                            elif op == '$in':
+                                placeholders = ', '.join(['?' for _ in val])
+                                conditions.append(f"{key} IN ({placeholders})")
+                                params.extend([self._convert_param_value(v) for v in val])
+                            elif op == '$regex':
+                                conditions.append(f"{key} LIKE ?")
+                                params.append(val.replace('.*', '%'))
+                    else:
+                        conditions.append(f"{key} = ?")
+                        params.append(self._convert_param_value(value))
+                if conditions:
+                    where_clause = f"WHERE {' AND '.join(conditions)}"
 
-        # Build ORDER BY clause
-        order_clause = ""
-        if order_by:
-            order_parts = []
-            for field, direction in order_by:
-                order_parts.append(f"{field} {'DESC' if direction == -1 else 'ASC'}")
-            order_clause = f"ORDER BY {', '.join(order_parts)}"
+            # Build GROUP BY clause
+            group_clause = ""
+            if group_by:
+                group_clause = f"GROUP BY {', '.join(group_by)}"
 
-        # Build LIMIT and OFFSET clauses
-        limit_clause = f"LIMIT {limit}" if limit else ""
-        offset_clause = f"OFFSET {offset}" if offset else ""
+            # Build HAVING clause
+            having_clause = ""
+            if having:
+                having_conditions = []
+                for condition in having:
+                    # Simple parsing - in practice, you'd need more sophisticated parsing
+                    having_conditions.append(condition)
+                if having_conditions:
+                    having_clause = f"HAVING {' AND '.join(having_conditions)}"
 
-        # Combine all parts
-        query = f"{select_clause} {from_clause} {where_clause} {group_clause} {having_clause} {order_clause} {limit_clause} {offset_clause}".strip()
+            # Build ORDER BY clause
+            order_clause = ""
+            if order_by:
+                order_parts = []
+                for field, direction in order_by:
+                    order_parts.append(f"{field} {'DESC' if direction == -1 else 'ASC'}")
+                order_clause = f"ORDER BY {', '.join(order_parts)}"
 
-        # Execute query
-        cursor = await self.execute_query(query, tuple(params) if params else None)
-        rows = cursor.fetchall()
-        return [dict(row) for row in rows]
+            # Build LIMIT and OFFSET clauses
+            limit_clause = f"LIMIT {limit}" if limit else ""
+            offset_clause = f"OFFSET {offset}" if offset else ""
+
+            # Combine all parts
+            query = f"{select_clause} {from_clause} {where_clause} {group_clause} {having_clause} {order_clause} {limit_clause} {offset_clause}".strip()
+
+            # Debug: print query and params
+            print(f"DEBUG: Query: {query}")
+            print(f"DEBUG: Params: {params}")
+            print(f"DEBUG: Param types: {[type(p) for p in params]}")
+
+            # Execute query
+            cursor = conn.cursor()
+            if params:
+                cursor.execute(query, tuple(params))
+            else:
+                cursor.execute(query)
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, _execute_query_builder)
 
     async def test_connection(self) -> bool:
         """
@@ -883,10 +1088,16 @@ class SQLiteConnection(DatabaseConnection):
 
     async def execute_many(self, query: str, parameters_list: List[Tuple]) -> Any:
         """Execute a query multiple times with different parameters."""
-        cursor = self.connection.cursor()
-        cursor.executemany(query, parameters_list)
-        self.connection.commit()
-        return cursor
+
+        def _execute_many_and_commit():
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.executemany(query, parameters_list)
+            conn.commit()
+            return cursor
+
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, _execute_many_and_commit)
 
     async def table_exists(self, table_name: str) -> bool:
         """Check if table exists in SQLite."""

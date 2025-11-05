@@ -1,3 +1,4 @@
+from pydance.utils.logging import get_logger
 """
 Elegant Dependency Injection Container for Pydance framework.
 
@@ -26,7 +27,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
 
 from pydance.exceptions import DependencyInjectionException
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ServiceLifetime(Enum):
@@ -506,4 +507,3 @@ __all__ = [
     # Global container instance
     'container',
 ]
-

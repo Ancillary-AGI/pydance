@@ -11,7 +11,7 @@ class TestWebSocketIntegration:
     """Test WebSocket integration"""
 
     @pytest.fixture
-    async def ws_app(self):
+    def ws_app(self):
         """Create an application with WebSocket routes"""
         app = Application()
 
@@ -43,7 +43,3 @@ class TestWebSocketIntegration:
         # For now, just verify the route handler is callable
         ws_route = ws_app.router.websocket_routes[0]
         assert callable(ws_route.handler)
-
-
-
-

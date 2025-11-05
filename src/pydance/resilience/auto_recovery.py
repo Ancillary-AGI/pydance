@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Auto-recovery system for self-healing applications.
 Monitors system health and automatically recovers from failures.
@@ -56,7 +58,7 @@ class AutoRecoveryManager:
         self.recovery_strategies: Dict[RecoveryStrategy, Callable] = {}
         self.system_metrics: List[SystemMetrics] = []
         self.is_running = False
-        self.logger = logging.getLogger("auto_recovery")
+        self.logger = get_logger("auto_recovery")
         self._register_default_strategies()
 
     def _register_default_strategies(self):

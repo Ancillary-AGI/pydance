@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Main NeuralForge Framework
 
@@ -16,7 +18,7 @@ from .mcp_integration import MCPServer
 from .communication import AgentCommunicator
 from .economy import EconomySystem
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class TaskQueue:

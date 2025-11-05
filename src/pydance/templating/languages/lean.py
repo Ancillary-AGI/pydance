@@ -71,6 +71,9 @@ class LeanTemplateEngine(AbstractTemplateEngine):
             'endspaceless': r'\{%\s*endspaceless\s*%\}',
             'autoescape': r'\{%\s*autoescape\s+(\w+)\s*%\}',
             'endautoescape': r'\{%\s*endautoescape\s*%\}',
+            # Form validation patterns
+            'form_errors': r'\{%\s*form_errors\s+(.*?)\s*%\}',
+            'endform_errors': r'\{%\s*endform_errors\s*%\}',
         }
 
         # Configuration options
@@ -127,6 +130,10 @@ class LeanTemplateEngine(AbstractTemplateEngine):
     async def render_string(self, template_string: str, context: Dict[str, Any]) -> str:
         """Render a template string"""
         return await self._render_content(template_string, context, self.template_dir)
+
+    async def render_async(self, template_name: str, context: Dict[str, Any]) -> str:
+        """Async version of render method"""
+        return await self.render(template_name, context)
     
     async def _render_with_inheritance(self, content: str, context: Dict[str, Any], 
                                      base_dir: Path) -> str:
@@ -478,6 +485,44 @@ class LeanTemplateEngine(AbstractTemplateEngine):
                 i += 1
                 continue
             
+            # Check for form_errors block
+            form_errors_match = re.match(r'\{%\s*form_errors\s+(.*?)\s*%\}', line)
+            if form_errors_match:
+                form_expr = form_errors_match.group(1).strip()
+                endform_errors_index = self._find_block_end(lines, i, 'form_errors', 'endform_errors')
+
+                # Get form object
+                form_obj = self._evaluate_expression(form_expr, context)
+
+                # Get form errors
+                errors_output = []
+                if hasattr(form_obj, 'errors') and form_obj.errors:
+                    block_content = '\n'.join(lines[i+1:endform_errors_index])
+
+                    # Check if it's for a specific field or all errors
+                    if '.' in form_expr or form_expr != str(form_obj.__class__.__name__).lower():  # Specific field
+                        field_name = form_expr.split('.')[-1] if '.' in form_expr else form_expr
+                        if field_name in form_obj.errors:
+                            field_errors = form_obj.errors[field_name]
+                            for error in field_errors:
+                                error_context = context.copy()
+                                error_context['error'] = error
+                                error_context['field'] = field_name
+                                rendered_error = self._render_content_sync(block_content, error_context, self.template_dir)
+                                errors_output.append(rendered_error)
+                    else:  # All errors
+                        for field_name, field_errors in form_obj.errors.items():
+                            for error in field_errors:
+                                error_context = context.copy()
+                                error_context['error'] = error
+                                error_context['field'] = field_name
+                                rendered_error = self._render_content_sync(block_content, error_context, self.template_dir)
+                                errors_output.append(rendered_error)
+
+                output_lines.append('\n'.join(errors_output))
+                i = endform_errors_index + 1
+                continue
+
             # Check for raw block (no processing)
             raw_match = re.match(r'\{%\s*raw\s*%\}', line)
             if raw_match:
@@ -485,13 +530,13 @@ class LeanTemplateEngine(AbstractTemplateEngine):
                 endraw_index = i
                 while endraw_index < len(lines) and not re.search(r'\{%\s*endraw\s*%\}', lines[endraw_index]):
                     endraw_index += 1
-                
+
                 # Include raw content without processing
                 raw_content = '\n'.join(lines[i+1:endraw_index])
                 output_lines.append(raw_content)
-                i = endraw_index + 1
+                i = endraw_errors_index + 1
                 continue
-            
+
             output_lines.append(line)
             i += 1
         
@@ -840,6 +885,44 @@ class LeanTemplateEngine(AbstractTemplateEngine):
                 i = endautoescape_index + 1
                 continue
 
+            # Process form_errors blocks
+            form_errors_match = re.match(self.patterns['form_errors'], line)
+            if form_errors_match:
+                form_expr = form_errors_match.group(1).strip()
+                endform_errors_index = self._find_block_end(lines, i, 'form_errors', 'endform_errors')
+
+                # Get form object
+                form_obj = self._evaluate_expression(form_expr, context)
+
+                # Get form errors
+                errors_output = []
+                if hasattr(form_obj, 'errors') and form_obj.errors:
+                    block_content = '\n'.join(lines[i+1:endform_errors_index])
+
+                    # Check if it's for a specific field or all errors
+                    if form_expr != form_obj.__class__.__name__.lower():  # Specific field
+                        field_name = form_expr
+                        if field_name in form_obj.errors:
+                            field_errors = form_obj.errors[field_name]
+                            for error in field_errors:
+                                error_context = context.copy()
+                                error_context['error'] = error
+                                error_context['field'] = field_name
+                                rendered_error = self._render_content_sync(block_content, error_context, self.template_dir)
+                                errors_output.append(rendered_error)
+                    else:  # All errors
+                        for field_name, field_errors in form_obj.errors.items():
+                            for error in field_errors:
+                                error_context = context.copy()
+                                error_context['error'] = error
+                                error_context['field'] = field_name
+                                rendered_error = self._render_content_sync(block_content, error_context, self.template_dir)
+                                errors_output.append(rendered_error)
+
+                output_lines.append('\n'.join(errors_output))
+                i = endform_errors_index + 1
+                continue
+
             # Process load directives
             load_match = re.match(self.patterns['load'], line)
             if load_match:
@@ -1046,12 +1129,12 @@ class LeanTemplateEngine(AbstractTemplateEngine):
 
         for line_num, line in enumerate(lines, 1):
             # Check for block starts
-            for block_type in ['if', 'for', 'macro', 'raw', 'with', 'spaceless', 'autoescape']:
+            for block_type in ['if', 'for', 'macro', 'raw', 'with', 'spaceless', 'autoescape', 'form_errors']:
                 if re.search(rf'\{{%\s*{block_type}\s', line):
                     block_stack.append((block_type, line_num))
 
             # Check for block ends
-            for block_type in ['endif', 'endfor', 'endmacro', 'endraw', 'endwith', 'endspaceless', 'endautoescape']:
+            for block_type in ['endif', 'endfor', 'endmacro', 'endraw', 'endwith', 'endspaceless', 'endautoescape', 'endform_errors']:
                 if re.search(rf'\{{%\s*{block_type}\s*%}}', line):
                     if not block_stack:
                         errors.append(f"Unmatched {block_type} at line {line_num}")

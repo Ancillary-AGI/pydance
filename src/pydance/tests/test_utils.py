@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional, List, Callable
 from datetime import datetime
 
 from pydance.auth.core import create_user, auth_manager
-from pydance.testing.test_client import TestResponse
+from .test_client import TestResponse
 
 
 def create_test_user(username: str = None, email: str = None, password: str = None,

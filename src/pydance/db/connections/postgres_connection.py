@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Real PostgreSQL database backend implementation with full CRUD operations.
 """
@@ -13,11 +15,11 @@ import threading
 from decimal import Decimal
 from urllib.parse import urlparse
 
-from pydance.db.connections.base_connection import DatabaseConnection
+from pydance.db.connections.base import DatabaseConnection
 from pydance.db.config import DatabaseConfig
 from pydance.db.models.base import Field, StringField, IntegerField, BooleanField, DateTimeField, FieldType
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class PostgreSQLConnection(DatabaseConnection):
@@ -132,7 +134,16 @@ class PostgreSQLConnection(DatabaseConnection):
 
         async with self.pool.acquire() as connection:
             result = await connection.fetchrow(query, *values)
-            return dict(result) if result else None
+            if result:
+                result_dict = dict(result)
+                # For autoincrement fields, return the ID value
+                primary_key = model_class.get_primary_key()
+                if primary_key and primary_key in result_dict:
+                    primary_field = model_class._fields.get(primary_key)
+                    if isinstance(primary_field, IntegerField) and primary_field.autoincrement:
+                        return result_dict[primary_key]
+                return result_dict
+            return None
 
     async def update_one(self, model_class: Type, filters: Dict[str, Any], data: Dict[str, Any]) -> bool:
         """Update a single record"""

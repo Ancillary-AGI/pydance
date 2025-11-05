@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Migration runner and manager for Pydance framework.
 Handles both database-stored and file-based migrations with comprehensive model diffing.
@@ -801,7 +803,7 @@ class MigrationRunner:
         self.db_config = db_config
         self.migrations_dir = migrations_dir or Path("migrations")
         self.migrations_dir.mkdir(exist_ok=True)
-        self.logger = logging.getLogger("migration_runner")
+        self.logger = get_logger("migration_runner")
         self.db_connection = None
         self.migration_generator = MigrationGenerator(self.migrations_dir)
 
@@ -1143,7 +1145,7 @@ class MigrationManager:
     def __init__(self, db_config: DatabaseConfig = None):
         self.db_config = db_config
         self.runner = MigrationRunner(db_config)
-        self.logger = logging.getLogger("migration_manager")
+        self.logger = get_logger("migration_manager")
 
     async def initialize(self):
         """Initialize migration manager"""

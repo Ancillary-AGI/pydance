@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Performance anti-pattern detector for Pydance applications.
 Identifies common performance issues and suggests improvements.
@@ -27,7 +29,7 @@ class PerformanceAntiPatternDetector:
 
     def __init__(self):
         self.anti_patterns: List[AntiPattern] = []
-        self.logger = logging.getLogger("anti_pattern_detector")
+        self.logger = get_logger("anti_pattern_detector")
         self._setup_anti_patterns()
 
     def _setup_anti_patterns(self):

@@ -3,6 +3,8 @@ Testing framework for Pydance .
 Provides comprehensive testing utilities for unit, integration, and performance testing.
 """
 
+from __future__ import annotations
+
 import unittest
 import time
 import json

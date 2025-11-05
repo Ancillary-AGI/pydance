@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Deployment monitoring and health checks.
 """
@@ -12,7 +14,7 @@ class DeploymentMonitor:
     """
 
     def __init__(self):
-        self.logger = logging.getLogger("deployment_monitor")
+        self.logger = get_logger("deployment_monitor")
 
     async def update_deployment(self, deployment) -> bool:
         """Update deployment status."""

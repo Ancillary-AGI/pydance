@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 CI/CD pipeline for automated deployment.
 """
@@ -20,7 +22,7 @@ class CICDPipeline:
     """
 
     def __init__(self):
-        self.logger = logging.getLogger("cicd_pipeline")
+        self.logger = get_logger("cicd_pipeline")
         self.stages = []
 
     async def run_pipeline(self, source_code: str, version: str) -> Dict[str, Any]:

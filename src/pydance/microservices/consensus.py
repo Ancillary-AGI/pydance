@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Distributed consensus implementation for Pydance framework.
 
@@ -26,7 +28,7 @@ import uuid
 from pydance.db.connections import DatabaseConnection
 from pydance.db.config import DatabaseConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class NodeRole(Enum):
@@ -361,7 +363,7 @@ class NetworkTransport:
         self.port = port
         self.server_socket = None
         self.node_addresses: Dict[str, Tuple[str, int]] = {}
-        self.logger = logging.getLogger(f"NetworkTransport-{node_id}")
+        self.logger = get_logger(f"NetworkTransport-{node_id}")
         self._message_handlers: Dict[str, Callable] = {}
         self._running = False
 
@@ -624,7 +626,7 @@ class RaftNode:
 
         self.lock = asyncio.Lock()
         self.running = False
-        self.logger = logging.getLogger(f"RaftNode-{node_id}")
+        self.logger = get_logger(f"RaftNode-{node_id}")
 
         self._election_timer_task: Optional[asyncio.Task] = None
         self._heartbeat_task: Optional[asyncio.Task] = None
@@ -1066,7 +1068,7 @@ class ConsensusManager:
         self.transport = NetworkTransport(node_id)
         self.storage = PersistentStorage(node_id, db_connection)
         self.raft_node: Optional[RaftNode] = None
-        self.logger = logging.getLogger(f"ConsensusManager-{node_id}")
+        self.logger = get_logger(f"ConsensusManager-{node_id}")
 
     async def initialize(self):
         """Initialize consensus system"""
@@ -1129,7 +1131,7 @@ class DistributedLock:
         self.lock_name = lock_name
         self.holder: Optional[str] = None
         self.lock_id = f"lock_{lock_name}_{random.randint(1000, 9999)}"
-        self.logger = logging.getLogger(f"DistributedLock-{lock_name}")
+        self.logger = get_logger(f"DistributedLock-{lock_name}")
 
     async def acquire(self, holder_id: str, timeout: float = 5.0) -> bool:
         """Acquire distributed lock"""

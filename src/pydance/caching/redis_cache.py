@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Redis cache implementation for distributed caching.
 """
@@ -18,7 +20,7 @@ class RedisCache:
     def __init__(self, config: CacheConfig):
         self.config = config
         self.redis_client = None
-        self.logger = logging.getLogger("redis_cache")
+        self.logger = get_logger("redis_cache")
 
     async def initialize(self):
         """Initialize Redis connection."""

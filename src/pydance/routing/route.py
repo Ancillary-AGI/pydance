@@ -83,36 +83,47 @@ class Route:
         # Convert path parameters like {id:int} or {id} to regex groups
         pattern = self.path
 
-        # Handle typed parameters like {id:int}, {name:str}, etc.
+        # First, handle typed parameters like {id:int}, {name:str}, etc.
         typed_param_pattern = r'\{([^:}]+):([^}]+)\}'
         def typed_param_replacer(match):
             param_name = match.group(1)
             param_type = match.group(2)
-            self.param_names.append(param_name)
-            self.param_types[param_name] = self._get_type_from_string(param_type)
+            if param_name not in self.param_names:  # Avoid duplicates
+                self.param_names.append(param_name)
+                self.param_types[param_name] = self._get_type_from_string(param_type)
             return f'(?P<{param_name}>[^/]+)'
 
         pattern = re.sub(typed_param_pattern, typed_param_replacer, pattern)
 
-        # Handle regular parameters like {id}
+        # Then handle regular parameters like {id}
         simple_param_pattern = r'\{([^}]+)\}'
         def simple_param_replacer(match):
             param_name = match.group(1)
-            if param_name not in self.param_names:
+            if param_name not in self.param_names:  # Avoid overwriting typed params
                 self.param_names.append(param_name)
                 self.param_types[param_name] = str  # Default to string
             return f'(?P<{param_name}>[^/]+)'
 
         pattern = re.sub(simple_param_pattern, simple_param_replacer, pattern)
 
-        # Escape other special regex characters
-        pattern = re.sub(r'([.+^$()])', r'\\\1', pattern)
-        # Convert wildcards
-        pattern = pattern.replace('*', '.*')
-        # Add start and end anchors
-        pattern = f'^{pattern}$'
+        # Escape special regex characters, but not within the parameter groups we created
+        # Split the pattern by our added groups and escape each part separately
+        parts = re.split(r'(\(\?P<\w+>[^)]+\))', pattern)
+        escaped_parts = []
 
-        self.pattern = re.compile(pattern)
+        for part in parts:
+            if part.startswith('(?P<') and part.endswith(')'):
+                # This is one of our parameter groups, don't escape it
+                escaped_parts.append(part)
+            else:
+                # Escape special regex chars in non-parameter parts
+                escaped_part = re.sub(r'([.+^$*()\\[\]{}|])', r'\\\1', part)
+                escaped_parts.append(escaped_part)
+
+        # Join back together and add anchors
+        final_pattern = f'^{"".join(escaped_parts)}$'
+
+        self.pattern = re.compile(final_pattern)
 
     def _get_type_from_string(self, type_str: str) -> type:
         """Convert string type representation to actual type."""
@@ -231,4 +242,3 @@ class WebSocketRoute:
         if match:
             return match.groupdict()
         return None
-

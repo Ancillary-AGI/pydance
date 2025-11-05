@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Protocol gateway for IoT communication.
 Provides unified interface for different IoT protocols.
@@ -27,7 +29,7 @@ class ProtocolGateway:
 
     def __init__(self, config: ProtocolGatewayConfig):
         self.config = config
-        self.logger = logging.getLogger("protocol_gateway")
+        self.logger = get_logger("protocol_gateway")
         self.mqtt_client = None
         self.coap_server = None
         self.websocket_p2p = None

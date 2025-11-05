@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Maintenance mode middleware for Pydance framework.
 Provides site maintenance functionality similar to Laravel/Django.
@@ -66,7 +68,7 @@ class MaintenanceManager:
 
     def __init__(self, config_file: str = "maintenance.json"):
         self.config_file = Path(config_file)
-        self.logger = logging.getLogger("maintenance_manager")
+        self.logger = get_logger("maintenance_manager")
         self.config = MaintenanceConfig()
         self.maintenance_history: List[MaintenanceRecord] = []
         self._lock = asyncio.Lock()
@@ -324,7 +326,7 @@ class MaintenanceMiddleware:
 
     def __init__(self, maintenance_manager: MaintenanceManager):
         self.maintenance_manager = maintenance_manager
-        self.logger = logging.getLogger("maintenance_middleware")
+        self.logger = get_logger("maintenance_middleware")
 
     async def __call__(self, request: Request, call_next: Callable) -> Response:
         """Handle maintenance mode for requests"""

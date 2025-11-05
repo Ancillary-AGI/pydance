@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 
 from pydance.db.config import DatabaseConfig
-from .base_connection import (
+from .base import (
     DatabaseConnection,
     ConnectionState,
     ConnectionStats,

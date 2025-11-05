@@ -95,7 +95,9 @@ export class Signal {
     try {
       this._value = newValue;
       this._version++;
-      this._metadata.lastAccessed = Date.now();
+      if (this._metadata) {
+        this._metadata.lastAccessed = Date.now();
+      }
 
       // Enhanced batch notifications with priority
       if (!isBatching) {
@@ -114,14 +116,27 @@ export class Signal {
 
   _notifySubscribers() {
     if (this._notifying) return; // Prevent re-entry
-    
+
     this._notifying = true;
     try {
       const subscribers = Array.from(this._subscribers);
       this._subscribers.clear();
 
-      // Execute in dependency order for better performance
-      const orderedEffects = this._topologicalSort(subscribers);
+      // Separate effects from computed signals
+      const effects = [];
+      const computeds = [];
+
+      subscribers.forEach(subscriber => {
+        if (subscriber instanceof Computed && subscriber._markDirty) {
+          subscriber._markDirty();
+          computeds.push(subscriber);
+        } else if (subscriber && subscriber.execute) {
+          effects.push(subscriber);
+        }
+      });
+
+      // Execute effects in dependency order for better performance
+      const orderedEffects = this._topologicalSort(effects);
 
       for (const effect of orderedEffects) {
         if (effect && effect.active) {
@@ -178,9 +193,16 @@ export class Signal {
   }
 
   subscribe(fn) {
-    const effect = new Effect(fn);
-    effect.execute();
-    return () => effect.stop();
+    const effect = new Effect(() => {
+      fn(this.value);
+    });
+    // Add the effect to subscribers so it gets notified on changes
+    this._subscribers.add(effect);
+    // Don't execute initially, only when value changes
+    return () => {
+      this._subscribers.delete(effect);
+      effect.stop();
+    };
   }
 
   destroy() {
@@ -231,6 +253,12 @@ export class Computed extends Signal {
     this._compute = compute;
     this._dependencies = new Set();
     this._dirty = true;
+    this._tracking = false;
+
+    // Properties needed for effect-like behavior
+    this.dependencies = new Set();
+    this.dependents = new Set();
+    this.active = true;
 
     // Compute initial value
     this._update();
@@ -255,7 +283,14 @@ export class Computed extends Signal {
 
     // Track dependencies
     const prevEffect = activeEffect;
-    activeEffect = null;
+    const prevDependencies = new Set(this._dependencies);
+
+    // Clear old dependencies
+    this._dependencies.clear();
+
+    // Set this computed as the active effect to track dependencies
+    this._tracking = true;
+    activeEffect = this;
 
     try {
       const newValue = this._compute();
@@ -265,17 +300,34 @@ export class Computed extends Signal {
         this._version++;
 
         // Notify subscribers
-        const subscribers = [...this._subscribers];
-        this._subscribers.clear();
-
-        for (const effect of subscribers) {
-          if (effect.active) {
-            effect.execute();
-          }
-        }
+        this._notifySubscribers();
       }
     } finally {
       activeEffect = prevEffect;
+      this._tracking = false;
+
+      // Subscribe to new dependencies
+      this._dependencies.forEach(dep => {
+        if (!prevDependencies.has(dep)) {
+          dep._subscribers.add(this);
+        }
+      });
+
+      // Unsubscribe from old dependencies
+      prevDependencies.forEach(dep => {
+        if (!this._dependencies.has(dep)) {
+          dep._subscribers.delete(this);
+        }
+      });
+    }
+  }
+
+  // Called when dependencies change
+  _markDirty() {
+    if (!this._dirty) {
+      this._dirty = true;
+      // Force recalculation of the computed value
+      this._update();
     }
   }
 
@@ -297,6 +349,7 @@ export class Effect {
     this.options = options;
     this.active = true;
     this.dependencies = new Set();
+    this.dependents = new Set(); // Track reverse dependencies
     this.cleanup = null;
     this.executing = false;
   }
@@ -374,25 +427,24 @@ export const effect = (fn, options) => {
 const batchedEffects = new Set();
 
 export const batch = (fn) => {
-  if (batchDepth > 0) {
-    return fn();
-  }
-
+  const wasBatching = isBatching;
+  isBatching = true;
   batchDepth++;
+
   try {
     return fn();
   } finally {
     batchDepth--;
 
     if (batchDepth === 0) {
-      // Execute all batched effects
-      const effects = [...batchedEffects];
-      batchedEffects.clear();
+      isBatching = wasBatching;
 
-      for (const effect of effects) {
-        if (effect.active) {
-          effect.execute();
-        }
+      // Execute all batched notifications
+      const signals = [...batchedNotifications];
+      batchedNotifications.clear();
+
+      for (const signal of signals) {
+        signal._notifySubscribers();
       }
     }
   }

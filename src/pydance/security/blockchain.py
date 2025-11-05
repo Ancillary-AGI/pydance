@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Real Web3 and blockchain integration for Pydance framework with wallet management and smart contract interaction.
 """
@@ -13,7 +15,7 @@ from decimal import Decimal
 from enum import Enum
 import logging
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BlockchainNetwork(Enum):

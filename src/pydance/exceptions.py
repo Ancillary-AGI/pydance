@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Unified Exceptions Module for Pydance Framework.
 
@@ -10,7 +12,7 @@ from dataclasses import dataclass
 import logging
 import json
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -89,7 +91,9 @@ class HTTPException(BaseFrameworkException):
 class BadRequest(HTTPException):
     """400 Bad Request"""
     def __init__(self, message: str = "Bad request", **kwargs):
-        super().__init__(message, status_code=400, error_code="bad_request", **kwargs)
+        if 'error_code' not in kwargs:
+            kwargs['error_code'] = "bad_request"
+        super().__init__(message, status_code=400, **kwargs)
 
 
 class Unauthorized(HTTPException):
@@ -188,14 +192,13 @@ class GatewayTimeout(HTTPException):
 class ValidationError(BadRequest):
     """Validation error with field-level details"""
 
-    def __init__(self, message: str = "Validation failed", field_errors: Optional[Dict[str, List[str]]] = None, **kwargs):
-        super().__init__(message, error_code="validation_error", **kwargs)
+    def __init__(self, message: str = "Validation failed", field: Optional[str] = None, **kwargs):
+        # Always use validation_error for ValidationError
+        kwargs['error_code'] = "validation_error"
+        super().__init__(message, **kwargs)
 
-        if field_errors:
-            self.details = [
-                ErrorDetail(field=field, message=", ".join(messages), code="field_error")
-                for field, messages in field_errors.items()
-            ]
+        if field:
+            self.details = [ErrorDetail(field=field, message=message, code="field_error")]
 
 
 class FieldValidationError(ValidationError):
@@ -284,16 +287,18 @@ class PasswordTooWeak(UserError):
 class InvalidEmailFormat(ValidationError):
     """Invalid email format"""
 
-    def __init__(self, email: str, **kwargs):
-        super().__init__(error_code="invalid_email_format", **kwargs)
+    def __init__(self, email: str, message: str = "Invalid email format", **kwargs):
+        super().__init__(message=message, **kwargs)
+        self.error_code = "invalid_email_format"
         self.details = [ErrorDetail(field="email", message=f"Invalid email format: {email}", code="invalid_format")]
 
 
 class InvalidUsernameFormat(ValidationError):
     """Invalid username format"""
 
-    def __init__(self, username: str, **kwargs):
-        super().__init__(error_code="invalid_username_format", **kwargs)
+    def __init__(self, username: str, message: str = "Invalid username format", **kwargs):
+        super().__init__(message=message, **kwargs)
+        self.error_code = "invalid_username_format"
         self.details = [ErrorDetail(field="username", message=f"Invalid username format: {username}", code="invalid_format")]
 
 
@@ -339,7 +344,8 @@ class ConnectionError(DatabaseError):
     """Database connection error"""
 
     def __init__(self, message: str = "Database connection failed", **kwargs):
-        super().__init__(message, error_code="database_connection_error", **kwargs)
+        super().__init__(message, **kwargs)
+        self.error_code = "database_connection_error"
 
 
 class IntegrityError(DatabaseError):
@@ -638,4 +644,3 @@ __all__ = [
     'register_exception_handler',
     'get_exception_handler',
 ]
-

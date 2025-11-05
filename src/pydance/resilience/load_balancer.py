@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Load balancing system for distributing requests across multiple instances.
 """
@@ -44,7 +46,7 @@ class LoadBalancer:
         self.strategy = strategy
         self.servers: List[BackendServer] = []
         self.current_index = 0
-        self.logger = logging.getLogger(f"load_balancer.{strategy.value}")
+        self.logger = get_logger(f"load_balancer.{strategy.value}")
 
     def add_server(self, server: BackendServer):
         """Add a backend server."""
@@ -186,7 +188,7 @@ class LoadBalancerManager:
 
     def __init__(self):
         self.load_balancers: Dict[str, LoadBalancer] = {}
-        self.logger = logging.getLogger("load_balancer_manager")
+        self.logger = get_logger("load_balancer_manager")
 
     def create_load_balancer(self, name: str, strategy: LoadBalancingStrategy) -> LoadBalancer:
         """Create a new load balancer."""

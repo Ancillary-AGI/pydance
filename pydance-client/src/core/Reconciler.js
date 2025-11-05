@@ -389,6 +389,7 @@ export class Reconciler {
   }
 
   updateElement(parent, oldVNode, newVNode, index) {
+    if (!parent) return null;
     const domNode = parent.childNodes[index];
     if (domNode) {
       this.updateDomNode(domNode, oldVNode, newVNode);

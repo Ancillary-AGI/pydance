@@ -7,8 +7,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
-from pydance.models.base import BaseModel, ModelMeta
-from pydance.utils.types import Field
+from pydance.db.models.base import BaseModel, ModelMeta
 from typing import get_type_hints, Dict, ClassVar
 
 class TestModel(BaseModel):
@@ -144,7 +143,3 @@ if __name__ == "__main__":
         import traceback
         traceback.print_exc()
         sys.exit(1)
-
-
-
-

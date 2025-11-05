@@ -37,20 +37,19 @@ def temp_dir():
 @pytest.fixture
 def config():
     """Test application configuration."""
-    return AppConfig(
-        debug=True,
-        secret_key="test-secret-key",
-        host="127.0.0.1",
-        port=8000,
-        database_url="sqlite:///:memory:",
-    )
+    # Create config with SQLite for actual database tests
+    class TestConfig:
+        DEBUG = True
+        SECRET_KEY = "test-secret-key"
+        DATABASE_URL = "sqlite:///:memory:"
+
+    return TestConfig()
 
 
 @pytest.fixture
-async def app(config) -> AsyncGenerator[Application, None]:
+def app(config) -> Application:
     """Test application instance."""
-    app = Application(config)
-    yield app
+    return Application(config)
 
 
 @pytest.fixture(autouse=True)
@@ -62,6 +61,13 @@ def cleanup_test_artifacts():
         for file in Path(".").glob(pattern):
             if file.exists():
                 file.unlink()
+
+
+@pytest.fixture
+def client(app):
+    """Test client fixture."""
+    from pydance.tests.test_client import TestClient
+    return TestClient(app)
 
 
 # Custom markers
@@ -80,11 +86,7 @@ def pytest_configure(config):
 
 
 # Register fixture plugins
-pytest_plugins = [
-    "tests.fixtures.database",
-    "tests.fixtures.http",
-]
-
-
-
-
+# pytest_plugins = [
+#     "tests.fixtures.database",
+#     "tests.fixtures.http",
+# ]

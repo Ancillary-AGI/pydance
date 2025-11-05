@@ -1,6 +1,7 @@
 import asyncio
 import signal
 import logging
+from pydance.utils.logging import get_logger
 from typing import Optional
 try:
     from hypercorn.asyncio import serve
@@ -76,7 +77,7 @@ class Server:
         self._server_task: Optional[asyncio.Task] = None
         self._shutdown_event = asyncio.Event()
         self._workers: list = []
-        self.logger = logging.getLogger("app.server")
+        self.logger = get_logger("app.server")
         
     async def start(self) -> None:
         """Start the server with configured options"""

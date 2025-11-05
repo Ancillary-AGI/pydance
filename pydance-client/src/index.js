@@ -19,6 +19,10 @@ import { PerformanceMonitor } from './core/PerformanceMonitor.js';
 import { AccessibilityManager } from './core/AccessibilityManager.js';
 import { Internationalization } from './core/Internationalization.js';
 
+// Logging and Developer Tools
+import { getLogger, logger, LOG_LEVELS } from './utils/logger.js';
+import { devtools } from './utils/devtools.js';
+
 // Core framework class
 class PydanceClientFramework {
   constructor(config = {}) {
@@ -406,6 +410,8 @@ window.PydanceClient = framework;
 
 // Export for module usage
 export { PydanceClientFramework, framework };
+export { getLogger, logger, LOG_LEVELS } from './utils/logger.js';
+export { devtools } from './utils/devtools.js';
 export default framework;
 
 // Auto-initialize if not in module environment

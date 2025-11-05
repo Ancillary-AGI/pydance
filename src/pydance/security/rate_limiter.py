@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Rate limiting system to prevent abuse and DDoS attacks.
 """
@@ -38,7 +40,7 @@ class RateLimiter:
     def __init__(self):
         self.rules: Dict[str, RateLimitRule] = {}
         self.records: Dict[str, Dict[str, RequestRecord]] = {}  # rule_name -> identifier -> record
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__)
 
     def add_rule(self, rule: RateLimitRule):
         """Add a rate limiting rule."""

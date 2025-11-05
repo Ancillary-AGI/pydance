@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Communication Module for NeuralForge
 
@@ -12,7 +14,7 @@ from datetime import datetime
 from collections import defaultdict
 import logging
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class MessageQueue:

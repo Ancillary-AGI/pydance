@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Cryptocurrency payment processor implementation.
 """
@@ -16,7 +18,7 @@ class CryptoProcessor:
 
     def __init__(self, config):
         self.config = config
-        self.logger = logging.getLogger("crypto_processor")
+        self.logger = get_logger("crypto_processor")
         self.supported_currencies = ["BTC", "ETH", "USDT", "BCH", "LTC"]
 
     async def initialize(self):

@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Docker container management for deployment.
 """
@@ -12,7 +14,7 @@ class DockerManager:
     """
 
     def __init__(self):
-        self.logger = logging.getLogger("docker_manager")
+        self.logger = get_logger("docker_manager")
 
     async def build_image(self, source_path: str, image_name: str) -> bool:
         """Build Docker image from source."""

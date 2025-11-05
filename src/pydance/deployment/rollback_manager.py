@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Rollback manager for failed deployments.
 """
@@ -12,7 +14,7 @@ class RollbackManager:
     """
 
     def __init__(self):
-        self.logger = logging.getLogger("rollback_manager")
+        self.logger = get_logger("rollback_manager")
 
     async def rollback(self, deployment) -> bool:
         """Rollback a failed deployment."""

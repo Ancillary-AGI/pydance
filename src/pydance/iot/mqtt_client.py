@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 MQTT Client for IoT communication.
 Provides MQTT protocol support for device communication.
@@ -32,7 +34,7 @@ class MQTTClient:
 
     def __init__(self, config: MQTTConfig):
         self.config = config
-        self.logger = logging.getLogger("mqtt_client")
+        self.logger = get_logger("mqtt_client")
         self.client = None
         self.is_connected = False
         self.subscriptions: Dict[str, Callable] = {}

@@ -5,7 +5,7 @@ Provides DatabaseConfig, DatabaseConnection, models, migrations, and type defini
 """
 
 from pydance.db.config import DatabaseConfig
-from pydance.db.connections.base_connection import DatabaseConnection
+from pydance.db.connections.base import DatabaseConnection
 
 # Types and fields
 from pydance.db.models.base import (

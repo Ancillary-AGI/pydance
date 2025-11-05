@@ -13,6 +13,8 @@ def test_settings():
     settings = Settings()
     settings.DEBUG = True
     settings.SECRET_KEY = "test-secret-key-for-testing-only"
+    # Comment out DATABASE_URL to avoid auto db setup in tests
+    # settings.DATABASE_URL = 'sqlite:///:memory:'
     settings.DATABASES = {
         'default': {
             'ENGINE': 'pydance.db.backends.sqlite3',
@@ -28,9 +30,10 @@ def test_settings():
 
 
 @pytest.fixture
-def test_app(test_settings):
+def test_app():
     """Create test application instance"""
-    app = Application(test_settings)
+    from pydance.server.application import Application
+    app = Application()
     return app
 
 
@@ -61,6 +64,19 @@ def authenticated_user():
     )
     return user
 
+
+@pytest.fixture
+def test_database():
+    """Create test database for testing"""
+    from unittest.mock import Mock
+    db = Mock()
+    db.connect.return_value = None
+    db.disconnect.return_value = None
+    db.session = Mock()
+    db.engine = Mock()
+    return db
+
+
 __all__ = [
-    'test_settings', 'test_app', 'test_client', 'db_session', 'authenticated_user'
+    'test_settings', 'test_app', 'test_client', 'test_database', 'db_session', 'authenticated_user'
 ]

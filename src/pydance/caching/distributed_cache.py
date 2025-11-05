@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Multi-level distributed caching system for Pydance  framework.
 
@@ -144,7 +146,7 @@ class DistributedCache:
 
     def __init__(self, config: CacheConfig = None):
         self.config = config or CacheConfig()
-        self.logger = logging.getLogger("distributed_cache")
+        self.logger = get_logger("distributed_cache")
         self.metrics = get_metrics_collector()
         self.analytics = CacheAnalytics()
 

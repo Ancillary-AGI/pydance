@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Unified Rate Limiting Module for Pydance  Framework.
 
@@ -14,7 +16,7 @@ from typing import Dict, Any, Optional, Union, List, Callable
 from enum import Enum
 import logging
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class RateLimitAlgorithm(Enum):

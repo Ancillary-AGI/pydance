@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Security Middleware for Pydance Framework
 
@@ -24,7 +26,7 @@ from pydance.http import Request, Response
 from pydance.exceptions import HTTPException
 from pydance.middleware import HTTPMiddleware
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def add_csrf_token_to_response(response: Response, config: 'SecurityConfig', token: str) -> None:

@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Compliance Framework for Pydance .
 Supports GDPR, HIPAA, SOC2, and other compliance standards.
@@ -151,7 +153,7 @@ class ComplianceManager:
             default_config = DatabaseConfig("sqlite:///compliance.db")
             self.db_connection = DatabaseConnection.get_instance(default_config)
         
-        self.logger = logging.getLogger("ComplianceManager")
+        self.logger = get_logger("ComplianceManager")
 
     def add_compliance_rule(self, rule: ComplianceRule):
         """Add compliance rule"""

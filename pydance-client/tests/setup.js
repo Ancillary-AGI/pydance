@@ -73,11 +73,43 @@ global.console = {
   debug: vi.fn(),
 };
 
-// Performance API
-global.performance = dom.window.performance;
+// Performance API - mock performance.now() to avoid jsdom recursive bug
+global.performance = {
+  ...dom.window.performance,
+  now: () => Date.now(),
+  mark: dom.window.performance.mark,
+  measure: dom.window.performance.measure,
+  getEntriesByName: dom.window.performance.getEntriesByName,
+  getEntriesByType: dom.window.performance.getEntriesByType,
+  clearMarks: dom.window.performance.clearMarks,
+  clearMeasures: dom.window.performance.clearMeasures,
+};
 
-// Crypto API
-global.crypto = dom.window.crypto;
+// Crypto API - handle read-only property
+try {
+  global.crypto = dom.window.crypto;
+} catch (e) {
+  // If crypto is read-only, define it using Object.defineProperty
+  Object.defineProperty(global, 'crypto', {
+    value: {
+      getRandomValues: (array) => {
+        for (let i = 0; i < array.length; i++) {
+          array[i] = Math.floor(Math.random() * 256);
+        }
+        return array;
+      },
+      randomUUID: () => {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          const r = Math.random() * 16 | 0;
+          const v = c === 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      }
+    },
+    writable: false,
+    configurable: true
+  });
+}
 
 // URL and URLSearchParams
 global.URL = dom.window.URL;

@@ -11,11 +11,10 @@ utility classes and functions.
 # Import utilities from submodules to avoid circular imports
 
 # Import advanced utilities
-from .mathematical_operations import MathematicalOperations
-from .advanced_functions import (
-    FunctionUtils, AsyncUtils, DataUtils, ValidationUtils,
+from .math_utils import (
+    MathOps, FunctionUtils, AsyncUtils, DataUtils, ValidationUtils,
     PerformanceUtils, ThreadingUtils, LoggingUtils,
-    function_utils, async_utils, data_utils, validation_utils,
+    math_ops, function_utils, async_utils, data_utils, validation_utils,
     performance_utils, threading_utils, logging_utils
 )
 from .locale_support import (
@@ -34,7 +33,7 @@ __all__ = [
     'csrf_exempt', 'csrf_exempt_endpoint',
 
     # Mathematical operations
-    'MathematicalOperations',
+    'MathOps',
 
     # Advanced function utilities
     'FunctionUtils', 'AsyncUtils', 'DataUtils', 'ValidationUtils',
@@ -49,4 +48,3 @@ __all__ = [
     'format_date', 'format_datetime', 'format_number', 'format_currency', 'format_percent',
     'format_address', 'format_measurement', 'format_list',
 ]
-

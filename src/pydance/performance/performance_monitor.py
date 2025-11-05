@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Performance monitoring system for Pydance applications.
 Tracks response times, throughput, error rates, and resource usage.
@@ -35,7 +37,7 @@ class PerformanceMonitor:
     def __init__(self):
         self.metrics: List[PerformanceMetrics] = []
         self.is_monitoring = False
-        self.logger = logging.getLogger("performance_monitor")
+        self.logger = get_logger("performance_monitor")
         self._lock = asyncio.Lock()
 
     async def start_monitoring(self, interval: float = 1.0):

@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 CoAP Server for IoT communication.
 Provides Constrained Application Protocol support.
@@ -24,7 +26,7 @@ class CoAPServer:
 
     def __init__(self, config: CoAPConfig):
         self.config = config
-        self.logger = logging.getLogger("coap_server")
+        self.logger = get_logger("coap_server")
         self.server = None
         self.is_running = False
         self.resources: Dict[str, Callable] = {}

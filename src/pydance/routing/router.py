@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Pydance Router - Simple ASGI router for web applications.
 
@@ -16,7 +18,7 @@ from collections import defaultdict
 from functools import lru_cache
 import asyncio
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 from pydance.routing.route import Route
 from pydance.middleware.base import MiddlewareType
@@ -175,6 +177,10 @@ class Router:
 
         self._route_cache[cache_key] = None
         return None
+
+    def find_websocket_route(self, path: str) -> Optional[RouteMatch]:
+        """Find WebSocket route (alias for match_websocket)."""
+        return self.match_websocket(path)
 
     def get_route_by_name(self, name: str) -> Optional[Route]:
         """Get route by name."""

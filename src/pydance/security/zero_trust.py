@@ -1,3 +1,5 @@
+
+from pydance.utils.logging import get_logger
 """
 Zero Trust Network implementation for Pydance  framework.
 Implements never trust, always verify security model.
@@ -108,7 +110,7 @@ class TrustEngine:
             default_config = DatabaseConfig("sqlite:///zero_trust.db")
             self.db_connection = DatabaseConnection.get_instance(default_config)
         
-        self.logger = logging.getLogger("TrustEngine")
+        self.logger = get_logger("TrustEngine")
 
     def register_trust_policy(self, name: str, policy_func: callable):
         """Register a trust evaluation policy"""
@@ -325,7 +327,7 @@ class ZeroTrustNetwork:
         self.trust_engine = trust_engine
         self.access_policies: Dict[str, Dict[str, Any]] = {}
         self.session_registry: Dict[str, Dict[str, Any]] = {}
-        self.logger = logging.getLogger("ZeroTrustNetwork")
+        self.logger = get_logger("ZeroTrustNetwork")
 
     def define_access_policy(self, resource: str, policy: Dict[str, Any]):
         """Define access policy for a resource"""
