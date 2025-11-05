@@ -422,7 +422,7 @@ Contents
 
 .. toctree::
    :maxdepth: 2
-   :caption: Getting Started:
+   :caption: 🚀 Getting Started:
 
    installation
    quickstart
@@ -430,7 +430,13 @@ Contents
 
 .. toctree::
    :maxdepth: 2
-   :caption: Core Concepts:
+   :caption: 🏗️ Architecture & Design:
+
+   architecture
+
+.. toctree::
+   :maxdepth: 2
+   :caption: 📚 Core Concepts:
 
    application
    routing
@@ -439,35 +445,68 @@ Contents
    models
    controllers
    views
+   database
+   templates
 
 .. toctree::
    :maxdepth: 2
-   :caption: Advanced Features:
+   :caption: ⚡ Advanced Features:
 
-   database
-   templates
    sessions
    authentication
+   authorization
    graphql
    websockets
    caching
    monitoring
    security
    deployment
+   performance
+   scaling
 
 .. toctree::
    :maxdepth: 2
-   :caption: API Reference:
+   :caption: 🔧 Development Tools:
 
-   api
+   testing
+   debugging
+   profiling
+   cli-tools
 
 .. toctree::
    :maxdepth: 2
-   :caption: Ecosystem:
+   :caption: 📖 API Reference:
+
+   api-core
+   api-database
+   api-security
+   api-middleware
+
+.. toctree::
+   :maxdepth: 2
+   :caption: 🌐 Ecosystem:
 
    pydance-client
    plugins
    extensions
+   integrations
+
+.. toctree::
+   :maxdepth: 2
+   :caption: 📋 Best Practices:
+
+   best-practices
+   security-guide
+   performance-guide
+   deployment-guide
+
+.. toctree::
+   :maxdepth: 2
+   :caption: ❓ Troubleshooting:
+
+   faq
+   common-issues
+   migration-guide
 
 Indices and tables
 ==================
