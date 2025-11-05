@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Pydance Application - ASGI Web Framework
 
@@ -11,10 +10,10 @@ import asyncio
 import time
 from pathlib import Path
 from typing import Dict, List, Callable, Any, Optional, Type, Union, Awaitable
-import logging
 from dataclasses import dataclass, field
 from enum import Enum
 
+from pydance.utils.logging import get_logger
 from pydance.config.settings import settings
 from pydance.config import AppConfig
 from pydance.routing import Router

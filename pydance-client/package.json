@@ -1,6 +1,6 @@
 {
   "name": "@pydance/client",
-  "version": "3.0.0",
+  "version": "0.1.0",
   "description": "Ultra-lightweight, signal-based frontend framework for Pydance",
   "keywords": [
     "frontend",

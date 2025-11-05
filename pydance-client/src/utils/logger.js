@@ -14,7 +14,7 @@
  * - Development tools integration
  *
  * @author Pydance Framework Team
- * @version 3.0.0
+ * @version 0.1.0
  * @license MIT
  */
 

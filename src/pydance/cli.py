@@ -1282,7 +1282,6 @@ Tests for {project_name}
 """
 
 import pytest
-from app import app
 
 
 def test_home_endpoint():
