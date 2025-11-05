@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@pydance/client Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 0;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 40px 0;
+        }
+
+        .feature {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .feature h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 10px;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #5a67d8;
+        }
+
+        .section {
+            margin: 60px 0;
+        }
+
+        .section h2 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .comparison {
+            overflow-x: auto;
+            margin: 40px 0;
+        }
+
+        table {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+        }
+
+        .highlight {
+            background: #fef5e7;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #f6ad55;
+            margin: 20px 0;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 0;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>@pydance/client</h1>
+            <p class="subtitle">Ultra-lightweight, signal-based frontend framework for Pydance</p>
+            <a href="#installation" class="btn">Get Started</a>
+            <a href="https://github.com/ancillary-ai/pydance" class="btn">GitHub</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <section class="section">
+            <h2>🚀 Key Features</h2>
+            <div class="feature-grid">
+                <div class="feature">
+                    <h4>⚡ Ultra-Lightweight</h4>
+                    <p>Only 3-8KB gzipped core runtime with zero external dependencies</p>
+                </div>
+                <div class="feature">
+                    <h4>🎯 Signal-Based Reactivity</h4>
+                    <p>Fine-grained, automatic dependency tracking for optimal performance</p>
+                </div>
+                <div class="feature">
+                    <h4>🎨 Modern JSX Runtime</h4>
+                    <p>Optimized JSX with full TypeScript support and modern syntax</p>
+                </div>
+                <div class="feature">
+                    <h4>🔧 Function Components</h4>
+                    <p>Modern hooks-based component system with useState, useEffect, and more</p>
+                </div>
+                <div class="feature">
+                    <h4>🌐 SSR Support</h4>
+                    <p>Server-side rendering integration with Pydance backend</p>
+                </div>
+                <div class="feature">
+                    <h4>📊 Performance Monitoring</h4>
+                    <p>Built-in real-time performance metrics and optimization tools</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="installation">
+            <h2>📦 Installation</h2>
+            <div class="card">
+                <h3>Choose your package manager</h3>
+                <div class="code-block">
+// npm
+npm install @pydance/client
+
+// yarn
+yarn add @pydance/client
+
+// pnpm
+pnpm add @pydance/client
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>🚀 Quick Start</h2>
+            <div class="card">
+                <h3>Create your first Pydance Client app</h3>
+                <div class="code-block">
+import { createComponent, signal, useState, jsx } from '@pydance/client';
+
+// Create a reactive signal
+const count = signal(0);
+
+// Create a component
+const Counter = createComponent(() => {
+  const [state, setState] = useState({ name: 'World' });
+
+  return jsx('div', {
+    className: 'counter',
+    children: [
+      jsx('h1', {
+        children: [`Hello ${state.name}!`]
+      }),
+      jsx('p', {
+        children: [`Count: ${count.value}`]
+      }),
+      jsx('button', {
+        onClick: () => count.value++,
+        children: 'Increment'
+      }),
+      jsx('button', {
+        onClick: () => setState(prev => ({ ...prev, name: 'Pydance' })),
+        children: 'Change Name'
+      })
+    ]
+  });
+});
+
+// Mount the component
+const app = new Counter();
+app.mount('#app');
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>📊 Performance Comparison</h2>
+            <div class="comparison">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>@pydance/client</th>
+                            <th>React</th>
+                            <th>Vue 3</th>
+                            <th>Svelte</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Bundle Size</td>
+                            <td><strong>3-8KB</strong></td>
+                            <td>40KB+</td>
+                            <td>20KB+</td>
+                            <td>5KB+</td>
+                        </tr>
+                        <tr>
+                            <td>Runtime</td>
+                            <td><strong>Signals</strong></td>
+                            <td>VDOM</td>
+                            <td>Proxy</td>
+                            <td>Compiler</td>
+                        </tr>
+                        <tr>
+                            <td>Performance</td>
+                            <td><strong>⚡ Fastest</strong></td>
+                            <td>Fast</td>
+                            <td>Fast</td>
+                            <td>Very Fast</td>
+                        </tr>
+                        <tr>
+                            <td>Memory Usage</td>
+                            <td><strong>Optimized</strong></td>
+                            <td>Good</td>
+                            <td>Good</td>
+                            <td>Excellent</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>🔧 Core Concepts</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Signals</h3>
+                    <p>Signals are the foundation of Pydance Client's reactivity system, providing fine-grained dependency tracking.</p>
+                    <div class="code-block">
+import { signal, computed, effect } from '@pydance/client';
+
+// Create a signal
+const name = signal('Pydance');
+const age = signal(1);
+
+// Create a computed signal
+const description = computed(() => `${name.value} is ${age.value} years old`);
+
+// Create an effect
+effect(() => {
+  console.log(description.value);
+});
+
+// Update signals (triggers reactivity)
+name.value = 'Pydance Client';
+age.value = 2;
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Components</h3>
+                    <p>Function-based components with hooks for state management and side effects.</p>
+                    <div class="code-block">
+import { createComponent, useState, useEffect } from '@pydance/client';
+
+const Timer = createComponent(() => {
+  const [time, setTime] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTime(prev => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return jsx('div', {
+    children: `Time: ${time}s`
+  });
+});
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>JSX Runtime</h3>
+                    <p>Modern JSX with optimized runtime and fragment support.</p>
+                    <div class="code-block">
+import { jsx, jsxs, Fragment } from '@pydance/client';
+
+// JSX Elements
+const element = jsx('div', {
+  className: 'container',
+  children: jsx('h1', { children: 'Hello World' })
+});
+
+// JSX Fragments
+const fragment = jsx(Fragment, {
+  children: [
+    jsx('h1', { children: 'Title' }),
+    jsx('p', { children: 'Description' })
+  ]
+});
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>🛠️ Development</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Setup</h3>
+                    <div class="code-block">
+# Clone the repository
+git clone https://github.com/ancillary-ai/pydance.git
+cd pydance/pydance-client
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Run tests
+npm run test
+
+# Build for production
+npm run build
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Available Scripts</h3>
+                    <ul>
+                        <li><code>npm run dev</code> - Start development server</li>
+                        <li><code>npm run build</code> - Build for production</li>
+                        <li><code>npm run test</code> - Run tests</li>
+                        <li><code>npm run test:watch</code> - Watch mode for tests</li>
+                        <li><code>npm run test:coverage</code> - Generate coverage report</li>
+                        <li><code>npm run lint</code> - Lint code</li>
+                        <li><code>npm run format</code> - Format code</li>
+                        <li><code>npm run typecheck</code> - TypeScript type checking</li>
+                        <li><code>npm run size</code> - Check bundle size</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>🌟 Ecosystem</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Official Packages</h3>
+                    <ul>
+                        <li><code>@pydance/client</code> - Core framework</li>
+                        <li><code>@pydance/client-devtools</code> - Development tools</li>
+                        <li><code>@pydance/client-router</code> - Client-side routing</li>
+                        <li><code>@pydance/client-store</code> - State management</li>
+                        <li><code>@pydance/client-forms</code> - Form handling</li>
+                        <li><code>@pydance/client-testing</code> - Testing utilities</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3>Community Packages</h3>
+                    <ul>
+                        <li><code>pydance-client-axios</code> - Axios integration</li>
+                        <li><code>pydance-client-socket</code> - WebSocket integration</li>
+                        <li><code>pydance-client-i18n</code> - Internationalization</li>
+                        <li><code>pydance-client-pwa</code> - PWA utilities</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <div class="highlight">
+            <h3>🎯 Why Choose @pydance/client?</h3>
+            <p>
+                Pydance Client is specifically designed for seamless integration with Pydance backend,
+                providing the perfect frontend companion with unmatched performance and developer experience.
+                Built with modern JavaScript and TypeScript, it offers the best of both worlds: the simplicity
+                of signal-based reactivity and the power of a full-featured framework.
+            </p>
+        </div>
+
+        <section class="section">
+            <h2>🤝 Contributing</h2>
+            <div class="card">
+                <h3>How to contribute</h3>
+                <ol>
+                    <li>Fork the repository</li>
+                    <li>Create your feature branch (<code>git checkout -b feature/amazing-feature</code>)</li>
+                    <li>Commit your changes (<code>git commit -m 'Add some amazing feature'</code>)</li>
+                    <li>Push to the branch (<code>git push origin feature/amazing-feature</code>)</li>
+                    <li>Open a Pull Request</li>
+                </ol>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Pydance Framework Team. Made with ❤️ for the modern web.</p>
+            <p>
+                <a href="https://github.com/ancillary-ai/pydance" class="btn">GitHub</a>
+                <a href="https://pydance.dev" class="btn">Documentation</a>
+                <a href="https://discord.gg/pydance" class="btn">Discord</a>
+            </p>
+        </div>
+    </footer>
+</body>
+</html>
