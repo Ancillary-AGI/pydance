@@ -263,6 +263,483 @@ Server-Side Rendering (SSR)
      hydrate(app, '#app');
    }
 
+Examples
+--------
+
+Complete Todo Application
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A comprehensive example showing signals, computed values, context, JSX, and component lifecycle:
+
+.. code-block:: javascript
+
+   import { createComponent, signal, computed, jsx, useState, useEffect, Context } from '@pydance/client';
+
+   // Create a theme context
+   const ThemeContext = new Context('light');
+
+   // Todo App Component
+   const TodoApp = createComponent(() => {
+     const [todos, setTodos] = useState([]);
+     const [filter, setFilter] = useState('all');
+     const [newTodo, setNewTodo] = useState('');
+     const [theme, setTheme] = useState('light');
+
+     // Computed values
+     const filteredTodos = computed(() => {
+       switch (filter) {
+         case 'active':
+           return todos.filter(todo => !todo.completed);
+         case 'completed':
+           return todos.filter(todo => todo.completed);
+         default:
+           return todos;
+       }
+     });
+
+     const stats = computed(() => {
+       const total = todos.length;
+       const active = todos.filter(todo => !todo.completed).length;
+       const completed = total - active;
+       return { total, active, completed };
+     });
+
+     // Add new todo
+     const addTodo = () => {
+       if (newTodo.trim()) {
+         setTodos(prev => [...prev, {
+           id: Date.now(),
+           text: newTodo.trim(),
+           completed: false,
+           createdAt: new Date().toISOString()
+         }]);
+         setNewTodo('');
+       }
+     };
+
+     // Toggle todo completion
+     const toggleTodo = (id) => {
+       setTodos(prev => prev.map(todo =>
+         todo.id === id ? { ...todo, completed: !todo.completed } : todo
+       ));
+     };
+
+     // Remove todo
+     const removeTodo = (id) => {
+       setTodos(prev => prev.filter(todo => todo.id !== id));
+     };
+
+     // Clear completed todos
+     const clearCompleted = () => {
+       setTodos(prev => prev.filter(todo => !todo.completed));
+     };
+
+     // Toggle theme
+     const toggleTheme = () => {
+       const newTheme = theme === 'light' ? 'dark' : 'light';
+       setTheme(newTheme);
+       document.body.className = `theme-${newTheme}`;
+     };
+
+     return jsx('div', {
+       className: 'todo-app',
+       children: [
+         jsx('div', {
+           className: 'demo-header',
+           children: jsx('h2', { children: '🚀 Pydance Client - Complete Demo' })
+         }),
+
+         // Theme Toggle
+         jsx('div', {
+           className: 'controls',
+           children: jsx('button', {
+             onClick: toggleTheme,
+             children: `Switch to ${theme === 'light' ? 'Dark' : 'Light'} Theme`
+           })
+         }),
+
+         // Stats
+         jsx('div', {
+           className: 'stats',
+           children: [
+             jsx('div', {
+               className: 'stat-card',
+               children: [
+                 jsx('div', {
+                   className: 'stat-number',
+                   children: stats.value.total
+                 }),
+                 jsx('div', { children: 'Total Todos' })
+               ]
+             }),
+             jsx('div', {
+               className: 'stat-card',
+               children: [
+                 jsx('div', {
+                   className: 'stat-number',
+                   children: stats.value.active
+                 }),
+                 jsx('div', { children: 'Active' })
+               ]
+             }),
+             jsx('div', {
+               className: 'stat-card',
+               children: [
+                 jsx('div', {
+                   className: 'stat-number',
+                   children: stats.value.completed
+                 }),
+                 jsx('div', { children: 'Completed' })
+               ]
+             })
+           ]
+         }),
+
+         // Add Todo Form
+         jsx('div', {
+           className: 'demo-container',
+           children: [
+             jsx('h3', { children: '📝 Add New Todo' }),
+             jsx('div', {
+               className: 'form-group',
+               children: [
+                 jsx('label', {
+                   htmlFor: 'new-todo-input',
+                   children: 'Todo Text:'
+                 }),
+                 jsx('input', {
+                   id: 'new-todo-input',
+                   type: 'text',
+                   value: newTodo,
+                   onInput: (e) => setNewTodo(e.target.value),
+                   onKeyDown: (e) => {
+                     if (e.key === 'Enter') {
+                       addTodo();
+                     }
+                   },
+                   placeholder: 'Enter a new todo...'
+                 })
+               ]
+             }),
+             jsx('div', {
+               className: 'controls',
+               children: jsx('button', {
+                 onClick: addTodo,
+                 className: 'success',
+                 children: 'Add Todo'
+               })
+             })
+           ]
+         }),
+
+         // Filter Controls
+         jsx('div', {
+           className: 'demo-container',
+           children: [
+             jsx('h3', { children: '🔍 Filter Todos' }),
+             jsx('div', {
+               className: 'controls',
+               children: [
+                 jsx('button', {
+                   onClick: () => setFilter('all'),
+                   children: 'All',
+                   style: filter === 'all' ? { background: '#007acc' } : {}
+                 }),
+                 jsx('button', {
+                   onClick: () => setFilter('active'),
+                   children: 'Active',
+                   style: filter === 'active' ? { background: '#007acc' } : {}
+                 }),
+                 jsx('button', {
+                   onClick: () => setFilter('completed'),
+                   children: 'Completed',
+                   style: filter === 'completed' ? { background: '#007acc' } : {}
+                 }),
+                 jsx('button', {
+                   onClick: clearCompleted,
+                   className: 'danger',
+                   children: 'Clear Completed'
+                 })
+               ]
+             })
+           ]
+         }),
+
+         // Todo List
+         jsx('div', {
+           className: 'demo-container',
+           children: [
+             jsx('h3', { children: `📋 Todos (${filteredTodos.value.length})` }),
+             jsx('div', {
+               className: 'todo-list',
+               children: filteredTodos.value.length === 0
+                 ? jsx('p', {
+                     children: filter === 'all'
+                       ? 'No todos yet. Add one above!'
+                       : `No ${filter} todos.`
+                   })
+                 : filteredTodos.value.map(todo =>
+                     jsx('div', {
+                       key: todo.id,
+                       className: `todo-item ${todo.completed ? 'completed' : ''}`,
+                       children: [
+                         jsx('div', {
+                           className: 'todo-text',
+                           onClick: () => toggleTodo(todo.id),
+                           children: todo.text
+                         }),
+                         jsx('div', {
+                           className: 'todo-actions',
+                           children: [
+                             jsx('button', {
+                               onClick: () => toggleTodo(todo.id),
+                               children: todo.completed ? '✓' : '○'
+                             }),
+                             jsx('button', {
+                               onClick: () => removeTodo(todo.id),
+                               className: 'danger',
+                               children: '×'
+                             })
+                           ]
+                         })
+                       ]
+                     })
+                   )
+             })
+           ]
+         })
+       ]
+     });
+   });
+
+   // Mount the application
+   const app = new TodoApp();
+   app.mount('#app');
+
+Signal-Based Counter
+~~~~~~~~~~~~~~~~~~~~
+
+Simple counter demonstrating signal reactivity:
+
+.. code-block:: javascript
+
+   import { createComponent, signal, jsx } from '@pydance/client';
+
+   // Counter component using signals
+   const Counter = createComponent(() => {
+     const count = signal(0);
+
+     // Update counter display
+     effect(() => {
+       const display = document.getElementById('counter');
+       if (display) {
+         display.textContent = count.value;
+       }
+     });
+
+     // Event listeners
+     const increment = () => count.value++;
+     const decrement = () => count.value--;
+
+     document.getElementById('increment')?.addEventListener('click', increment);
+     document.getElementById('decrement')?.addEventListener('click', decrement);
+
+     return { count, increment, decrement };
+   });
+
+State Management Patterns
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Different state management approaches:
+
+**Zustand-style Store:**
+
+.. code-block:: javascript
+
+   import { create } from '@pydance/client';
+
+   const useCounterStore = create((set, get) => ({
+     count: 0,
+     increment: () => set(state => ({ count: state.count + 1 })),
+     decrement: () => set(state => ({ count: state.count - 1 })),
+     reset: () => set({ count: 0 })
+   }));
+
+**Redux Toolkit (RTK) Style:**
+
+.. code-block:: javascript
+
+   import { createSlice, configureStore } from '@pydance/client';
+
+   const counterSlice = createSlice({
+     name: 'counter',
+     initialState: { value: 0 },
+     reducers: {
+       increment: (state) => ({ ...state, value: state.value + 1 }),
+       decrement: (state) => ({ ...state, value: state.value - 1 }),
+       incrementByAmount: (state, action) => ({ ...state, value: state.value + action.payload })
+     }
+   });
+
+   const rtkStore = configureStore({
+     reducer: { counter: counterSlice }
+   });
+
+**Immer Integration:**
+
+.. code-block:: javascript
+
+   import { create, immer } from '@pydance/client';
+
+   const useImmerStore = create(
+     immer((set) => ({
+       nested: { deep: { value: 0 } },
+       updateDeep: () => set(state => {
+         state.nested.deep.value += 1; // Mutate directly!
+       })
+     }))
+   );
+
+**Persistent Store with DevTools:**
+
+.. code-block:: javascript
+
+   import { create, persist, devtools } from '@pydance/client';
+
+   const usePersistStore = create(
+     devtools(
+       persist(
+         (set) => ({
+           count: 0,
+           increment: () => set(state => ({ count: state.count + 1 })),
+           decrement: () => set(state => ({ count: state.count - 1 }))
+         }),
+         { name: 'persist-demo' }
+       ),
+       { name: 'Pydance Demo Store' }
+     )
+   );
+
+Advanced Scaling Features
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Virtual scrolling for large datasets:
+
+.. code-block:: javascript
+
+   import { createComponent, VirtualList, jsx } from '@pydance/client';
+
+   const LargeListDemo = createComponent(() => {
+     // Create large dataset
+     const items = Array.from({ length: 100000 }, (_, i) => ({
+       id: i,
+       name: `Item ${i}`,
+       value: Math.random() * 1000,
+       category: ['A', 'B', 'C'][Math.floor(Math.random() * 3)]
+     }));
+
+     return jsx('div', {
+       className: 'virtual-list-container',
+       children: jsx(VirtualList, {
+         items: items,
+         renderItem: (item, index) => jsx('div', {
+           key: item.id,
+           className: 'virtual-item',
+           children: [
+             jsx('span', { className: 'item-id', children: `#${item.id}` }),
+             jsx('span', { className: 'item-data', children: `${item.name} - ${item.category} - $${item.value.toFixed(2)}` }),
+             jsx('button', {
+               onClick: () => selectItem(item.id),
+               children: 'Select'
+             })
+           ]
+         }),
+         itemHeight: 60,
+         containerHeight: 400,
+         overscan: 10
+       })
+     });
+   });
+
+Real-time Chat Application
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+WebSocket-based chat with real-time updates:
+
+.. code-block:: javascript
+
+   import { createComponent, useState, useEffect, jsx } from '@pydance/client';
+
+   const ChatApp = createComponent(() => {
+     const [messages, setMessages] = useState([]);
+     const [inputValue, setInputValue] = useState('');
+     const [isConnected, setIsConnected] = useState(false);
+
+     useEffect(() => {
+       // WebSocket connection
+       const ws = new WebSocket('ws://localhost:8000/ws/chat?room=general');
+
+       ws.onopen = () => setIsConnected(true);
+       ws.onmessage = (event) => {
+         const data = JSON.parse(event.data);
+         setMessages(prev => [...prev, {
+           id: Date.now(),
+           type: data.type === 'chat_message' ? 'user' : 'system',
+           message: data.message,
+           timestamp: data.timestamp
+         }]);
+       };
+       ws.onclose = () => setIsConnected(false);
+
+       return () => ws.close();
+     }, []);
+
+     const sendMessage = () => {
+       if (inputValue.trim() && isConnected) {
+         // Send via WebSocket
+         ws.send(JSON.stringify({
+           type: 'chat_message',
+           message: inputValue.trim(),
+           room: 'general'
+         }));
+         setInputValue('');
+       }
+     };
+
+     return jsx('div', {
+       className: 'chat-container',
+       children: [
+         jsx('div', {
+           className: 'chat-messages',
+           children: messages.map(msg =>
+             jsx('div', {
+               key: msg.id,
+               className: `chat-message ${msg.type}`,
+               children: msg.message
+             })
+           )
+         }),
+         jsx('div', {
+           className: 'chat-input-container',
+           children: [
+             jsx('input', {
+               type: 'text',
+               className: 'chat-input',
+               value: inputValue,
+               onChange: (e) => setInputValue(e.target.value),
+               onKeyDown: (e) => e.key === 'Enter' && sendMessage(),
+               placeholder: 'Type your message...'
+             }),
+             jsx('button', {
+               onClick: sendMessage,
+               children: 'Send'
+             })
+           ]
+         })
+       ]
+     });
+   });
+
 API Integration
 ~~~~~~~~~~~~~~~
 
