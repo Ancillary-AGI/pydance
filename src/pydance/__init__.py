@@ -65,12 +65,13 @@ except ImportError:
     DatabaseConfig = None
     DatabaseConnection = None
 
-# Utility components (optional)
+# Event system (optional)
 try:
     from pydance.events import get_event_bus
 except ImportError:
     get_event_bus = None
 
+# Plugin system (optional)
 try:
     from pydance.plugins import get_plugin_manager
 except ImportError:

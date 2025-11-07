@@ -6,9 +6,9 @@ Provides rich UI components with form handling, validation, and theming.
 """
 
 from pydance.widgets.core import (
-    Widget, BaseWidget, WidgetRegistry, WidgetConfig,
-    RichText, RichSelect, RichTitle, RichFile, RichDate,
-    RichColor, RichRating, RichTags, RichSlider, RichCode,
+    Widget, BaseWidget, WidgetConfig, WidgetRegistry,
+    RichText, RichSelect, RichFile, RichDate,
+    RichTitle, RichColor, RichRating, RichTags, RichSlider, RichCode,
     # Date and Time Widgets
     RichDateTime, RichTime,
     # File Management Widgets
@@ -24,9 +24,9 @@ from pydance.widgets.forms import (
 __version__ = "1.0.0"
 __all__ = [
     # Core widgets
-    'Widget', 'BaseWidget', 'WidgetRegistry', 'WidgetConfig',
-    'RichText', 'RichSelect', 'RichTitle', 'RichFile', 'RichDate',
-    'RichColor', 'RichRating', 'RichTags', 'RichSlider', 'RichCode',
+    'Widget', 'BaseWidget', 'WidgetConfig', 'WidgetRegistry',
+    'RichText', 'RichSelect', 'RichFile', 'RichDate',
+    'RichTitle', 'RichColor', 'RichRating', 'RichTags', 'RichSlider', 'RichCode',
 
     # Date and Time Widgets
     'RichDateTime', 'RichTime',

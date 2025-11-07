@@ -10,7 +10,7 @@ import uuid
 import json
 import hashlib
 from datetime import datetime, date, time
-from typing import Any, Dict, List, Optional, Union, Callable
+from typing import Any, Dict, List, Optional, Union, Callable, Type
 from pathlib import Path
 from dataclasses import dataclass, field
 from enum import Enum
@@ -875,7 +875,7 @@ class RichShoppingCart(Widget):
 
     def get_subtotal(self) -> float:
         """Calculate subtotal"""
-        return sum(item.get('price', 0) * item.get('quantity', 1) for item in self.items)
+        return sum(item.get('price', 0) * item.get("quantity", 1) for item in self.items)
 
     def get_tax(self) -> float:
         """Calculate tax"""
@@ -926,12 +926,12 @@ class RichShoppingCart(Widget):
                 quantity_controls = f'''
                 <div class="quantity-controls">
                     <button type="button" class="btn-quantity-minus" data-quantity-minus="true">−</button>
-                    <input type="number" class="item-quantity" value="{item.get('quantity', 1)}" min="1" max="99">
+                    <input type="number" class="item-quantity" value="{item.get("quantity", 1)}" min="1" max="99">
                     <button type="button" class="btn-quantity-plus" data-quantity-plus="true">+</button>
                 </div>
                 '''
             else:
-                quantity_controls = f'<span class="item-quantity-display">Qty: {item.get('quantity', 1)}</span>'
+                quantity_controls = f'<span class="item-quantity-display">Qty: {item.get("quantity", 1)}</span>'
 
             remove_btn = ''
             if self.allow_item_removal:
@@ -945,7 +945,7 @@ class RichShoppingCart(Widget):
                     <div class="item-price">{self.currency_symbol}{item.get('price', 0):.2f}</div>
                     {quantity_controls}
                 </div>
-                <div class="item-total">{self.currency_symbol}{item.get('price', 0) * item.get('quantity', 1):.2f}</div>
+                <div class="item-total">{self.currency_symbol}{item.get('price', 0) * item.get("quantity", 1):.2f}</div>
                 {remove_btn}
             </div>
             '''
@@ -1163,3 +1163,365 @@ class RichSelect(Widget):
 
         return self.render_wrapper(content)
 
+
+# Additional Rich Widgets
+class RichTitle(Widget):
+    """Rich title widget with styling options"""
+
+    def __init__(self, name: str, config: Optional[WidgetConfig] = None, **kwargs):
+        super().__init__(name, config, **kwargs)
+        self.level = kwargs.get('level', 1)  # h1, h2, h3, etc.
+        self.subtitle = kwargs.get('subtitle', '')
+        self.icon = kwargs.get('icon', '')
+        self.dependencies = ['rich-title.css']
+
+    @property
+    def widget_type(self) -> WidgetType:
+        return WidgetType.DISPLAY
+
+    def render(self) -> str:
+        """Render the rich title"""
+        icon_html = f'<span class="title-icon">{self.icon}</span>' if self.icon else ''
+        subtitle_html = f'<div class="title-subtitle">{self.subtitle}</div>' if self.subtitle else ''
+
+        content = f'''
+        <div class="rich-title-wrapper">
+            {icon_html}
+            <h{self.level} class="rich-title">{self.value or self.label}</h{self.level}>
+            {subtitle_html}
+        </div>
+        '''
+
+        return content
+
+
+class RichColor(Widget):
+    """Color picker widget"""
+
+    def __init__(self, name: str, config: Optional[WidgetConfig] = None, **kwargs):
+        super().__init__(name, config, **kwargs)
+        self.show_palette = kwargs.get('show_palette', True)
+        self.allow_custom = kwargs.get('allow_custom', True)
+        self.format = kwargs.get('format', 'hex')  # hex, rgb, hsl
+        self.palette = kwargs.get('palette', ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'])
+        self.dependencies = ['color-picker.js', 'color-picker.css']
+
+    @property
+    def widget_type(self) -> WidgetType:
+        return WidgetType.INPUT
+
+    def render(self) -> str:
+        """Render the color picker"""
+        attrs = self.get_attributes()
+        attrs.update({
+            'type': 'color',
+            'data-color-picker': 'true',
+            'data-format': self.format,
+            'data-show-palette': str(self.show_palette).lower(),
+            'data-allow-custom': str(self.allow_custom).lower(),
+        })
+
+        if self.value:
+            attrs['value'] = str(self.value)
+
+        attr_str = ' '.join(f'{k}="{v}"' for k, v in attrs.items())
+
+        # Color palette
+        palette_html = ''
+        if self.show_palette:
+            colors = ' '.join(f'<div class="color-swatch" data-color="{color}" style="background-color: {color}"></div>' for color in self.palette)
+            palette_html = f'<div class="color-palette">{colors}</div>'
+
+        content = f'''
+        <div class="color-picker-wrapper">
+            <input {attr_str}>
+            {palette_html}
+        </div>
+        '''
+
+        return self.render_wrapper(content)
+
+
+class RichRating(Widget):
+    """Star rating widget"""
+
+    def __init__(self, name: str, config: Optional[WidgetConfig] = None, **kwargs):
+        super().__init__(name, config, **kwargs)
+        self.max_rating = kwargs.get('max_rating', 5)
+        self.allow_half = kwargs.get('allow_half', False)
+        self.show_value = kwargs.get('show_value', True)
+        self.icon = kwargs.get('icon', '⭐')
+        self.readonly = kwargs.get('readonly', False)
+        self.dependencies = ['rating-widget.js', 'rating-widget.css']
+
+    @property
+    def widget_type(self) -> WidgetType:
+        return WidgetType.INPUT
+
+    def render(self) -> str:
+        """Render the rating widget"""
+        attrs = self.get_attributes()
+        attrs.update({
+            'type': 'hidden',
+            'data-rating': 'true',
+            'data-max-rating': str(self.max_rating),
+            'data-allow-half': str(self.allow_half).lower(),
+            'data-show-value': str(self.show_value).lower(),
+            'data-readonly': str(self.readonly).lower(),
+        })
+
+        if self.value is not None:
+            attrs['value'] = str(self.value)
+
+        attr_str = ' '.join(f'{k}="{v}"' for k, v in attrs.items())
+
+        # Rating stars
+        stars = ''
+        current_rating = float(self.value or 0)
+
+        for i in range(1, self.max_rating + 1):
+            if current_rating >= i:
+                star_class = 'star full'
+            elif self.allow_half and current_rating >= i - 0.5:
+                star_class = 'star half'
+            else:
+                star_class = 'star empty'
+
+            stars += f'<span class="{star_class}" data-rating="{i}">{self.icon}</span>'
+
+        value_display = f'<span class="rating-value">{current_rating:.1f}</span>' if self.show_value else ''
+
+        content = f'''
+        <div class="rating-widget-wrapper">
+            <input {attr_str}>
+            <div class="rating-stars">
+                {stars}
+            </div>
+            {value_display}
+        </div>
+        '''
+
+        return self.render_wrapper(content)
+
+
+class RichTags(Widget):
+    """Tag input widget with autocomplete"""
+
+    def __init__(self, name: str, config: Optional[WidgetConfig] = None, **kwargs):
+        super().__init__(name, config, **kwargs)
+        self.suggestions = kwargs.get('suggestions', [])
+        self.max_tags = kwargs.get('max_tags')
+        self.allow_duplicates = kwargs.get('allow_duplicates', False)
+        self.placeholder = kwargs.get('placeholder', 'Add tags...')
+        self.dependencies = ['tag-widget.js', 'tag-widget.css']
+
+    @property
+    def widget_type(self) -> WidgetType:
+        return WidgetType.INPUT
+
+    def render(self) -> str:
+        """Render the tag widget"""
+        attrs = self.get_attributes()
+        attrs.update({
+            'type': 'text',
+            'data-tag-widget': 'true',
+            'data-allow-duplicates': str(self.allow_duplicates).lower(),
+        })
+
+        if self.max_tags:
+            attrs['data-max-tags'] = str(self.max_tags)
+        if self.placeholder:
+            attrs['placeholder'] = self.placeholder
+
+        # Convert value to list if it's a string
+        tags = []
+        if self.value:
+            if isinstance(self.value, str):
+                tags = [tag.strip() for tag in self.value.split(',') if tag.strip()]
+            elif isinstance(self.value, list):
+                tags = self.value
+
+        # Hidden inputs for form submission
+        hidden_inputs = ''
+        for tag in tags:
+            hidden_inputs += f'<input type="hidden" name="{self.name}" value="{tag}">'
+
+        attr_str = ' '.join(f'{k}="{v}"' for k, v in attrs.items())
+
+        # Tag display
+        tag_display = ' '.join(f'<span class="tag" data-tag="{tag}">{tag}<span class="tag-remove">×</span></span>' for tag in tags)
+
+        # Suggestions
+        suggestions_html = ''
+        if self.suggestions:
+            suggestions = ' '.join(f'<div class="tag-suggestion" data-suggestion="{suggestion}">{suggestion}</div>' for suggestion in self.suggestions)
+            suggestions_html = f'<div class="tag-suggestions" style="display: none;">{suggestions}</div>'
+
+        content = f'''
+        <div class="tag-widget-wrapper">
+            {hidden_inputs}
+            <div class="tag-container">
+                <div class="tag-display">
+                    {tag_display}
+                    <input {attr_str}>
+                </div>
+                {suggestions_html}
+            </div>
+        </div>
+        '''
+
+        return self.render_wrapper(content)
+
+
+class RichSlider(Widget):
+    """Range slider widget"""
+
+    def __init__(self, name: str, config: Optional[WidgetConfig] = None, **kwargs):
+        super().__init__(name, config, **kwargs)
+        self.min_value = kwargs.get('min_value', 0)
+        self.max_value = kwargs.get('max_value', 100)
+        self.step = kwargs.get('step', 1)
+        self.show_value = kwargs.get('show_value', True)
+        self.show_range = kwargs.get('show_range', False)
+        self.range_min = kwargs.get('range_min', self.min_value)
+        self.range_max = kwargs.get('range_max', self.max_value)
+        self.orientation = kwargs.get('orientation', 'horizontal')  # horizontal, vertical
+        self.dependencies = ['slider-widget.js', 'slider-widget.css']
+
+    @property
+    def widget_type(self) -> WidgetType:
+        return WidgetType.INPUT
+
+    def render(self) -> str:
+        """Render the slider widget"""
+        attrs = self.get_attributes()
+        attrs.update({
+            'type': 'range',
+            'data-slider': 'true',
+            'min': str(self.min_value),
+            'max': str(self.max_value),
+            'step': str(self.step),
+            'data-show-value': str(self.show_value).lower(),
+            'data-show-range': str(self.show_range).lower(),
+            'data-orientation': self.orientation,
+        })
+
+        if self.show_range:
+            # For range sliders, we need two inputs
+            attrs_min = attrs.copy()
+            attrs_max = attrs.copy()
+            attrs_min['name'] = f"{self.name}_min"
+            attrs_max['name'] = f"{self.name}_max"
+            attrs_min['value'] = str(self.range_min)
+            attrs_max['value'] = str(self.range_max)
+
+            attr_str_min = ' '.join(f'{k}="{v}"' for k, v in attrs_min.items())
+            attr_str_max = ' '.join(f'{k}="{v}"' for k, v in attrs_max.items())
+
+            content = f'''
+            <div class="slider-wrapper range-slider {self.orientation}">
+                <input {attr_str_min}>
+                <input {attr_str_max}>
+                <div class="slider-track"></div>
+                <div class="slider-values">
+                    <span class="slider-min">{self.range_min}</span>
+                    <span class="slider-max">{self.range_max}</span>
+                </div>
+            </div>
+            '''
+        else:
+            if self.value is not None:
+                attrs['value'] = str(self.value)
+            else:
+                attrs['value'] = str(self.min_value)
+
+            attr_str = ' '.join(f'{k}="{v}"' for k, v in attrs.items())
+
+            value_display = f'<span class="slider-value">{self.value or self.min_value}</span>' if self.show_value else ''
+
+            content = f'''
+            <div class="slider-wrapper {self.orientation}">
+                <input {attr_str}>
+                <div class="slider-track"></div>
+                {value_display}
+            </div>
+            '''
+
+        return self.render_wrapper(content)
+
+
+class RichCode(Widget):
+    """Code editor widget with syntax highlighting"""
+
+    def __init__(self, name: str, config: Optional[WidgetConfig] = None, **kwargs):
+        super().__init__(name, config, **kwargs)
+        self.language = kwargs.get('language', 'python')
+        self.theme = kwargs.get('theme', 'default')
+        self.readonly = kwargs.get('readonly', False)
+        self.line_numbers = kwargs.get('line_numbers', True)
+        self.min_height = kwargs.get('min_height', '200px')
+        self.font_size = kwargs.get('font_size', '14px')
+        self.dependencies = ['code-editor.js', 'code-editor.css']
+
+    @property
+    def widget_type(self) -> WidgetType:
+        return WidgetType.INPUT
+
+    def render(self) -> str:
+        """Render the code editor"""
+        attrs = self.get_attributes()
+        attrs.update({
+            'data-code-editor': 'true',
+            'data-language': self.language,
+            'data-theme': self.theme,
+            'data-readonly': str(self.readonly).lower(),
+            'data-line-numbers': str(self.line_numbers).lower(),
+        })
+
+        content_value = self.value or ''
+
+        attr_str = ' '.join(f'{k}="{v}"' for k, v in attrs.items())
+
+        content = f'''
+        <div class="code-editor-wrapper" style="min-height: {self.min_height}; font-size: {self.font_size};">
+            <textarea {attr_str} style="display: none;">{content_value}</textarea>
+            <div class="code-editor-container">
+                <div class="code-editor-toolbar">
+                    <span class="code-language">{self.language.upper()}</span>
+                    <button type="button" class="btn-copy" data-copy-code="true">Copy</button>
+                </div>
+                <pre class="code-editor-display"><code class="language-{self.language}">{content_value}</code></pre>
+            </div>
+        </div>
+        '''
+
+        return self.render_wrapper(content)
+
+
+class WidgetRegistry:
+    """Registry for managing custom widget definitions"""
+
+    _widgets: Dict[str, Type[BaseWidget]] = {}
+
+    @classmethod
+    def register(cls, name: str, widget_class: Type[BaseWidget]) -> None:
+        """Register a custom widget class"""
+        cls._widgets[name] = widget_class
+
+    @classmethod
+    def get(cls, name: str) -> Optional[Type[BaseWidget]]:
+        """Get a registered widget class"""
+        return cls._widgets.get(name)
+
+    @classmethod
+    def list_widgets(cls) -> List[str]:
+        """List all registered widget names"""
+        return list(cls._widgets.keys())
+
+    @classmethod
+    def create_widget(cls, name: str, widget_type: str, **kwargs) -> Optional[BaseWidget]:
+        """Create a widget instance by type"""
+        widget_class = cls._widgets.get(widget_type)
+        if widget_class:
+            return widget_class(name, **kwargs)
+        return None
