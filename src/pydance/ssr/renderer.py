@@ -15,49 +15,11 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from enum import Enum
 
-try:
-    from pydance.templating import TemplateEngine
-    from pydance.templating.engine import TemplateEngine as TEngine
-    from pydance.ssr.cache import SSRCache
-    from pydance.ssr.hydrator import DataHydrator
-    from pydance.core.di import Container
-except ImportError:
-    # Fallback placeholders for missing modules
-    class SSRCache:
-        def __init__(self, ttl=300):
-            self.ttl = ttl
-            self._cache = {}
-
-        async def get(self, key):
-            return self._cache.get(key)
-
-        async def set(self, key, value):
-            self._cache[key] = value
-
-        def clear(self):
-            self._cache.clear()
-
-        @property
-        def cache(self):
-            return self._cache
-
-    class DataHydrator:
-        pass
-
-    # Use the template engine directly
-    class TemplateEngine:
-        def __init__(self, template_dir):
-            from pydance.templating.engine import get_template_engine
-            self.engine = get_template_engine("lean", template_dir)
-
-        async def render(self, template_path, data):
-            return await self.engine.render_async(template_path, data)
-
-        async def render_async(self, template_path, data):
-            return await self.render(template_path, data)
-
-    class Container:
-        pass
+from pydance.templating import TemplateEngine
+from pydance.templating.engine import TemplateEngine as TEngine
+from pydance.ssr.cache import SSRCache
+from pydance.ssr.hydrator import DataHydrator
+from pydance.core.di import Container
 
 
 class SSRFramework(Enum):

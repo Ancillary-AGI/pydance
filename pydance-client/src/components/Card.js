@@ -3,7 +3,7 @@
  * Provides flexible card layouts with headers, bodies, footers, and various styling options
  */
 
-import { Component } from '../core/Component.js';
+import { Component } from '~/core/Component.js';
 
 export class Card extends Component {
   constructor(props = {}) {

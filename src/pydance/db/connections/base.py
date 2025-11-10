@@ -125,112 +125,80 @@ class DatabaseConnection(abc.ABC):
 
     def _create_sqlite_connection(self) -> Optional[ManagedConnection]:
         """Create SQLite connection."""
-        try:
-            import aiosqlite
+        import aiosqlite
 
-            async def _connect():
-                return await aiosqlite.connect(self.config.name)
+        async def _connect():
+            return await aiosqlite.connect(self.config.name)
 
-            # For synchronous creation, we'll use a thread pool
-            import concurrent.futures
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(asyncio.run, _connect())
-                connection = future.result(timeout=30)
+        # For synchronous creation, we'll use a thread pool
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(asyncio.run, _connect())
+            connection = future.result(timeout=30)
 
-            managed = ManagedConnection(connection=connection)
-            self._stats.total_connections_created += 1
-            return managed
-        except ImportError:
-            # Fallback to sqlite3 if aiosqlite not available
-            import sqlite3
-            connection = sqlite3.connect(self.config.name)
-            managed = ManagedConnection(connection=connection)
-            self._stats.total_connections_created += 1
-            return managed
+        managed = ManagedConnection(connection=connection)
+        self._stats.total_connections_created += 1
+        return managed
 
     def _create_postgresql_connection(self) -> Optional[ManagedConnection]:
         """Create PostgreSQL connection."""
-        try:
-            import asyncpg
+        import asyncpg
 
-            async def _connect():
-                return await asyncpg.connect(
-                    host=self.config.host,
-                    port=self.config.port,
-                    user=self.config.user,
-                    password=self.config.password,
-                    database=self.config.name
-                )
+        async def _connect():
+            return await asyncpg.connect(
+                host=self.config.host,
+                port=self.config.port,
+                user=self.config.user,
+                password=self.config.password,
+                database=self.config.name
+            )
 
-            # Create the connection synchronously for the pool
-            import asyncio
-            connection = asyncio.run(_connect())
-            managed = ManagedConnection(connection=connection)
-            self._stats.total_connections_created += 1
-            return managed
-        except ImportError:
-            logger.error("asyncpg not installed. Install with: pip install asyncpg")
-            return None
-        except Exception as e:
-            logger.error(f"Failed to create PostgreSQL connection: {e}")
-            self._stats.total_connection_errors += 1
-            return None
+        # Create the connection synchronously for the pool
+        import asyncio
+        connection = asyncio.run(_connect())
+        managed = ManagedConnection(connection=connection)
+        self._stats.total_connections_created += 1
+        return managed
 
     def _create_mysql_connection(self) -> Optional[ManagedConnection]:
         """Create MySQL connection."""
-        try:
-            import aiomysql
+        import aiomysql
 
-            async def _connect():
-                return await aiomysql.connect(
-                    host=self.config.host,
-                    port=self.config.port,
-                    user=self.config.user,
-                    password=self.config.password,
-                    db=self.config.name
-                )
+        async def _connect():
+            return await aiomysql.connect(
+                host=self.config.host,
+                port=self.config.port,
+                user=self.config.user,
+                password=self.config.password,
+                db=self.config.name
+            )
 
-            # Create the connection synchronously for the pool
-            import asyncio
-            connection = asyncio.run(_connect())
-            managed = ManagedConnection(connection=connection)
-            self._stats.total_connections_created += 1
-            return managed
-        except ImportError:
-            logger.error("aiomysql not installed. Install with: pip install aiomysql")
-            return None
-        except Exception as e:
-            logger.error(f"Failed to create MySQL connection: {e}")
-            self._stats.total_connection_errors += 1
-            return None
+        # Create the connection synchronously for the pool
+        import asyncio
+        connection = asyncio.run(_connect())
+        managed = ManagedConnection(connection=connection)
+        self._stats.total_connections_created += 1
+        return managed
 
     def _create_mongodb_connection(self) -> Optional[ManagedConnection]:
         """Create MongoDB connection."""
-        try:
-            import pymongo
+        import pymongo
 
-            # Create MongoDB client
-            client = pymongo.MongoClient(
-                host=self.config.host,
-                port=self.config.port,
-                username=self.config.user,
-                password=self.config.password,
-                authSource=self.config.name
-            )
+        # Create MongoDB client
+        client = pymongo.MongoClient(
+            host=self.config.host,
+            port=self.config.port,
+            username=self.config.user,
+            password=self.config.password,
+            authSource=self.config.name
+        )
 
-            # Test the connection
-            client.admin.command('ping')
+        # Test the connection
+        client.admin.command('ping')
 
-            managed = ManagedConnection(connection=client)
-            self._stats.total_connections_created += 1
-            return managed
-        except ImportError:
-            logger.error("pymongo not installed. Install with: pip install pymongo")
-            return None
-        except Exception as e:
-            logger.error(f"Failed to create MongoDB connection: {e}")
-            self._stats.total_connection_errors += 1
-            return None
+        managed = ManagedConnection(connection=client)
+        self._stats.total_connections_created += 1
+        return managed
 
     async def acquire(self) -> ManagedConnection:
         """Acquire a connection from the pool."""

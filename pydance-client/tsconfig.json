@@ -15,13 +15,13 @@
     "jsx": "preserve",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@/core/*": ["src/core/*"],
-      "@/components/*": ["src/components/*"],
-      "@/services/*": ["src/services/*"],
-      "@/hooks/*": ["src/hooks/*"],
-      "@/utils/*": ["src/utils/*"],
-      "@/types/*": ["src/types/*"]
+      "~/*": ["src/*"],
+      "~/core/*": ["src/core/*"],
+      "~/components/*": ["src/components/*"],
+      "~/services/*": ["src/services/*"],
+      "~/hooks/*": ["src/hooks/*"],
+      "~/utils/*": ["src/utils/*"],
+      "~/types/*": ["src/types/*"]
     },
     "typeRoots": [
       "./node_modules/@types",

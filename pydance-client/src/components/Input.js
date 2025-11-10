@@ -3,7 +3,7 @@
  * Provides flexible input fields with validation, formatting, and various input types
  */
 
-import { Component } from '../core/Component.js';
+import { Component } from '~/core/Component.js';
 
 export class Input extends Component {
   constructor(props = {}) {

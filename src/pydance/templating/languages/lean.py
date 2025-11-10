@@ -9,7 +9,7 @@ import math
 import json
 import functools
 
-from ..engine import AbstractTemplateEngine
+from pydance.templating.engine import AbstractTemplateEngine
 # from pydance.security_middleware import get_security_middleware  # Optional import
 
 class TemplateError(Exception):

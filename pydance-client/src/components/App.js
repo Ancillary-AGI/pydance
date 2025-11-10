@@ -4,12 +4,12 @@
  * navigation, and global state management
  */
 
-import { Component } from '../core/Component.js';
-import { useRouter, useRoute } from '../core/Router.js';
-import { useAuth, useUser, useIsAuthenticated } from '../core/Auth.js';
-import { useTheme, useIsDarkTheme } from '../services/ThemeManager.js';
-import { useNotifications } from '../services/NotificationManager.js';
-import { useCache } from '../services/CacheManager.js';
+import { Component } from '~/core/Component.js';
+import { useRouter, useRoute } from '~/core/Router.js';
+import { useAuth, useUser, useIsAuthenticated } from '~/core/Auth.js';
+import { useTheme, useIsDarkTheme } from '~/services/ThemeManager.js';
+import { useNotifications } from '~/services/NotificationManager.js';
+import { useCache } from '~/services/CacheManager.js';
 
 export class App extends Component {
   constructor(props = {}) {

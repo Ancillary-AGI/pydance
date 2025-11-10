@@ -3,7 +3,7 @@
  * Provides sortable, filterable, paginated tables with selection and actions
  */
 
-import { Component } from '../core/Component.js';
+import { Component } from '~/core/Component.js';
 
 export class Table extends Component {
   constructor(props = {}) {

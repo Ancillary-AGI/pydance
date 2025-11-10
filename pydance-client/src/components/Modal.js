@@ -3,7 +3,7 @@
  * Provides flexible modal dialogs with various sizes, animations, and accessibility features
  */
 
-import { Component } from '../core/Component.js';
+import { Component } from '~/core/Component.js';
 
 export class Modal extends Component {
   constructor(props = {}) {

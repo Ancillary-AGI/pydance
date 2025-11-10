@@ -57,25 +57,15 @@ from pydance.http import Request, Response
 from pydance.config.settings import settings
 from pydance.exceptions import HTTPException, ValidationError
 
-# Database components (optional)
-try:
-    from pydance.db import DatabaseConfig
-    from pydance.db.connections import DatabaseConnection
-except ImportError:
-    DatabaseConfig = None
-    DatabaseConnection = None
+# Database components
+from pydance.db import DatabaseConfig
+from pydance.db.connections import DatabaseConnection
 
-# Event system (optional)
-try:
-    from pydance.events import get_event_bus
-except ImportError:
-    get_event_bus = None
+# Event system
+from pydance.core.events import get_event_bus
 
-# Plugin system (optional)
-try:
-    from pydance.plugins import get_plugin_manager
-except ImportError:
-    get_plugin_manager = None
+# Plugin system
+from pydance.core.plugins import get_plugin_manager
 
 __all__ = [
     # Core

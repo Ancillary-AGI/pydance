@@ -80,32 +80,20 @@ class MonitoringManager:
     async def _initialize_components(self):
         """Initialize monitoring components"""
         if self.config.metrics_enabled:
-            try:
-                from .metrics import MetricsCollector
-                self.metrics_collector = MetricsCollector()
-            except ImportError:
-                pass
+            from .metrics import MetricsCollector
+            self.metrics_collector = MetricsCollector()
 
         if self.config.alerting_enabled:
-            try:
-                from .alert_manager import AlertManager
-                self.alert_manager = AlertManager()
-            except ImportError:
-                pass
+            from .alert_manager import AlertManager
+            self.alert_manager = AlertManager()
 
         if self.config.logging_enabled:
-            try:
-                from .log_aggregator import LogAggregator
-                self.log_aggregator = LogAggregator()
-            except ImportError:
-                pass
+            from .log_aggregator import LogAggregator
+            self.log_aggregator = LogAggregator()
 
         if self.config.dashboard_enabled:
-            try:
-                from .dashboard_generator import DashboardGenerator
-                self.dashboard_generator = DashboardGenerator()
-            except ImportError:
-                pass
+            from .dashboard_generator import DashboardGenerator
+            self.dashboard_generator = DashboardGenerator()
 
     async def _run_metrics_collection(self):
         """Run periodic metrics collection"""

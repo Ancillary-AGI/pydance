@@ -4,7 +4,7 @@
  * sizes, states, and loading indicators
  */
 
-import { Component } from '../core/Component.js';
+import { Component } from '/core/Component.js';
 
 export class Button extends Component {
   constructor(props = {}) {

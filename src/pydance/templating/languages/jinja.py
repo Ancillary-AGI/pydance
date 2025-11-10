@@ -4,7 +4,7 @@ from typing import Dict, Any
 from pathlib import Path
 from pydance.i18n.translations import gettext, ngettext
 from pydance.i18n.formatters import format_date, format_time, format_datetime, format_number, format_currency, format_percent, format_scientific
-from ..engine import AbstractTemplateEngine
+from pydance.templating.engine import AbstractTemplateEngine
 
 class JinjaTemplateEngine(AbstractTemplateEngine):
     """Jinja2 template engine with i18n support"""
@@ -42,4 +42,3 @@ class JinjaTemplateEngine(AbstractTemplateEngine):
         """Render a template string with Jinja2"""
         template = self.env.from_string(template_string)
         return template.render(**context)
-

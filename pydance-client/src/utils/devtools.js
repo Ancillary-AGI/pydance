@@ -19,8 +19,8 @@
  * @license MIT
  */
 
-import { signal, computed, effect, isSignal, unwrap } from '../core/Signal.js';
-import { getLogger } from './logger.js';
+import { signal, computed, effect, isSignal, unwrap } from '~/core/Signal.js';
+import { getLogger } from '~/utils/logger.js';
 
 // Development mode detection
 const isDevelopment = typeof window !== 'undefined' &&

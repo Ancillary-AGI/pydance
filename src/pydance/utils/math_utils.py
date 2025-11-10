@@ -220,14 +220,8 @@ class MathOps:
     @staticmethod
     def polynomial_roots(coefficients: List[float]) -> List[complex]:
         """Find roots of polynomial using numpy"""
-        try:
-            import numpy as np
-            return np.roots(coefficients).tolist()
-        except ImportError:
-            raise ImportError(
-                "numpy is required for polynomial_roots. "
-                "Install with: pip install numpy"
-            )
+        import numpy as np
+        return np.roots(coefficients).tolist()
 
     @staticmethod
     def numerical_integration(func: Callable[[float], float], a: float, b: float,

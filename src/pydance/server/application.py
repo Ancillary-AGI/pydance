@@ -123,25 +123,10 @@ class Application:
 
     def with_all_features(self) -> 'Application':
         """Enable all optional features (convenience method)."""
-        try:
-            self.with_container()
-        except ImportError:
-            pass
-
-        try:
-            self.with_monitoring()
-        except ImportError:
-            pass
-
-        try:
-            self.with_graphql()
-        except ImportError:
-            pass
-
-        try:
-            self.with_caching()
-        except ImportError:
-            pass
+        self.with_container()
+        self.with_monitoring()
+        self.with_graphql()
+        self.with_caching()
 
         # Enable event bus and plugins
         self.event_bus = get_event_bus()
@@ -179,39 +164,30 @@ class Application:
             return
 
         if hasattr(self.config, 'DATABASE_URL') and self.config.DATABASE_URL:
-            try:
-                from pydance.db.config import DatabaseConfig
-                from pydance.db.connections import DatabaseConnection
+            from pydance.db.config import DatabaseConfig
+            from pydance.db.connections import DatabaseConnection
 
-                db_config = DatabaseConfig.from_url(self.config.DATABASE_URL)
-                self.db_connection = DatabaseConnection.get_instance(db_config)
+            db_config = DatabaseConfig.from_url(self.config.DATABASE_URL)
+            self.db_connection = DatabaseConnection.get_instance(db_config)
 
-                # Register database startup/shutdown
-                @self.on_startup
-                async def connect_db():
-                    await self.db_connection.connect()
+            # Register database startup/shutdown
+            @self.on_startup
+            async def connect_db():
+                await self.db_connection.connect()
 
-                @self.on_shutdown
-                async def disconnect_db():
-                    if self.db_connection:
-                        await self.db_connection.disconnect()
-
-            except ImportError:
-                logger.warning("Database modules not available, continuing without database support")
+            @self.on_shutdown
+            async def disconnect_db():
+                if self.db_connection:
+                    await self.db_connection.disconnect()
 
     def _setup_default_middleware(self) -> None:
         """Setup default middleware stack."""
-        try:
-            from pydance.middleware import cors_middleware, logging_middleware
+        from pydance.middleware import cors_middleware, logging_middleware
 
-            # Add CORS support
-            self.use(cors_middleware)
-            # Add logging middleware
-            self.use(logging_middleware)
-
-        except ImportError:
-            # Best-effort: if middleware not available, continue silently
-            pass
+        # Add CORS support
+        self.use(cors_middleware)
+        # Add logging middleware
+        self.use(logging_middleware)
 
     def _register_health_endpoints(self) -> None:
         """Register cloud-native health check endpoints."""

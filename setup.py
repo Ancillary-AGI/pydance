@@ -53,9 +53,10 @@ def should_build_extensions():
     
     return True
 
-# Core dependencies - minimal for basic functionality
+# Core dependencies - actually used by the framework
 install_requires = [
-    # No required dependencies - framework works with stdlib only
+    "jinja2>=3.0.0",          # Template engine (used in core)
+    "python-dotenv>=0.19.0",  # Config management (used in core)
 ]
 
 # Optional dependencies for enhanced features

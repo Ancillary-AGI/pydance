@@ -1,22 +1,27 @@
 /**
- * @fileoverview Test Setup - Global test configuration and utilities
+ * @fileoverview Universal Frontend Test Setup
+ *
+ * Framework-agnostic test environment setup for frontend testing.
+ * Compatible with any frontend framework (React, Vue, Svelte, etc.).
  */
 
-// Global test environment setup
-import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import { JSDOM } from 'jsdom';
+import { beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 
-// Setup JSDOM environment
-const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
+// Setup JSDOM environment for DOM testing
+const { JSDOM } = await import('jsdom');
+
+const dom = new JSDOM('<!DOCTYPE html><html><head></head><body></body></html>', {
   url: 'http://localhost:3000',
   pretendToBeVisual: true,
   resources: 'usable',
 });
 
-// Global variables
+// Global DOM APIs
 global.window = dom.window;
 global.document = dom.window.document;
 global.navigator = dom.window.navigator;
+
+// HTML Elements
 global.HTMLElement = dom.window.HTMLElement;
 global.HTMLDivElement = dom.window.HTMLDivElement;
 global.HTMLButtonElement = dom.window.HTMLButtonElement;
@@ -33,22 +38,22 @@ global.HTMLSpanElement = dom.window.HTMLSpanElement;
 global.HTMLUListElement = dom.window.HTMLUListElement;
 global.HTMLOListElement = dom.window.HTMLOListElement;
 global.HTMLLIElement = dom.window.HTMLLIElement;
+
+// Core DOM APIs
 global.Node = dom.window.Node;
 global.Text = dom.window.Text;
 global.Comment = dom.window.Comment;
 global.DocumentFragment = dom.window.DocumentFragment;
-global.Range = dom.window.Range;
 global.Event = dom.window.Event;
 global.CustomEvent = dom.window.CustomEvent;
 global.MouseEvent = dom.window.MouseEvent;
 global.KeyboardEvent = dom.window.KeyboardEvent;
 global.FocusEvent = dom.window.FocusEvent;
-global.InputEvent = dom.window.InputEvent;
 global.EventTarget = dom.window.EventTarget;
 
-// DOM APIs
-global.requestAnimationFrame = dom.window.requestAnimationFrame;
-global.cancelAnimationFrame = dom.window.cancelAnimationFrame;
+// Browser APIs
+global.requestAnimationFrame = dom.window.requestAnimationFrame || ((cb) => setTimeout(cb, 16));
+global.cancelAnimationFrame = dom.window.cancelAnimationFrame || clearTimeout;
 global.setTimeout = dom.window.setTimeout;
 global.clearTimeout = dom.window.clearTimeout;
 global.setInterval = dom.window.setInterval;
@@ -58,147 +63,154 @@ global.clearInterval = dom.window.clearInterval;
 global.localStorage = dom.window.localStorage;
 global.sessionStorage = dom.window.sessionStorage;
 
-// Location and history APIs
+// Location and History APIs
 global.location = dom.window.location;
 global.history = dom.window.history;
 
-// Console (for testing)
-global.console = {
-  ...console,
-  // Override console methods to avoid noise in tests
-  log: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
-  debug: vi.fn(),
-};
-
-// Performance API - mock performance.now() to avoid jsdom recursive bug
-global.performance = {
-  ...dom.window.performance,
-  now: () => Date.now(),
-  mark: dom.window.performance.mark,
-  measure: dom.window.performance.measure,
-  getEntriesByName: dom.window.performance.getEntriesByName,
-  getEntriesByType: dom.window.performance.getEntriesByType,
-  clearMarks: dom.window.performance.clearMarks,
-  clearMeasures: dom.window.performance.clearMeasures,
-};
-
-// Crypto API - handle read-only property
-try {
-  global.crypto = dom.window.crypto;
-} catch (e) {
-  // If crypto is read-only, define it using Object.defineProperty
-  Object.defineProperty(global, 'crypto', {
-    value: {
-      getRandomValues: (array) => {
-        for (let i = 0; i < array.length; i++) {
-          array[i] = Math.floor(Math.random() * 256);
-        }
-        return array;
-      },
-      randomUUID: () => {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-          const r = Math.random() * 16 | 0;
-          const v = c === 'x' ? r : (r & 0x3 | 0x8);
-          return v.toString(16);
-        });
-      }
-    },
-    writable: false,
-    configurable: true
-  });
-}
-
-// URL and URLSearchParams
+// Web APIs
 global.URL = dom.window.URL;
 global.URLSearchParams = dom.window.URLSearchParams;
+global.AbortController = dom.window.AbortController;
+global.ResizeObserver = dom.window.ResizeObserver;
+global.IntersectionObserver = dom.window.IntersectionObserver;
+global.MutationObserver = dom.window.MutationObserver;
+global.WebSocket = dom.window.WebSocket;
 
-// Fetch API
+// File APIs
+global.File = dom.window.File;
+global.FileReader = dom.window.FileReader;
+global.Blob = dom.window.Blob;
+global.FormData = dom.window.FormData;
+
+// Performance API
+global.performance = {
+  now: () => Date.now(),
+  mark: dom.window.performance?.mark || (() => {}),
+  measure: dom.window.performance?.measure || (() => {}),
+  getEntriesByName: dom.window.performance?.getEntriesByName || (() => []),
+  getEntriesByType: dom.window.performance?.getEntriesByType || (() => []),
+  clearMarks: dom.window.performance?.clearMarks || (() => {}),
+  clearMeasures: dom.window.performance?.clearMeasures || (() => {}),
+};
+
+// Crypto API
+global.crypto = {
+  getRandomValues: (array) => {
+    for (let i = 0; i < array.length; i++) {
+      array[i] = Math.floor(Math.random() * 256);
+    }
+    return array;
+  },
+  randomUUID: () => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+};
+
+// Mock fetch by default
 global.fetch = vi.fn();
+
+// Mock Request/Response
 global.Request = dom.window.Request;
 global.Response = dom.window.Response;
 global.Headers = dom.window.Headers;
 
-// AbortController
-global.AbortController = dom.window.AbortController;
+// Test lifecycle setup
+beforeAll(async () => {
+  console.log('🚀 Setting up universal frontend test environment...');
+});
 
-// ResizeObserver
-global.ResizeObserver = dom.window.ResizeObserver;
+afterAll(async () => {
+  console.log('🧹 Cleaning up test environment...');
+});
 
-// IntersectionObserver
-global.IntersectionObserver = dom.window.IntersectionObserver;
+beforeEach(() => {
+  // Reset DOM state
+  document.body.innerHTML = '';
+  document.head.innerHTML = '';
 
-// MutationObserver
-global.MutationObserver = dom.window.MutationObserver;
+  // Clear all mocks
+  vi.clearAllMocks();
 
-// WebSocket
-global.WebSocket = dom.window.WebSocket;
+  // Reset storage
+  localStorage.clear();
+  sessionStorage.clear();
 
-// File API
-global.File = dom.window.File;
-global.FileReader = dom.window.FileReader;
-global.Blob = dom.window.Blob;
+  // Reset fetch mock
+  global.fetch.mockReset();
+});
 
-// FormData
-global.FormData = dom.window.FormData;
+afterEach(() => {
+  // Additional cleanup can be added here
+});
 
-// Test utilities
-global.createElement = (tag, props = {}, children = []) => {
-  const element = document.createElement(tag);
+// Universal test utilities
+global.testUtils = {
+  /**
+   * Create a DOM element for testing
+   */
+  createElement: (tag, props = {}, children = []) => {
+    const element = document.createElement(tag);
 
-  Object.entries(props).forEach(([key, value]) => {
-    if (key === 'className') {
-      element.className = value;
-    } else if (key.startsWith('on') && typeof value === 'function') {
-      element.addEventListener(key.toLowerCase().slice(2), value);
-    } else {
-      element.setAttribute(key, value);
-    }
-  });
+    Object.entries(props).forEach(([key, value]) => {
+      if (key === 'className') {
+        element.className = value;
+      } else if (key.startsWith('on') && typeof value === 'function') {
+        element.addEventListener(key.toLowerCase().slice(2), value);
+      } else {
+        element.setAttribute(key, value);
+      }
+    });
 
-  children.forEach(child => {
-    if (typeof child === 'string') {
-      element.textContent = child;
-    } else if (child instanceof Node) {
-      element.appendChild(child);
-    }
-  });
+    children.forEach(child => {
+      if (typeof child === 'string') {
+        element.appendChild(document.createTextNode(child));
+      } else if (child instanceof Node) {
+        element.appendChild(child);
+      }
+    });
 
-  return element;
-};
+    return element;
+  },
 
-global.createSignal = (initialValue) => {
-  let value = initialValue;
-  const subscribers = new Set();
+  /**
+   * Create a reactive signal for testing
+   */
+  createSignal: (initialValue) => {
+    let value = initialValue;
+    const subscribers = new Set();
 
-  const signal = {
-    get value() {
-      return value;
-    },
-    set value(newValue) {
-      if (Object.is(value, newValue)) return;
-      value = newValue;
-      subscribers.forEach(subscriber => subscriber(value));
-    },
-    subscribe: (subscriber) => {
-      subscribers.add(subscriber);
-      return () => subscribers.delete(subscriber);
-    },
-  };
+    return {
+      get value() {
+        return value;
+      },
+      set value(newValue) {
+        if (Object.is(value, newValue)) return;
+        value = newValue;
+        subscribers.forEach(subscriber => subscriber(newValue, value));
+      },
+      subscribe: (callback) => {
+        subscribers.add(callback);
+        return () => subscribers.delete(callback);
+      },
+      get subscriberCount() {
+        return subscribers.size;
+      }
+    };
+  },
 
-  return signal;
-};
-
-global.createComponent = (renderFn) => {
-  return (props = {}) => {
-    const instance = {
+  /**
+   * Create a generic component factory
+   */
+  createComponent: (renderFn) => {
+    return (props = {}) => ({
       props,
-      renderFn,
       render: () => renderFn(props),
       mount: (container) => {
-        const html = instance.render();
+        const html = renderFn(props);
         if (typeof container === 'string') {
           container = document.querySelector(container);
         }
@@ -207,111 +219,15 @@ global.createComponent = (renderFn) => {
         }
         return container;
       },
-    };
-    return instance;
-  };
-};
-
-// Test lifecycle hooks
-beforeAll(async () => {
-  // Setup before all tests
-  console.log('🧪 Setting up test environment...');
-});
-
-afterAll(async () => {
-  // Cleanup after all tests
-  console.log('🧪 Cleaning up test environment...');
-});
-
-beforeEach(() => {
-  // Reset DOM before each test
-  document.body.innerHTML = '';
-  document.head.innerHTML = '';
-
-  // Reset mocks
-  vi.clearAllMocks();
-
-  // Reset localStorage
-  localStorage.clear();
-  sessionStorage.clear();
-});
-
-afterEach(() => {
-  // Cleanup after each test
-  // Remove any global event listeners
-  // Reset any global state
-});
-
-// Custom matchers
-expect.extend({
-  toBeSignal(received) {
-    const pass = received && typeof received.subscribe === 'function' && 'value' in received;
-    if (pass) {
-      return {
-        message: () => `expected ${received} not to be a signal`,
-        pass: true,
-      };
-    } else {
-      return {
-        message: () => `expected ${received} to be a signal`,
-        pass: false,
-      };
-    }
+      update: (newProps) => {
+        Object.assign(props, newProps);
+      }
+    });
   },
 
-  toBeComponent(received) {
-    const pass = received && typeof received.render === 'function' && typeof received.mount === 'function';
-    if (pass) {
-      return {
-        message: () => `expected ${received} not to be a component`,
-        pass: true,
-      };
-    } else {
-      return {
-        message: () => `expected ${received} to be a component`,
-        pass: false,
-      };
-    }
-  },
-
-  toHaveBeenCalledWithSignal(received, signal) {
-    const calls = received.mock.calls;
-    const pass = calls.some(call =>
-      call.some(arg => arg && typeof arg.subscribe === 'function' && 'value' in arg)
-    );
-
-    if (pass) {
-      return {
-        message: () => `expected ${received} not to have been called with a signal`,
-        pass: true,
-      };
-    } else {
-      return {
-        message: () => `expected ${received} to have been called with a signal`,
-        pass: false,
-      };
-    }
-  },
-});
-
-// Global test helpers
-global.testUtils = {
-  createMockElement: (tag = 'div', props = {}) => {
-    return createElement(tag, props);
-  },
-
-  createMockEvent: (type, props = {}) => {
-    return new Event(type, props);
-  },
-
-  createMockSignal: (initialValue) => {
-    return createSignal(initialValue);
-  },
-
-  createMockComponent: (renderFn) => {
-    return createComponent(renderFn);
-  },
-
+  /**
+   * Wait for a condition to be met
+   */
   waitFor: (condition, timeout = 1000) => {
     return new Promise((resolve, reject) => {
       const start = Date.now();
@@ -321,7 +237,7 @@ global.testUtils = {
           if (condition()) {
             resolve();
           } else if (Date.now() - start > timeout) {
-            reject(new Error('Timeout waiting for condition'));
+            reject(new Error(`Condition not met within ${timeout}ms`));
           } else {
             setTimeout(check, 10);
           }
@@ -334,12 +250,18 @@ global.testUtils = {
     });
   },
 
+  /**
+   * Trigger a custom event on an element
+   */
   triggerEvent: (element, eventType, data = {}) => {
     const event = new CustomEvent(eventType, { detail: data });
     element.dispatchEvent(event);
     return event;
   },
 
+  /**
+   * Simulate user interaction
+   */
   simulateUserInteraction: (element, action = 'click') => {
     const rect = element.getBoundingClientRect();
     const event = new MouseEvent(action, {
@@ -353,28 +275,71 @@ global.testUtils = {
     element.dispatchEvent(event);
     return event;
   },
+
+  /**
+   * Create a test container
+   */
+  createTestContainer: (id = 'test-container') => {
+    const container = document.createElement('div');
+    container.id = id;
+    container.style.cssText = `
+      position: absolute;
+      left: -9999px;
+      top: -9999px;
+      width: 1000px;
+      height: 1000px;
+      overflow: hidden;
+    `;
+    document.body.appendChild(container);
+    return container;
+  },
+
+  /**
+   * Clean up test containers
+   */
+  cleanupTestContainers: () => {
+    const containers = document.querySelectorAll('[id^="test-container"]');
+    containers.forEach(container => container.remove());
+  }
 };
 
-// Mock fetch for tests
-global.fetch = vi.fn();
+// Custom matchers for universal testing
+expect.extend({
+  toBeVisible(received) {
+    const isVisible = received.offsetWidth > 0 && received.offsetHeight > 0 &&
+                     received.getClientRects().length > 0;
+    return {
+      pass: isVisible,
+      message: () => `Expected element to ${isVisible ? 'not ' : ''}be visible`
+    };
+  },
 
-// Mock console methods for cleaner test output
-const originalConsole = { ...console };
+  toHaveClass(received, className) {
+    const hasClass = received.classList.contains(className);
+    return {
+      pass: hasClass,
+      message: () => `Expected element to ${hasClass ? 'not ' : ''}have class "${className}"`
+    };
+  },
 
-beforeEach(() => {
-  // Restore original console before each test
-  Object.assign(console, originalConsole);
-});
+  toHaveTextContent(received, expectedText) {
+    const actualText = received.textContent.trim();
+    const pass = actualText === expectedText;
+    return {
+      pass,
+      message: () => `Expected text content "${expectedText}", got "${actualText}"`
+    };
+  },
 
-afterEach(() => {
-  // Mock console methods after each test to reduce noise
-  if (process.env.NODE_ENV === 'test') {
-    console.log = vi.fn();
-    console.warn = vi.fn();
-    console.error = vi.fn();
-    console.info = vi.fn();
-    console.debug = vi.fn();
+  toBeSignal(received) {
+    const isSignal = received &&
+                    typeof received.subscribe === 'function' &&
+                    'value' in received;
+    return {
+      pass: isSignal,
+      message: () => `Expected ${received} to be a signal`
+    };
   }
 });
 
-console.log('✅ Test environment setup complete');
+console.log('✅ Universal frontend test environment ready');

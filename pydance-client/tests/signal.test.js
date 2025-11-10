@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { signal, computed, effect, batch } from '../src/core/Signal.js';
+import { signal, computed, effect, batch } from '~/core/Signal.js';
 
 describe('Signal System', () => {
   let count;

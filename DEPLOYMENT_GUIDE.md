@@ -22,7 +22,7 @@ The Pydance framework has been completely refactored with enterprise-grade featu
 
 ## Versioning Strategy
 
-Current stable release: **version 1.0.0** - Complete enterprise production-ready framework.
+Current stable release: **version 0.1.0** - Alpha framework under development.
 
 ### Version Format
 - **Major.Minor.Patch** (Semantic Versioning)
