@@ -25,7 +25,6 @@ from email.utils import parsedate_to_datetime
 from datetime import datetime
 import io
 import gzip
-from collections import defaultdict
 from functools import lru_cache
 from dataclasses import dataclass, field
 from enum import Enum
@@ -33,9 +32,8 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pydance.server.application import Application
 
-from pydance.exceptions import BadRequest, UnsupportedMediaType
+from pydance.core.exceptions import BadRequest, UnsupportedMediaType
 from pydance.i18n import _
 
 

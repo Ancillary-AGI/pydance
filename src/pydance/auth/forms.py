@@ -5,7 +5,6 @@ Forms for user authentication, registration, and password management.
 """
 
 from typing import Dict, Any, Optional, List
-from pydance.http.request import Request
 from pydance.forms.base import BaseForm, Field, ValidationError
 
 

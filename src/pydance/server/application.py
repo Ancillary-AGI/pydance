@@ -11,7 +11,6 @@ import time
 from pathlib import Path
 from typing import Dict, List, Callable, Any, Optional, Type, Union, Awaitable
 from dataclasses import dataclass, field
-from enum import Enum
 
 from pydance.utils.logging import get_logger
 from pydance.config.settings import settings
@@ -19,7 +18,7 @@ from pydance.config import AppConfig
 from pydance.routing import Router
 from pydance.middleware.manager import get_middleware_manager
 from pydance.middleware.types import MiddlewareType
-from pydance.exceptions import HTTPException, WebSocketException, WebSocketDisconnect
+from pydance.core.exceptions import HTTPException, WebSocketException, WebSocketDisconnect
 from pydance.http import Request, Response
 from pydance.websocket import WebSocket
 from pydance.templating.engine import AbstractTemplateEngine
@@ -30,8 +29,8 @@ from pydance.core.di import Container
 from pydance.monitoring import MetricsCollector, HealthChecker
 from pydance.caching import get_cache_manager
 from pydance.graphql import GraphQLManager
-from pydance.events import get_event_bus
-from pydance.plugins import get_plugin_manager
+from pydance.core.events import get_event_bus
+from pydance.core.plugins import get_plugin_manager
 
 
 class Application:
@@ -438,7 +437,7 @@ class Application:
 
         # Emit startup event
         if hasattr(self, 'event_bus'):
-            from pydance.events import StartupEvent
+            from pydance.core.events import StartupEvent
             await self.event_bus.publish(StartupEvent(app_name="pydance"))
 
         logger.info("Application started")
@@ -447,7 +446,7 @@ class Application:
         """Shutdown the application."""
         # Emit shutdown event
         if hasattr(self, 'event_bus'):
-            from pydance.events import ShutdownEvent
+            from pydance.core.events import ShutdownEvent
             await self.event_bus.publish(ShutdownEvent(app_name="pydance"))
 
         # Stop plugins if enabled

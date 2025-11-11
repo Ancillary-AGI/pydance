@@ -1,7 +1,6 @@
 """
 HTTP-related test fixtures and mocks
 """
-from typing import AsyncGenerator
 
 import pytest
 
@@ -18,7 +17,6 @@ async def client(app):
 @pytest.fixture
 def mock_request():
     """Mock request object."""
-    from pydance.http.request import Request
 
     class MockRequest:
         def __init__(self, method="GET", path="/", headers=None, query_params=None):
@@ -35,7 +33,6 @@ def mock_request():
 @pytest.fixture
 def mock_response():
     """Mock response object."""
-    from pydance.http.response import Response
 
     class MockResponse:
         def __init__(self, content="", status_code=200, headers=None):
@@ -49,7 +46,6 @@ def mock_response():
 @pytest.fixture
 def mock_websocket():
     """Mock WebSocket object."""
-    from pydance.websocket import WebSocket
 
     class MockWebSocket:
         def __init__(self, path="/", headers=None):

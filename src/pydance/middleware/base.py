@@ -40,7 +40,6 @@ from abc import ABC, abstractmethod
 from typing import Callable, Any, Optional, Union, Coroutine, Dict, List
 from dataclasses import dataclass, field
 from enum import Enum
-from contextvars import ContextVar
 
 from pydance.http.request import Request
 from pydance.http.response import Response

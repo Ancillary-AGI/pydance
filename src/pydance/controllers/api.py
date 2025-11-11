@@ -9,7 +9,6 @@ from typing import Dict, Any, Optional, List, Type, Union, Generic, TypeVar
 from pydance.controllers.base import Controller, get, post, put, delete, patch
 from pydance.exceptions import NotFound
 from pydance.models.base import BaseModel
-from pydance.form_validation import ValidationError
 
 T = TypeVar('T', bound=BaseModel)
 

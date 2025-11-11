@@ -16,8 +16,6 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import heapq
 import logging
 
-from pydance.caching import get_cache_manager
-from pydance.db.connections import DatabaseConnection
 
 
 class Job:

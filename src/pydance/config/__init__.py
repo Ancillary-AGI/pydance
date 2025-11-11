@@ -2,7 +2,6 @@
 Pydance Configuration System
 
 This module provides comprehensive configuration management for the Pydance framework,
-including support for multiple providers and environment-based settings.
 """
 
 import os
@@ -53,7 +52,6 @@ class EmailConfig:
     from_address: str = os.getenv('EMAIL_FROM', 'noreply@example.com')
     from_name: str = os.getenv('EMAIL_FROM_NAME', 'App')
 
-    # Provider-specific settings
     aws_region: str = os.getenv('AWS_SES_REGION', 'us-east-1')
     sendgrid_api_key: str = os.getenv('SENDGRID_API_KEY', '')
     mailgun_api_key: str = os.getenv('MAILGUN_API_KEY', '')
@@ -68,7 +66,6 @@ class StorageConfig:
     max_file_size: int = int(os.getenv('STORAGE_MAX_FILE_SIZE', '10485760'))  # 10MB
     allowed_extensions: List[str] = field(default_factory=lambda: os.getenv('STORAGE_ALLOWED_EXTENSIONS', 'jpg,jpeg,png,gif,pdf,doc,docx,txt').split(','))
 
-    # Cloud storage settings
     aws_access_key: str = os.getenv('AWS_ACCESS_KEY_ID', '')
     aws_secret_key: str = os.getenv('AWS_SECRET_ACCESS_KEY', '')
     aws_region: str = os.getenv('AWS_REGION', 'us-east-1')
@@ -180,7 +177,6 @@ class StaticFilesConfig:
     include_patterns: List[str] = field(default_factory=lambda: ['**/*'])
     exclude_patterns: List[str] = field(default_factory=lambda: [])
 
-    # CDN settings
     use_cdn: bool = os.getenv('STATIC_USE_CDN', 'False').lower() == 'true'
     cdn_url: str = os.getenv('STATIC_CDN_URL', '')
 
@@ -188,7 +184,6 @@ class StaticFilesConfig:
 @dataclass
 class AppConfig:
     """Main application configuration"""
-    # Core settings
     debug: bool = os.getenv('DEBUG', 'False').lower() == 'true'
     secret_key: str = os.getenv('SECRET_KEY', 'your-secret-key-here')
     allowed_hosts: List[str] = field(default_factory=lambda: os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(','))
@@ -258,9 +253,7 @@ class AppConfig:
         return self.security.trusted_hosts
 
 
-# Adapter: build AppConfig from the settings proxy so `settings` becomes canonical
 try:
-    # Local import; settings.py defines a lazy `settings` proxy
     from .settings import settings as _settings_proxy
 except Exception:
     _settings_proxy = None  # If import fails, adapter will fall back to env/defaults
@@ -284,19 +277,15 @@ def _to_bool(value, default=False):
         return default
 
 
-def appconfig_from_settings() -> AppConfig:
-    """Construct an AppConfig using values from the `settings` proxy.
-
-    This lets `settings` be the canonical source while preserving the
-    dataclass-based `AppConfig` API for consumers that expect it.
+def create_config_from_settings(s) -> AppConfig:
     """
-    s = _settings_proxy
+    Create a dataclass-based `AppConfig` API for consumers that expect it.
+    """
 
     if s is None:
         # Fallback to environment-based factory
         return get_config_from_environment()
 
-    # Build nested configs using values from settings (use getattr with safe defaults)
     db = DatabaseConfig(
         url=getattr(s, 'DATABASE_URL', 'sqlite:///app.db'),
         pool_size=_to_int(getattr(s, 'DB_POOL_SIZE', 10), 10),
@@ -448,11 +437,11 @@ class LazyConfig:
 
     def _setup(self) -> None:
         if self._wrapped is None:
-            # Prefer building AppConfig from the settings proxy so `settings` is
             # the canonical source of configuration. Fall back to env-based
             # factory if needed.
             try:
-                self._wrapped = appconfig_from_settings()
+                from .settings import settings as _settings_proxy
+                self._wrapped = create_config_from_settings(_settings_proxy)
             except Exception:
                 self._wrapped = get_config_from_environment()
 
@@ -480,4 +469,3 @@ __all__ = [
     'ConfigPresets', 'get_config_from_environment', 'default_config',
     'EmailProvider', 'StorageProvider', 'CacheBackend'
 ]
-

@@ -17,13 +17,12 @@ import threading
 import abc
 from typing import Dict, List, Any, Optional, Union, AsyncGenerator, TYPE_CHECKING, Type
 from dataclasses import dataclass, field
-from enum import Enum
 from contextlib import asynccontextmanager
 import queue
 import weakref
 
 from pydance.db.config import DatabaseConfig
-from pydance.exceptions import ConnectionError, DatabaseError, IntegrityError
+from pydance.core.exceptions import ConnectionError, DatabaseError, IntegrityError
 from pydance.db.models.base import ConnectionState, ConnectionStats, ManagedConnection
 from pydance.utils.logging import get_logger
 

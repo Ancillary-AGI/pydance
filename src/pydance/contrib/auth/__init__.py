@@ -1,5 +1,4 @@
 """
-Authentication and authorization system for Pydance  framework.
 """
 from typing import List
 

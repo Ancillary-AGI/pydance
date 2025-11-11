@@ -15,7 +15,6 @@ import logging
 import time
 import threading
 import abc
-from contextlib import asynccontextmanager
 import queue
 import weakref
 

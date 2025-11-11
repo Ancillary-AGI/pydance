@@ -26,7 +26,6 @@ from concurrent.futures import ThreadPoolExecutor
 import threading
 
 from pydance.caching import CacheManager, MemoryCache, RedisCache, DatabaseCache
-from pydance.db.connections import DatabaseConnection
 from pydance.monitoring.metrics import get_metrics_collector
 
 

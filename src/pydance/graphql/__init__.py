@@ -17,8 +17,6 @@ This module provides comprehensive GraphQL support with:
 
 from .schema import GraphQLManager, GraphQLSchema, GraphQLObjectType, GraphQLField
 from .query import GraphQLQuery, GraphQLMutation, GraphQLSubscription
-from .middleware import GraphQLMiddleware
-from .playground import GraphQLPlayground
 
 __all__ = [
     'GraphQLManager', 'GraphQLSchema', 'GraphQLObjectType', 'GraphQLField',

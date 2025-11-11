@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 from abc import ABC, abstractmethod
 
 from pydance.http.request import Request
-from pydance.http.response import Response
 from pydance.exceptions import HTTPException, Unauthorized, Forbidden
 from pydance.db.models.user import BaseUser
 from pydance.contrib.auth.backends import SessionBackend, TokenBackend

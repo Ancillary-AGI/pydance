@@ -14,7 +14,7 @@ from typing import Dict, Any, Optional, List, Type, TypeVar, Generic
 from dataclasses import dataclass
 from datetime import datetime
 
-from pydance.exceptions import BaseFrameworkException
+from pydance.core.exceptions import BaseFrameworkException
 
 logger = get_logger(__name__)
 

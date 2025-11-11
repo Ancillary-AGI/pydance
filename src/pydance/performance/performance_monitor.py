@@ -12,7 +12,6 @@ import time
 from typing import Dict, List, Optional, Any, Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from collections import defaultdict
 
 @dataclass
 class PerformanceMetrics:

@@ -2,7 +2,6 @@
 Utilities for internationalization and localization
 """
 import threading
-from typing import Optional
 from datetime import datetime
 import pytz
 

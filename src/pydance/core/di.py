@@ -25,7 +25,7 @@ from enum import Enum
 from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
 
-from pydance.exceptions import DependencyInjectionException
+from pydance.core.exceptions import DependencyInjectionException
 
 logger = get_logger(__name__)
 

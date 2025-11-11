@@ -3,7 +3,6 @@ import sys
 from typing import Dict, List, Any, Optional
 
 from pydance.db.migrations.migrator import MigrationManager
-from pydance.db.migrations.migration import MigrationExecutor
 
 
 class ManagementCommand:

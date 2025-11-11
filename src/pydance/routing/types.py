@@ -2,8 +2,6 @@ from typing import Callable, Any, TYPE_CHECKING, Awaitable
 from enum import Enum
 
 if TYPE_CHECKING:
-    from pydance.http.request import Request
-    from pydance.http.response import Response
 
 
 class HandlerType(Enum):

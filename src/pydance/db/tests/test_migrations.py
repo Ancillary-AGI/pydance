@@ -10,7 +10,7 @@ import os
 from unittest.mock import Mock, patch, MagicMock
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
 from pydance.db.migrations.migration import Migration
 from pydance.db.migrations.migrator import Migrator

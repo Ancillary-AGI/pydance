@@ -8,7 +8,6 @@ from .backends import (
     RedisBackend,
     FileBackend,
     DatabaseBackend,
-    MemcachedBackend
 )
 
 __all__ = [

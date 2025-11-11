@@ -26,7 +26,6 @@ import pickle
 import uuid
 
 from pydance.db.connections import DatabaseConnection
-from pydance.db.config import DatabaseConfig
 
 logger = get_logger(__name__)
 

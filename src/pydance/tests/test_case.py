@@ -11,7 +11,6 @@ import json
 from typing import Dict, Any, Optional, List, Type
 from datetime import datetime
 
-from pydance.config.settings import settings
 from pydance.db.connections import DatabaseConnection
 from pydance.db.config import DatabaseConfig
 from pydance.auth.core import create_user, auth_manager

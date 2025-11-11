@@ -18,7 +18,6 @@ from pydance.db.models.base import BaseModel
 from pydance.forms.base import Form, Field, CharField, EmailField, BooleanField
 from pydance.http.request import Request
 from pydance.http.response import Response
-from pydance.views.base import View
 from pydance.routing.router import Router
 
 

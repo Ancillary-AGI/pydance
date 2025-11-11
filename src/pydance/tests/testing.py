@@ -3,7 +3,6 @@ Testing framework for Pydance .
 Provides comprehensive testing utilities for unit, integration, and performance testing.
 """
 
-from __future__ import annotations
 
 import unittest
 import time
@@ -11,7 +10,6 @@ import json
 import asyncio
 from typing import Dict, List, Any, Optional, Callable, Type, Union
 from unittest.mock import Mock, patch, MagicMock
-from functools import wraps
 import inspect
 import sys
 from io import StringIO
@@ -19,10 +17,7 @@ from contextlib import redirect_stdout, redirect_stderr
 from urllib.parse import urlencode
 
 from pydance.http.request import Request
-from pydance.http.response import Response
 from pydance.server.application import Application
-from pydance.db.connections import DatabaseConnection
-from pydance.caching import get_cache_manager
 
 
 class PydanceTestCase(unittest.TestCase):

@@ -5,7 +5,6 @@ Provides template rendering, view functions, and view utilities.
 
 from .base import View, TemplateView, ListView, DetailView, FormView
 from .renderers import JSONRenderer, HTMLRenderer, XMLRenderer
-from .context_processors import ContextProcessor
 from .decorators import render_to, ajax_required, login_required
 
 __all__ = [

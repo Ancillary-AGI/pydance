@@ -5,7 +5,6 @@ Test script to verify our changes work correctly
 
 import sys
 import os
-sys.path.insert(0, 'src')
 
 def test_logging():
     """Test that logging works correctly"""

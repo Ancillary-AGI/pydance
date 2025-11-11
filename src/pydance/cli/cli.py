@@ -7,7 +7,6 @@ Refactored to use modular command system for better maintainability.
 
 import argparse
 import sys
-from typing import List
 
 from .cli.commands import registry
 

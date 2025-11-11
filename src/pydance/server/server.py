@@ -4,13 +4,11 @@ import logging
 from pydance.utils.logging import get_logger
 from typing import Optional
 from hypercorn.asyncio import serve
-from hypercorn.config import Config as HyperConfig
 
 from pydance.config import AppConfig
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pydance.server.application import Application
 
 class Server:
     def __init__(self, app: "Application", config: Optional[AppConfig] = None):
@@ -126,7 +124,6 @@ class Server:
             # Configure logging. If LOG_JSON_FORMAT or structured logging is desired,
             # try to use pydance.contrib.logging to produce structured logs.
             try:
-                from pydance.contrib.logging import logger as structured_logger
                 # Configure based on environment/config
                 log_config = {
                     'level': getattr(self.config, 'logging', {}).get('level', 'INFO') if hasattr(self.config, 'logging') else 'INFO',

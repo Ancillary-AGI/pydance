@@ -1,5 +1,5 @@
 """
-Route classes for Pydance routing system.
+Route classes for Pydance routing system with advanced regex parameter support.
 """
 
 import re
@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from urllib.parse import unquote
 from pydance.middleware.resolver import middleware_resolver
 from pydance.routing.types import HandlerType
+from pydance.routing.constraints import get_route_constraints
 
 
 class Route:
@@ -35,7 +36,7 @@ class Route:
         redirect_code: int = 302,
         view_class: Optional[Any] = None,
         view_kwargs: Optional[Dict[str, Any]] = None,
-        constraints: Optional[Dict[str, str]] = None,
+        constraints: Optional[Dict[str, Union[str, Pattern]]] = None,
         defaults: Optional[Dict[str, Any]] = None,
         host: Optional[str] = None,
         schemes: Optional[List[str]] = None,
@@ -79,32 +80,86 @@ class Route:
         return resolved
 
     def _compile_pattern(self) -> None:
-        """Compile regex pattern with enhanced parameter handling."""
-        # Convert path parameters like {id:int} or {id} to regex groups
+        """Compile regex pattern with enhanced parameter handling and constraints."""
+        constraints_registry = get_route_constraints()
         pattern = self.path
 
-        # First, handle typed parameters like {id:int}, {name:str}, etc.
-        typed_param_pattern = r'\{([^:}]+):([^}]+)\}'
-        def typed_param_replacer(match):
+        # First, handle parameters with inline constraints like {id:[0-9]+}, {id:numeric}, or {id:int}
+        regex_param_pattern = r'\{([^:}]+):(\[[^\]]+\]|[^}]+)\}'
+        def regex_param_replacer(match):
             param_name = match.group(1)
-            param_type = match.group(2)
+            constraint = match.group(2)
+
             if param_name not in self.param_names:  # Avoid duplicates
                 self.param_names.append(param_name)
-                self.param_types[param_name] = self._get_type_from_string(param_type)
+                self.param_types[param_name] = str  # Default to string
+
+                # If constraint is a regex pattern (starts with [), store it as constraint
+                if constraint.startswith('[') and constraint.endswith(']'):
+                    regex_pattern = constraint[1:-1]  # Remove brackets
+                    self.constraints[param_name] = regex_pattern
+                    return f'(?P<{param_name}>{regex_pattern})'
+                else:
+                    # Check if it's a type hint (int, float, bool, uuid)
+                    param_type = self._get_type_from_string(constraint)
+                    if param_type != str:  # It's a type hint
+                        self.param_types[param_name] = param_type
+                        return f'(?P<{param_name}>[^/]+)'
+                    else:
+                        # Check if it's a named constraint
+                        named_pattern = constraints_registry.get_pattern(constraint)
+                        if named_pattern:
+                            self.constraints[param_name] = named_pattern
+                            return f'(?P<{param_name}>{named_pattern})'
+                        else:
+                            # It's a custom regex pattern or unknown constraint
+                            self.constraints[param_name] = constraint
+                            return f'(?P<{param_name}>[^/]+)'
+
             return f'(?P<{param_name}>[^/]+)'
 
-        pattern = re.sub(typed_param_pattern, typed_param_replacer, pattern)
+        pattern = re.sub(regex_param_pattern, regex_param_replacer, pattern)
 
-        # Then handle regular parameters like {id}
+        # Then handle simple parameters like {id}
         simple_param_pattern = r'\{([^}]+)\}'
         def simple_param_replacer(match):
             param_name = match.group(1)
-            if param_name not in self.param_names:  # Avoid overwriting typed params
+            if param_name not in self.param_names:  # Avoid overwriting
                 self.param_names.append(param_name)
                 self.param_types[param_name] = str  # Default to string
             return f'(?P<{param_name}>[^/]+)'
 
         pattern = re.sub(simple_param_pattern, simple_param_replacer, pattern)
+
+        # Apply additional constraints from self.constraints (set via where() method)
+        for param_name, constraint in self.constraints.items():
+            if isinstance(constraint, str) and not constraint.startswith('(?P<'):
+                # Replace the parameter group with constrained version
+                param_group = f'(?P<{param_name}>[^/]+)'
+
+                # Check if it's a named constraint first
+                if ':' in constraint:
+                    # Handle parameterized constraints like 'min:3'
+                    base_name, params = constraint.split(':', 1)
+                    param_values = params.split(',')
+                    named_pattern = constraints_registry.get_pattern(base_name, *param_values)
+                    if named_pattern:
+                        constrained_group = f'(?P<{param_name}>{named_pattern})'
+                    else:
+                        constrained_group = f'(?P<{param_name}>[^/]+)'
+                else:
+                    # Check for named constraint
+                    named_pattern = constraints_registry.get_pattern(constraint)
+                    if named_pattern:
+                        constrained_group = f'(?P<{param_name}>{named_pattern})'
+                    elif constraint.startswith('[') and constraint.endswith(']'):
+                        # It's already a regex pattern
+                        constrained_group = f'(?P<{param_name}>{constraint[1:-1]})'
+                    else:
+                        # It's a regex pattern
+                        constrained_group = f'(?P<{param_name}>{constraint})'
+
+                pattern = pattern.replace(param_group, constrained_group)
 
         # Escape special regex characters, but not within the parameter groups we created
         # Split the pattern by our added groups and escape each part separately
@@ -218,6 +273,33 @@ class Route:
                 return middleware(req, next_middleware)
 
         return await dispatch(0, request)
+
+    def where(self, param: Union[str, Dict[str, Union[str, Pattern]]], constraint: Optional[Union[str, Pattern]] = None) -> 'Route':
+        """
+        Add regex constraints to route parameters.
+
+        Examples:
+            # Single constraint
+            route.where('id', '[0-9]+')
+
+            # Multiple constraints
+            route.where({'id': '[0-9]+', 'slug': '[a-z0-9-]+'})
+
+            # Using constraint names
+            route.where('id', 'numeric')
+        """
+        if isinstance(param, dict):
+            # Multiple constraints
+            for param_name, param_constraint in param.items():
+                self.constraints[param_name] = param_constraint
+        else:
+            # Single constraint
+            if constraint is not None:
+                self.constraints[param] = constraint
+
+        # Recompile pattern with new constraints
+        self._compile_pattern()
+        return self
 
 
 @dataclass

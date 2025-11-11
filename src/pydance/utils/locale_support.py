@@ -3,7 +3,6 @@ Locale support utilities for Pydance
 Comprehensive internationalization and localization features
 """
 
-import locale as locale_module
 import gettext
 import os
 import json
@@ -14,7 +13,6 @@ from decimal import Decimal
 import babel
 from babel import Locale, dates, numbers, support
 import pytz
-from functools import lru_cache
 
 
 class LocaleManager:

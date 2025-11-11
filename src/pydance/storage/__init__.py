@@ -8,7 +8,6 @@ from typing import BinaryIO, Optional, Dict, List, AsyncGenerator
 from pathlib import Path
 import aiofiles
 import aiohttp
-from google.cloud import storage as gcs
 from azure.storage.blob import BlobServiceClient
 import boto3
 from botocore.config import Config

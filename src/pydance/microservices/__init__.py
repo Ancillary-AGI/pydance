@@ -35,7 +35,6 @@ from .rest_api_patterns import (
 )
 
 # Legacy service discovery (for backward compatibility)
-from .service_discovery import ServiceDiscovery as LegacyServiceDiscovery
 from .service_discovery import ConsulDiscovery, ZookeeperDiscovery
 
 __all__ = [

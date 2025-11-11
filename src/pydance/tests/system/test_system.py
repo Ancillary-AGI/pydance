@@ -9,7 +9,6 @@ import requests
 import asyncio
 import aiohttp
 import json
-from pathlib import Path
 from typing import Dict, Any, List
 import tempfile
 import shutil
@@ -464,7 +463,7 @@ MIDDLEWARE = [
     def test_performance_endpoints(self, system_app):
         """Test performance-related endpoints"""
         import time
-        from pydance.utils.math_utils import MathOps
+        from pydance.utils.math_operations import MathOps
 
         # Test math utilities
         math_ops = MathOps()

@@ -286,7 +286,6 @@ class RedisBackend(CacheBackend):
         self.password = password
         self.redis = None
 
-        import redis.asyncio as redis
         self.redis = redis.Redis(
             host=host,
             port=port,

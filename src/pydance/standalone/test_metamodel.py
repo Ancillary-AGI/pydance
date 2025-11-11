@@ -5,7 +5,7 @@ Test script to verify MetaModel functionality and ClassVar type annotations.
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from pydance.db.models.base import BaseModel, ModelMeta
 from typing import get_type_hints, Dict, ClassVar

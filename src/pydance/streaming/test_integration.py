@@ -10,9 +10,6 @@ import time
 import asyncio
 from typing import List, Dict, Any
 
-# Add the parent directory to the path to import pydance modules
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-
 from pydance.streaming.stream_bindings import (
     QuantumStreamServer,
     QuantumMediaEngine,
@@ -175,8 +172,3 @@ def main():
 
 if __name__ == "__main__":
     exit(main())
-
-
-
-
-

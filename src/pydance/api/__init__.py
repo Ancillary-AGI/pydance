@@ -11,7 +11,6 @@ from functools import wraps
 from pydance.http.response import Response
 from pydance.http.request import Request
 from pydance.exceptions import HTTPException, ValidationError, PermissionDenied, NotFound, APIException
-from pydance.microservices.rest_api_patterns import APIResponse
 
 from pydance.pagination import Pagination, PageNumberPagination, LimitOffsetPagination
 

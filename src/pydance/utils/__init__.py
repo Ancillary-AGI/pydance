@@ -7,16 +7,10 @@ and to eliminate code duplication. This module provides convenient access to all
 utility classes and functions.
 """
 
-# Core utilities are available through individual modules
-# Import utilities from submodules to avoid circular imports
+# Import utilities from focused modules to avoid circular imports
+from .performance_utilities import PerformanceMonitor, PerformanceMetrics, PerformanceProfiler
 
-# Import advanced utilities
-from .math_utils import (
-    MathOps, FunctionUtils, AsyncUtils, DataUtils, ValidationUtils,
-    PerformanceUtils, ThreadingUtils, LoggingUtils,
-    math_ops, function_utils, async_utils, data_utils, validation_utils,
-    performance_utils, threading_utils, logging_utils
-)
+# Import locale support
 from .locale_support import (
     LocaleManager, TranslationManager, LocalizedFormatter,
     get_locale_manager, get_translation_manager, get_localized_formatter,

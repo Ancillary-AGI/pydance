@@ -15,7 +15,6 @@ from dataclasses import dataclass
 from urllib.parse import urljoin
 
 if TYPE_CHECKING:
-    from pydance.server.config import StaticFilesConfig
 
 
 @dataclass

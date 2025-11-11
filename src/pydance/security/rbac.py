@@ -4,7 +4,6 @@ Role-Based Access Control (RBAC) system.
 
 from typing import Dict, List, Set, Optional, Any
 from dataclasses import dataclass
-from enum import Enum
 
 class Permission:
     """Represents a system permission."""

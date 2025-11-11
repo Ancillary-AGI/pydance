@@ -12,7 +12,6 @@ from typing import Dict, List, Any, Optional, Type
 from datetime import datetime
 from pathlib import Path
 
-from pydance.db.connections import DatabaseConnection
 from pydance.db.config import DatabaseConfig
 from pydance.db.models.base import BaseModel
 from .migrator import MigrationRunner, MigrationManager, Migrator

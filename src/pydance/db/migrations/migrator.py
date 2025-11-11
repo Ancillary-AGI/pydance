@@ -24,7 +24,6 @@ from .migration import (
     Migration, MigrationFile, MigrationGenerator, MigrationOperationType,
     MigrationOperation, ModelMigration
 )
-from pydance.events import get_event_bus
 
 
 @dataclass

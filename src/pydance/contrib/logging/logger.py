@@ -10,7 +10,6 @@ import sys
 import threading
 from typing import Dict, Any, Optional, List
 from datetime import datetime
-from pathlib import Path
 
 from .formatters import JSONFormatter, StructuredFormatter, ColoredFormatter
 from .handlers import ConsoleHandler, FileHandler
@@ -147,7 +146,6 @@ def get_logger(name: str, context: Optional[Dict[str, Any]] = None) -> Logger:
             handlers.append(console_handler)
 
         if 'file' in _default_config['handlers'] and _default_config['file_path']:
-            from .handlers import RotatingFileHandler
             file_handler = RotatingFileHandler(
                 _default_config['file_path'],
                 maxBytes=_default_config['max_file_size'],

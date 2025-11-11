@@ -2,10 +2,8 @@
 Integration tests for application lifecycle and error handling
 """
 import pytest
-from unittest.mock import patch
 
 from pydance import Application
-from pydance.exceptions import HTTPException
 
 
 @pytest.mark.integration

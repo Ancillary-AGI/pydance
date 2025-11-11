@@ -5,7 +5,7 @@ import asyncio
 import os
 import tempfile
 from pathlib import Path
-from typing import AsyncGenerator, Generator
+from typing import AsyncGenerator
 
 import pytest
 from faker import Faker
@@ -93,7 +93,3 @@ def pytest_configure(config):
 #     "tests.fixtures.database",
 #     "tests.fixtures.http",
 # ]
-
-
-
-

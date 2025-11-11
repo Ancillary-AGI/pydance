@@ -13,8 +13,6 @@ from dataclasses import dataclass
 from abc import ABC, abstractmethod
 import time
 import logging
-from contextlib import asynccontextmanager
-from collections import deque
 import threading
 import queue
 
@@ -275,6 +273,30 @@ class BufferedStreamProcessor(StreamProcessor):
         # Basic processing logic
         return message
 
+    async def handle_connection(self, connection_id: str, connection) -> AsyncGenerator[StreamMessage, None]:
+        """Handle buffered connection"""
+        self._connections[connection_id] = connection
+
+        try:
+            while self._running:
+                try:
+                    # Wait for message with timeout
+                    message = await asyncio.wait_for(
+                        self._message_queue.get(),
+                        timeout=self.config.heartbeat_interval
+                    )
+
+                    processed = await self.process_message(message)
+                    if processed:
+                        yield processed
+
+                except asyncio.TimeoutError:
+                    # Send heartbeat
+                    yield StreamMessage("heartbeat", "system")
+
+        finally:
+            del self._connections[connection_id]
+
 
 class QuantumStreamProcessor(StreamProcessor):
     """Advanced streaming processor with quantum-inspired optimizations"""
@@ -448,8 +470,3 @@ _stream_metrics = StreamMetrics()
 def get_stream_metrics() -> StreamMetrics:
     """Get global stream metrics"""
     return _stream_metrics
-
-
-
-
-

@@ -7,7 +7,6 @@ import smtplib
 import ssl
 from typing import Optional, Dict, Any
 from abc import ABC, abstractmethod
-from email.mime.multipart import MIMEMultipart
 
 from .mail import EmailMessage
 

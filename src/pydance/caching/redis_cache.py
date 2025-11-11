@@ -8,7 +8,6 @@ import asyncio
 import json
 import logging
 from typing import Optional, Any, Dict
-from datetime import timedelta
 
 from pydance.caching.cache_manager import CacheConfig
 
@@ -25,7 +24,6 @@ class RedisCache:
     async def initialize(self):
         """Initialize Redis connection."""
         try:
-            import redis.asyncio as redis
             self.redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
             # Test connection
             await self.redis_client.ping()

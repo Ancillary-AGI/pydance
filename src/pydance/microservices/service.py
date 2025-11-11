@@ -24,7 +24,6 @@ import random
 from datetime import datetime, timedelta
 import socket
 import aiohttp
-from urllib.parse import urlparse
 from pydance.db.connections import DatabaseConnection
 from pydance.db.config import DatabaseConfig
 
@@ -168,6 +167,46 @@ class Service(ABC):
     def remove_dependency(self, service_name: str) -> None:
         """Remove a service dependency"""
         self.dependencies.discard(service_name)
+
+
+@dataclass
+class ServiceInstance:
+    """Represents a service instance in the discovery system"""
+    name: str
+    address: str
+    port: int
+    version: str
+    status: ServiceStatus
+    metadata: Dict[str, Any]
+    registered_at: datetime
+    last_heartbeat: datetime
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary representation"""
+        return {
+            "name": self.name,
+            "address": self.address,
+            "port": self.port,
+            "version": self.version,
+            "status": self.status.value,
+            "metadata": self.metadata,
+            "registered_at": self.registered_at.isoformat(),
+            "last_heartbeat": self.last_heartbeat.isoformat()
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'ServiceInstance':
+        """Create from dictionary representation"""
+        return cls(
+            name=data["name"],
+            address=data["address"],
+            port=data["port"],
+            version=data["version"],
+            status=ServiceStatus(data["status"]),
+            metadata=data.get("metadata", {}),
+            registered_at=datetime.fromisoformat(data["registered_at"]),
+            last_heartbeat=datetime.fromisoformat(data["last_heartbeat"])
+        )
 
 
 class ServiceRegistry:
@@ -599,44 +638,3 @@ def get_load_balancer(strategy: str = "round_robin") -> LoadBalancer:
     if _load_balancer is None:
         _load_balancer = LoadBalancer(strategy)
     return _load_balancer
-
-
-@dataclass
-class ServiceInstance:
-    """Represents a service instance in the discovery system"""
-    name: str
-    address: str
-    port: int
-    version: str
-    status: ServiceStatus
-    metadata: Dict[str, Any]
-    registered_at: datetime
-    last_heartbeat: datetime
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary representation"""
-        return {
-            "name": self.name,
-            "address": self.address,
-            "port": self.port,
-            "version": self.version,
-            "status": self.status.value,
-            "metadata": self.metadata,
-            "registered_at": self.registered_at.isoformat(),
-            "last_heartbeat": self.last_heartbeat.isoformat()
-        }
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'ServiceInstance':
-        """Create from dictionary representation"""
-        return cls(
-            name=data["name"],
-            address=data["address"],
-            port=data["port"],
-            version=data["version"],
-            status=ServiceStatus(data["status"]),
-            metadata=data.get("metadata", {}),
-            registered_at=datetime.fromisoformat(data["registered_at"]),
-            last_heartbeat=datetime.fromisoformat(data["last_heartbeat"])
-        )
-

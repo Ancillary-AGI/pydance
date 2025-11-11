@@ -6,8 +6,6 @@ import asyncio
 import time
 from typing import Dict, List, Optional, Any, DefaultDict
 from collections import defaultdict
-from enum import Enum
-from dataclasses import dataclass
 from datetime import datetime
 
 class CacheMetricsCollector:

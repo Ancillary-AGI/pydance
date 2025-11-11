@@ -6,7 +6,6 @@ import pytest
 from datetime import datetime
 from pydance import Application
 from pydance.i18n import gettext, ngettext, lazy_gettext, set_locale, get_locale
-from pydance.i18n.middleware import LocaleMiddleware
 from pydance.testing.test_client import TestClient
 
 

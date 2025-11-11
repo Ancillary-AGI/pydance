@@ -17,11 +17,9 @@ from typing import Dict, Any, Optional, Callable, Awaitable, List
 from functools import wraps
 from datetime import datetime, timedelta
 import json
-from enum import Enum
 import base64
 
 from pydance.http.request import Request
-from pydance.http.response import Response
 from pydance.exceptions import HTTPException, Unauthorized, Forbidden, RateLimitExceeded
 from pydance.config.settings import settings
 from pydance.events import get_event_bus

@@ -18,7 +18,6 @@ from pathlib import Path
 
 from pydance.http.request import Request
 from pydance.http.response import Response
-from pydance.exceptions import HTTPException
 
 
 class MaintenanceStatus(str, Enum):
@@ -533,4 +532,3 @@ __all__ = [
     'get_maintenance_manager', 'enable_maintenance', 'disable_maintenance',
     'schedule_maintenance', 'get_maintenance_status', 'get_maintenance_history'
 ]
-

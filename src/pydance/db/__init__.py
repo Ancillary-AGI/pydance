@@ -4,8 +4,6 @@ Database package - Unified database access layer.
 Provides DatabaseConfig, DatabaseConnection, models, migrations, and type definitions.
 """
 
-from pydance.db.config import DatabaseConfig
-from pydance.db.connections.base import DatabaseConnection
 
 # Types and fields
 from pydance.db.models.base import (
@@ -21,8 +19,6 @@ from pydance.db.models.base import (
 )
 
 # Models
-from pydance.db.models.base import BaseModel
-from pydance.db.models.query import QueryBuilder
 
 # Migrations
 from pydance.db.migrations import (

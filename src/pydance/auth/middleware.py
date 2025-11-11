@@ -13,7 +13,7 @@ from pydance.http.response import Response
 from pydance.middleware.base import HTTPMiddleware
 from pydance.exceptions import HTTPException, Unauthorized, Forbidden
 
-from .core import auth_manager, get_current_user
+from pydance.auth.core import auth_manager, get_current_user
 
 
 class AuthMiddleware(HTTPMiddleware):

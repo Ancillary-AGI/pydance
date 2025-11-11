@@ -6,7 +6,6 @@ Tests application initialization, configuration, routing, middleware, and lifecy
 import asyncio
 import pytest
 import tempfile
-from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 from pydance.server.application import Application
 from pydance.config.settings import Settings

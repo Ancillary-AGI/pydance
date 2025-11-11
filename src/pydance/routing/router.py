@@ -22,7 +22,7 @@ logger = get_logger(__name__)
 
 from pydance.routing.route import Route
 from pydance.middleware.base import MiddlewareType
-from pydance.events import get_event_bus
+from pydance.core.events import get_event_bus
 
 
 @dataclass
@@ -376,7 +376,7 @@ class Router:
         # Emit optimization event
         event_bus = get_event_bus()
         if event_bus:
-            from pydance.events import Event
+            from pydance.core.events import Event
             asyncio.create_task(event_bus.publish(Event('router_optimized', {'router': self.__class__.__name__})))
 
     def enable_advanced_caching(self) -> None:

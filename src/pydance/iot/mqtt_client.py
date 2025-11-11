@@ -10,7 +10,6 @@ import json
 import logging
 from typing import Dict, Any, Optional, Callable, List
 from dataclasses import dataclass
-from datetime import datetime
 
 @dataclass
 class MQTTConfig:

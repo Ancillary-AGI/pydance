@@ -15,7 +15,6 @@ import gzip
 import secrets
 import gc
 from typing import Dict, Any, Optional, Union, Callable, List
-from datetime import datetime
 import json
 
 from pydance.middleware.base import HTTPMiddleware, WebSocketMiddleware

@@ -11,7 +11,6 @@ import hashlib
 import json
 from typing import Dict, List, Optional, Any
 from datetime import datetime
-from collections import defaultdict
 import logging
 
 logger = get_logger(__name__)

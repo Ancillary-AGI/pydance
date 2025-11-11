@@ -13,7 +13,6 @@ Ultra-high-performance routing with advanced features:
 from typing import Any
 from pydance.routing.route import Route, WebSocketRoute
 from pydance.routing.router import Router
-from pydance.routing.group import RouteGroup
 from pydance.routing.types import RouteType, RouteMatch, RouteConfig
 
 # Import middleware aliases and groups from middleware module to avoid duplication

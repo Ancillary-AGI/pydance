@@ -1,6 +1,5 @@
 # tests/test_lean_templates.py
 import pytest
-from pathlib import Path
 from pydance.templating.languages.lean import LeanTemplateEngine
 
 @pytest.fixture

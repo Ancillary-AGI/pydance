@@ -17,8 +17,6 @@ from pathlib import Path
 import aiofiles
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
-from cryptography.hazmat.backends import default_backend
-from cryptography.exceptions import InvalidSignature
 
 
 @dataclass

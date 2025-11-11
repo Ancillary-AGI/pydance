@@ -3,7 +3,6 @@ Unit tests for refactored models
 """
 import pytest
 import asyncio
-from datetime import datetime
 from pydance.db.models.base import BaseModel
 from pydance.db.models.user import BaseUser, UserRole, UserStatus
 from pydance.db.models.factory import ModelFactory

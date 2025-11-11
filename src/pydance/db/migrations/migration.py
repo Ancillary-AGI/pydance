@@ -28,7 +28,6 @@ from abc import ABC, abstractmethod
 
 from pydance.db.connections import DatabaseConnection
 from pydance.db.connections.base import DatabaseBackend
-from pydance.db.config import DatabaseConfig
 from pydance.db.models.base import BaseModel, Field
 
 

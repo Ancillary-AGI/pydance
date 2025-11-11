@@ -12,7 +12,6 @@ import logging
 from typing import Dict, Any, Optional, Callable, Union
 from dataclasses import dataclass, field
 from enum import Enum
-from collections import deque
 
 
 class CircuitBreakerState(Enum):

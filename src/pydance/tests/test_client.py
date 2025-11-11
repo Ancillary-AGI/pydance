@@ -11,8 +11,6 @@ from typing import Dict, Any, Optional, Union, List
 from urllib.parse import urlencode, parse_qs
 from dataclasses import dataclass
 
-from pydance.http.request import Request
-from pydance.http.response import Response
 
 
 @dataclass
