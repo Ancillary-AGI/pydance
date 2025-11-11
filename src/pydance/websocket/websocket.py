@@ -2,8 +2,7 @@ import json
 from typing import Dict, Any, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-
-from pydance.core.exceptions import WebSocketException
+    from pydance.core.exceptions import WebSocketException
 
 class WebSocket:
     def __init__(self, scope, receive, send, app: "Application"):

@@ -32,9 +32,8 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-
-from pydance.core.exceptions import BadRequest, UnsupportedMediaType
-from pydance.i18n import _
+    from pydance.core.exceptions import BadRequest, UnsupportedMediaType
+    from pydance.i18n import _
 
 
 class RequestSecurity(Enum):

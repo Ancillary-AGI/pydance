@@ -9,6 +9,7 @@ from pydance.config import AppConfig
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    pass
 
 class Server:
     def __init__(self, app: "Application", config: Optional[AppConfig] = None):

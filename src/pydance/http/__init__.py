@@ -5,7 +5,9 @@ This module contains HTTP request/response handling with world-class algorithms,
 advanced compression, intelligent caching, and enterprise-grade performance optimizations.
 """
 
-from pydance.http.types import (
+from .request import Request
+from .response import Response
+from .types import (
     Scope, Message, Receive, Send, ASGIApp,
     Handler, AsyncHandler, RouteHandler,
     PathParams, QueryParams, Headers, Cookies,
@@ -19,4 +21,3 @@ __all__ = [
     'PathParams', 'QueryParams', 'Headers', 'Cookies',
     'RequestBody', 'ResponseBody'
 ]
-
