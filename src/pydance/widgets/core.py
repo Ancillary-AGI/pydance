@@ -11,6 +11,17 @@ from datetime import datetime, date, time
 from typing import Any, Dict, List, Optional, Union, Callable, Type
 from dataclasses import dataclass, field
 
+# Optional Tailwind CSS support
+try:
+    from pydance.templating.tailwind import get_tailwind, TailwindConfig, enable_tailwind, disable_tailwind
+    TAILWIND_AVAILABLE = True
+except ImportError:
+    TAILWIND_AVAILABLE = False
+    get_tailwind = None
+    TailwindConfig = None
+    enable_tailwind = None
+    disable_tailwind = None
+
 
 class WidgetTheme(Enum):
     """Widget theme options"""
@@ -190,6 +201,13 @@ class BaseWidget:
 
     def get_css_classes(self) -> str:
         """Get CSS classes for the widget"""
+        if TAILWIND_AVAILABLE and get_tailwind().is_enabled():
+            return self.get_tailwind_classes()
+        else:
+            return self.get_legacy_classes()
+
+    def get_legacy_classes(self) -> str:
+        """Get legacy CSS classes for the widget"""
         classes = [
             f"widget-{self.widget_type.value}",
             f"widget-theme-{self.config.theme.value}",
@@ -207,6 +225,76 @@ class BaseWidget:
 
         classes.extend(self.config.classes)
         return " ".join(classes)
+
+    def get_tailwind_classes(self) -> str:
+        """Get Tailwind CSS classes for the widget"""
+        if not TAILWIND_AVAILABLE:
+            return self.get_legacy_classes()
+
+        tw = get_tailwind()
+        base_classes = []
+
+        # Base widget classes
+        base_classes.extend([
+            "inline-block",  # Default display
+            "w-full",  # Full width by default
+            "text-sm",  # Small text
+            "font-medium",  # Medium font weight
+        ])
+
+        # Size variants
+        size_classes = {
+            WidgetSize.SMALL: ["text-xs", "py-1", "px-2"],
+            WidgetSize.MEDIUM: ["text-sm", "py-2", "px-3"],
+            WidgetSize.LARGE: ["text-base", "py-3", "px-4"],
+            WidgetSize.EXTRA_LARGE: ["text-lg", "py-4", "px-6"],
+        }
+        base_classes.extend(size_classes.get(self.config.size, size_classes[WidgetSize.MEDIUM]))
+
+        # State classes
+        if self.config.disabled:
+            base_classes.extend(["opacity-50", "cursor-not-allowed", "pointer-events-none"])
+        if self.config.readonly:
+            base_classes.extend(["bg-gray-100", "cursor-not-allowed"])
+        if self.config.required:
+            base_classes.append("required")
+        if self.errors:
+            base_classes.extend(["border-red-300", "focus:ring-red-500", "focus:border-red-500"])
+
+        # Theme-based colors (simplified)
+        theme_colors = {
+            WidgetTheme.LIGHT: {
+                "border": "border-gray-300",
+                "focus": "focus:ring-blue-500 focus:border-blue-500",
+                "bg": "bg-white",
+                "text": "text-gray-900"
+            },
+            WidgetTheme.DARK: {
+                "border": "border-gray-600",
+                "focus": "focus:ring-blue-400 focus:border-blue-400",
+                "bg": "bg-gray-800",
+                "text": "text-gray-100"
+            },
+            WidgetTheme.BLUE: {
+                "border": "border-blue-300",
+                "focus": "focus:ring-blue-500 focus:border-blue-500",
+                "bg": "bg-blue-50",
+                "text": "text-blue-900"
+            },
+        }
+
+        theme = theme_colors.get(self.config.theme, theme_colors[WidgetTheme.LIGHT])
+        base_classes.extend([
+            theme["border"],
+            theme["focus"],
+            theme["bg"],
+            theme["text"]
+        ])
+
+        # Add custom classes
+        base_classes.extend(self.config.classes)
+
+        return " ".join(base_classes)
 
     def get_attributes(self) -> Dict[str, Any]:
         """Get HTML attributes for the widget"""

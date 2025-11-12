@@ -17,6 +17,8 @@ class TemplateConfig:
     trim_blocks: bool = True
     lstrip_blocks: bool = False
     keep_trailing_newline: bool = False
+    tailwind_enabled: bool = False
+    tailwind_config: Optional[Dict[str, Any]] = None
 
 
 class TemplateError(Exception):

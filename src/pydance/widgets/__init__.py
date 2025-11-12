@@ -5,6 +5,7 @@ A comprehensive widget system for building dynamic web interfaces.
 Provides rich UI components with form handling, validation, and theming.
 """
 
+from .core import (
     Widget, BaseWidget, WidgetConfig, WidgetRegistry,
     RichText, RichSelect, RichFile, RichDate,
     RichTitle, RichColor, RichRating, RichTags, RichSlider, RichCode,
@@ -13,11 +14,20 @@ Provides rich UI components with form handling, validation, and theming.
     # File Management Widgets
     RichFileManager,
     # Commerce Widgets
-    RichPrice, RichQuantity, RichProductCard, RichShoppingCart
+    RichPrice, RichQuantity, RichProductCard, RichShoppingCart,
+    # Theme and size enums
+    WidgetTheme, WidgetSize, WidgetType, ThemeManager
 )
-    FormWidget, FieldWidget, ButtonWidget, InputWidget,
-    TextareaWidget, SelectWidget, CheckboxWidget, RadioWidget
-)
+
+# Optional form widgets (may not be implemented yet)
+try:
+    from .forms import (
+        FormWidget, FieldWidget, ButtonWidget, InputWidget,
+        TextareaWidget, SelectWidget, CheckboxWidget, RadioWidget
+    )
+except ImportError:
+    FormWidget = FieldWidget = ButtonWidget = InputWidget = None
+    TextareaWidget = SelectWidget = CheckboxWidget = RadioWidget = None
 
 __version__ = "1.0.0"
 __all__ = [
