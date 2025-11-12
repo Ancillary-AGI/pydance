@@ -64,9 +64,13 @@ from pydance.core.exceptions import HTTPException, ValidationError
 from pydance.caching import get_cache_manager, CacheManager, CacheConfig
 
 # Storage system
-from pydance.storage import get_storage_manager, StorageManager
+try:
+    from pydance.storage import get_storage_manager, StorageManager
+except ImportError:
+    get_storage_manager = None
+    StorageManager = None
 
-# Advanced modules (optional imports)
+# Advanced modules (optional imports - some have external dependencies)
 try:
     from pydance.neuralforge import NeuralForge, LLMEngine, NeuralAgent
 except ImportError:

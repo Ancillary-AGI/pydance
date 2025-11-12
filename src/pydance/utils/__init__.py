@@ -8,7 +8,13 @@ utility classes and functions.
 """
 
 # Import utilities from focused modules to avoid circular imports
-from .performance_utilities import PerformanceMonitor, PerformanceMetrics, PerformanceProfiler
+try:
+    from .performance_utilities import PerformanceMonitor, PerformanceMetrics, PerformanceProfiler
+except ImportError:
+    # psutil not available
+    PerformanceMonitor = None
+    PerformanceMetrics = None
+    PerformanceProfiler = None
 
 # Import locale support
 from .locale_support import (
