@@ -37,31 +37,13 @@ __author__ = "Pydance Team"
 __email__ = "team@pydance.dev"
 
 # Initialize logging system
-try:
-    from pydance.utils.logging import (
-        get_logger, configure_logging, setup_request_logging,
-        log_request_start, log_request_end, log_database_query,
-        log_auth_event, log_error, db_logger, auth_logger,
-        request_logger, error_logger, graphql_logger, cache_logger,
-        logger_manager
-    )
-except ImportError:
-    # Fallback if logging module not available
-    get_logger = None
-    configure_logging = None
-    setup_request_logging = None
-    log_request_start = None
-    log_request_end = None
-    log_database_query = None
-    log_auth_event = None
-    log_error = None
-    db_logger = None
-    auth_logger = None
-    request_logger = None
-    error_logger = None
-    graphql_logger = None
-    cache_logger = None
-    logger_manager = None
+from pydance.utils.logging import (
+    get_logger, configure_logging, setup_request_logging,
+    log_request_start, log_request_end, log_database_query,
+    log_auth_event, log_error, db_logger, auth_logger,
+    request_logger, error_logger, graphql_logger, cache_logger,
+    logger_manager
+)
 
 # Configure logging from settings
 if logger_manager:
@@ -79,19 +61,10 @@ from pydance.core.exceptions import HTTPException, ValidationError
 # Plugin system
 
 # Caching system
-try:
-    from pydance.caching import get_cache_manager, CacheManager, CacheConfig
-except ImportError:
-    get_cache_manager = None
-    CacheManager = None
-    CacheConfig = None
+from pydance.caching import get_cache_manager, CacheManager, CacheConfig
 
 # Storage system
-try:
-    from pydance.storage import get_storage_manager, StorageManager
-except ImportError:
-    get_storage_manager = None
-    StorageManager = None
+from pydance.storage import get_storage_manager, StorageManager
 
 # Advanced modules (optional imports)
 try:
