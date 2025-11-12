@@ -6,7 +6,7 @@ to be specified as strings and resolved to actual middleware instances.
 """
 
 from typing import Dict, Any, List, Union, Callable, Optional, Type
-from .throttle import ThrottleMiddleware
+from pydance.middleware.throttle import ThrottleMiddleware
 
 
 class MiddlewareResolver:
@@ -24,9 +24,7 @@ class MiddlewareResolver:
             'throttle': self._resolve_throttle,
         }
         self._instances: Dict[str, Any] = {}
-
-        # Register middleware aliases from __init__.py
-        self._register_middleware_aliases()
+        self._aliases_registered = False
 
     def register(self, name: str, resolver: Callable):
         """Register a custom middleware resolver"""
@@ -105,12 +103,10 @@ class MiddlewareResolver:
         """Register middleware aliases from settings and built-in middleware"""
         try:
             # Register built-in aliases from middleware module
-            from . import MIDDLEWARE_ALIASES
             for alias, middleware_path in MIDDLEWARE_ALIASES.items():
                 self._register_alias_resolver(alias, middleware_path)
 
             # Register custom aliases from settings
-            from pydance.config.settings import settings
             if hasattr(settings, 'MIDDLEWARE_ALIASES'):
                 for alias, middleware_path in settings.MIDDLEWARE_ALIASES.items():
                     self._register_alias_resolver(alias, middleware_path)

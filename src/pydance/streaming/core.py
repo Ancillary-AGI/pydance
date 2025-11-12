@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Modern Python Streaming Core
 High-performance async streaming processor for real-time data handling.
@@ -7,14 +6,9 @@ High-performance async streaming processor for real-time data handling.
 
 import asyncio
 import json
-import pickle
 from typing import Dict, Any, Optional, Union, List, Callable, AsyncGenerator, Iterator
-from dataclasses import dataclass
 from abc import ABC, abstractmethod
 import time
-import logging
-import threading
-import queue
 
 
 logger = get_logger(__name__)

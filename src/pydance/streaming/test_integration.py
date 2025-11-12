@@ -4,13 +4,10 @@ Test script for Pydance  Streaming C++ Integration
 Tests the channels and interfaces between Python and C++ code
 """
 
-import sys
-import os
-import time
 import asyncio
 from typing import List, Dict, Any
 
-from pydance.streaming.stream_bindings import (
+from pydance.streaming.core import (
     QuantumStreamServer,
     QuantumMediaEngine,
     UltraStreamServer,

@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Interactive shell and database shell for Pydance framework.
 Provides Django/Laravel-style shell commands for development and debugging.
@@ -12,11 +11,7 @@ import os
 import json
 import logging
 from typing import Dict, Any, Optional, List
-from datetime import datetime
 
-from pydance.db.connections import DatabaseConnection
-from pydance.models.base import BaseModel
-from pydance.caching.cache_manager import CacheManager
 from pydance.exceptions import ValidationError, DatabaseError
 from pydance.utils.types import Field, Relationship
 import time
@@ -67,7 +62,6 @@ class PydanceShell:
 
         # Add database connection
         try:
-            from pydance.db.config import DatabaseConfig
             db_config = DatabaseConfig()
             self.db_connection = DatabaseConnection.get_instance(db_config)
             context['db'] = self.db_connection
@@ -83,7 +77,6 @@ class PydanceShell:
 
         # Add all models
         try:
-            from pydance.models import BaseModel
             # Import all model classes dynamically
             models_dir = os.path.join(os.path.dirname(__file__), '..', 'models')
             if os.path.exists(models_dir):
@@ -167,7 +160,6 @@ class DatabaseShell:
             if not self.database_url:
                 raise ValueError("DATABASE_URL environment variable not set")
 
-            from pydance.db.config import DatabaseConfig
             db_config = DatabaseConfig(self.database_url)
             self.connection = DatabaseConnection.get_instance(db_config)
             await self.connection.connect()
@@ -254,7 +246,6 @@ class ShellCommand:
     def show_urls(self):
         """Show all registered URL patterns."""
         try:
-            from pydance.routing.router import router
             print("Registered URL patterns:")
             print("=" * 50)
 
@@ -327,8 +318,6 @@ class ShellCommand:
     def create_superuser(self, username: str, email: str, password: str):
         """Create a superuser."""
         try:
-            from pydance.models.user import BaseUser
-            from pydance.models.user import UserRole
 
             async def _create_superuser():
                 # Check if user already exists
@@ -363,7 +352,6 @@ class ShellCommand:
                 parallel: bool = False, strategy: str = 'safe', rollback_safe: bool = False):
         """Run database migrations with safety features."""
         try:
-            from pydance.migrations.migrator import migration_manager
 
             async def _run_migrations():
                 print("🔄 Starting advanced migration process...")
@@ -432,7 +420,6 @@ class ShellCommand:
     def makemigrations(self, app_name: str, message: Optional[str] = None):
         """Create new migrations."""
         try:
-            from pydance.migrations.migrator import migration_manager
 
             async def _make_migrations():
                 # Discover models in the app
@@ -453,7 +440,6 @@ class ShellCommand:
     def showmigrations(self):
         """Show migration status."""
         try:
-            from pydance.migrations.migrator import migration_manager
 
             async def _show_migrations():
                 status = await migration_manager.show_migrations()
@@ -467,7 +453,6 @@ class ShellCommand:
     def showmigrationdiff(self, app_name: str = None):
         """Show diff between models and migration state."""
         try:
-            from pydance.migrations.migrator import migration_manager
 
             async def _show_diff():
                 if app_name:
@@ -493,7 +478,6 @@ class ShellCommand:
     async def _create_migration_backup(self):
         """Create database backup before migration"""
         try:
-            from pydance.db.config import DatabaseConfig
             db_config = DatabaseConfig()
 
             if 'sqlite' in db_config.database_url.lower():
@@ -572,7 +556,6 @@ class MigrationDependencyResolver:
     async def resolve(self) -> List[Any]:
         """Resolve migration execution order"""
         # Real dependency resolution implementation
-        from pydance.migrations.migrator import migration_manager
 
         try:
             # Get all pending migrations
@@ -869,7 +852,6 @@ class AdvancedMigrationExecutor:
             return
 
         # Execute migration using existing migration system
-        from pydance.migrations.migrator import migration_manager
         await migration_manager.execute_migration(migration)
 
     async def _create_backup(self):

@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Core Authentication Module for Pydance Framework
 
@@ -9,20 +8,12 @@ Enhanced with modern security features like OAuth2, MFA, and advanced session ma
 
 import asyncio
 import hashlib
-import hmac
 import secrets
-import time
-import logging
 from typing import Dict, Any, Optional, Callable, Awaitable, List
-from functools import wraps
 from datetime import datetime, timedelta
 import json
-import base64
 
-from pydance.http.request import Request
 from pydance.exceptions import HTTPException, Unauthorized, Forbidden, RateLimitExceeded
-from pydance.config.settings import settings
-from pydance.events import get_event_bus
 
 logger = get_logger(__name__)
 
@@ -451,7 +442,6 @@ class AuthManager:
                 # Emit password reset event
                 event_bus = get_event_bus()
                 if event_bus:
-                    from pydance.events import Event
                     await event_bus.publish(Event('password_reset_requested', {
                         'user_id': user['id'],
                         'email': email,
@@ -518,7 +508,6 @@ class AuthManager:
         """Emit user-related events"""
         event_bus = get_event_bus()
         if event_bus:
-            from pydance.events import Event
             await event_bus.publish(Event(event_type, {
                 'user_id': user['id'],
                 'username': user['username'],

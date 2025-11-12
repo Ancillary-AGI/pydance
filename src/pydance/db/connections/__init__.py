@@ -6,8 +6,6 @@ implementation but imports the configuration from `pydance.db.config` so the
 new `pydance.db` package is self-contained.
 """
 
-import asyncio
-import logging
 import time
 from typing import Any, Dict, AsyncGenerator, Optional, List
 from dataclasses import dataclass, field

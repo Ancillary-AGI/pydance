@@ -3,7 +3,6 @@ Security headers middleware for HTTP response protection.
 """
 
 from typing import Dict, List, Optional, Any
-import re
 
 class SecurityHeaders:
     """

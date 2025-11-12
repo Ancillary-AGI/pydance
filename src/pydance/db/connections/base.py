@@ -11,20 +11,19 @@ This module provides enterprise-grade database connection handling with:
 """
 
 import asyncio
-import logging
 import time
 import threading
 import abc
-from typing import Dict, List, Any, Optional, Union, AsyncGenerator, TYPE_CHECKING, Type
+from typing import Dict, List, Any, Optional, Union, AsyncGenerator, Type, TYPE_CHECKING
 from dataclasses import dataclass, field
-from contextlib import asynccontextmanager
 import queue
 import weakref
+from contextlib import asynccontextmanager
 
-from pydance.db.config import DatabaseConfig
 from pydance.core.exceptions import ConnectionError, DatabaseError, IntegrityError
 from pydance.db.models.base import ConnectionState, ConnectionStats, ManagedConnection
 from pydance.utils.logging import get_logger
+from pydance.config.database import DatabaseConfig
 
 if TYPE_CHECKING:
     import asyncpg
@@ -74,16 +73,12 @@ class DatabaseConnection(abc.ABC):
             if name not in cls._instances:
                 # Create proper backend instance based on engine
                 if config.engine == 'sqlite':
-                    from .sqlite_connection import SQLiteConnection
                     cls._instances[name] = SQLiteConnection(config)
                 elif config.engine == 'postgresql':
-                    from .postgres_connection import PostgreSQLConnection
                     cls._instances[name] = PostgreSQLConnection(config)
                 elif config.engine == 'mysql':
-                    from .mysql_connection import MySQLConnection
                     cls._instances[name] = MySQLConnection(config)
                 elif config.engine == 'mongodb':
-                    from .mongodb_connection import MongoDBConnection
                     cls._instances[name] = MongoDBConnection(config)
                 else:
                     raise ValueError(f"Unsupported database engine: {config.engine}")
@@ -951,7 +946,6 @@ class DatabaseConnection(abc.ABC):
 
     def get_sql_type(self, field) -> str:
         """Get SQL type for field"""
-        from pydance.db.models.base import FieldType
         type_mappings = {
             'postgresql': {
                 FieldType.STRING: 'VARCHAR',
@@ -1025,7 +1019,6 @@ class DatabaseConnection(abc.ABC):
 
     def get_type_mappings(self) -> Dict[str, str]:
         """Get type mappings for this database engine"""
-        from pydance.db.models.base import FieldType
         type_mappings = {
             'postgresql': {
                 FieldType.STRING: 'VARCHAR',

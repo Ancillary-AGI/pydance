@@ -1,19 +1,12 @@
 
-from pydance.utils.logging import get_logger
 """
 Real PostgreSQL database backend implementation with full CRUD operations.
 """
 
 import asyncpg
 import json
-import os
 from typing import List, Dict, Any, AsyncGenerator, Type, Optional, Tuple, Union
-from contextlib import asynccontextmanager
-import logging
-import threading
 
-from pydance.db.connections.base import DatabaseConnection
-from pydance.db.config import DatabaseConfig
 from pydance.db.models.base import Field, StringField, IntegerField, BooleanField, DateTimeField, FieldType
 
 logger = get_logger(__name__)
@@ -595,5 +588,4 @@ class PostgreSQLConnection(DatabaseConnection):
 
     def get_field_type_mapping(self) -> Dict[str, str]:
         """Get PostgreSQL field type mapping."""
-        from pydance.db.connections.base import COMMON_FIELD_TYPE_MAPPINGS
         return COMMON_FIELD_TYPE_MAPPINGS['postgresql']

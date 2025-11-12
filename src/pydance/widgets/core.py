@@ -7,12 +7,9 @@ and comprehensive functionality for modern web applications.
 
 import os
 import uuid
-import json
-import hashlib
 from datetime import datetime, date, time
 from typing import Any, Dict, List, Optional, Union, Callable, Type
 from dataclasses import dataclass, field
-from enum import Enum
 
 
 class WidgetTheme(Enum):

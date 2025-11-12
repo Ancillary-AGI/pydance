@@ -7,7 +7,6 @@ Focused unit tests for security functionality
 import unittest
 from unittest.mock import Mock, patch
 from pydance import Application, Settings
-from pydance.security.cryptography import SecurityManager
 
 
 class TestSettings(Settings):

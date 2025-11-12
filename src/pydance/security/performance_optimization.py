@@ -8,13 +8,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 import asyncio
 import hashlib
-import hmac
 import secrets
-import threading
-import concurrent.futures
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, rsa, padding
-from cryptography.hazmat.backends import default_backend
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 
@@ -465,7 +461,6 @@ class OptimizedSecurityPipeline:
     async def _batch_sign_operation(self, data_list: List[bytes]) -> Dict[str, Any]:
         """Batch sign operation"""
         # Generate temporary key for demo
-        from cryptography.hazmat.primitives.asymmetric import rsa
         private_key = rsa.generate_private_key(
             public_exponent=65537,
             key_size=2048,

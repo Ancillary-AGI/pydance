@@ -5,7 +5,6 @@ A comprehensive widget system for building dynamic web interfaces.
 Provides rich UI components with form handling, validation, and theming.
 """
 
-from pydance.widgets.core import (
     Widget, BaseWidget, WidgetConfig, WidgetRegistry,
     RichText, RichSelect, RichFile, RichDate,
     RichTitle, RichColor, RichRating, RichTags, RichSlider, RichCode,
@@ -16,7 +15,6 @@ from pydance.widgets.core import (
     # Commerce Widgets
     RichPrice, RichQuantity, RichProductCard, RichShoppingCart
 )
-from pydance.widgets.forms import (
     FormWidget, FieldWidget, ButtonWidget, InputWidget,
     TextareaWidget, SelectWidget, CheckboxWidget, RadioWidget
 )

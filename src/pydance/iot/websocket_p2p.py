@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 WebSocket P2P communication for IoT devices with Django Channels-like features.
 Provides peer-to-peer communication through WebSocket with channel layers and consumers.
@@ -7,10 +6,9 @@ Provides peer-to-peer communication through WebSocket with channel layers and co
 
 import asyncio
 import json
-import logging
 from typing import Dict, Any, Optional, Callable, List, Set
-from dataclasses import dataclass
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 @dataclass
 class P2PConfig:
@@ -341,4 +339,3 @@ class WebSocketP2P:
             "peers": list(self.peers.keys()),
             "max_peers": self.config.max_peers
         }
-

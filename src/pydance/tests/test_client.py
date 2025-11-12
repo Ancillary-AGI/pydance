@@ -5,11 +5,9 @@ Provides a comprehensive HTTP client for testing API endpoints,
 middleware, and application behavior.
 """
 
-import asyncio
 import json
 from typing import Dict, Any, Optional, Union, List
 from urllib.parse import urlencode, parse_qs
-from dataclasses import dataclass
 
 
 
@@ -172,7 +170,6 @@ class TestClient:
 
         except Exception as e:
             # Handle exceptions by converting to appropriate responses
-            from pydance.exceptions import HTTPException
             if isinstance(e, HTTPException):
                 return TestResponse(
                     status_code=e.status_code,

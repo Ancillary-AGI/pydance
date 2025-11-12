@@ -2,10 +2,8 @@
 Authentication decorators for route protection.
 """
 
-from functools import wraps
 from typing import Optional, List, Callable, Any
 
-from pydance.http.request import Request
 from pydance.exceptions import Unauthorized, Forbidden
 
 

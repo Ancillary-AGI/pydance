@@ -1,11 +1,8 @@
 
-from pydance.utils.logging import get_logger
 """
 Rollback manager for failed deployments.
 """
 
-import asyncio
-import logging
 from typing import Dict, Any, Optional, List
 
 class RollbackManager:

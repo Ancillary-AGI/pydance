@@ -1,16 +1,10 @@
 
-from pydance.utils.logging import get_logger
 """
 CDN cache implementation for global content delivery.
 """
 
-import asyncio
-import json
-import logging
-import hashlib
 from typing import Optional, Any, Dict
 
-from pydance.caching.cache_manager import CacheConfig
 
 class CDNCache:
     """

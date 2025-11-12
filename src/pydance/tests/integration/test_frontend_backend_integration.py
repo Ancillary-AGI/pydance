@@ -6,7 +6,6 @@ ensuring proper communication, data flow, and compatibility.
 """
 
 import pytest
-import asyncio
 import json
 import time
 from unittest.mock import Mock, patch

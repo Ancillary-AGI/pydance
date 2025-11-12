@@ -1,15 +1,7 @@
 import asyncio
 import signal
 import logging
-from pydance.utils.logging import get_logger
-from typing import Optional
-from hypercorn.asyncio import serve
 
-from pydance.config import AppConfig
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    pass
 
 class Server:
     def __init__(self, app: "Application", config: Optional[AppConfig] = None):
@@ -68,7 +60,6 @@ class Server:
     async def _start_multiprocess(self, config: HyperConfig) -> None:
         """Start server with multiple worker processes"""
         import multiprocessing
-        from hypercorn.run import run_single
         
         self.logger.info(f"Starting {self.config.workers} workers on {self.config.host}:{self.config.port}")
         

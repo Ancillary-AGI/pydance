@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Performance monitoring system for Pydance applications.
 Tracks response times, throughput, error rates, and resource usage.
@@ -7,11 +6,10 @@ Tracks response times, throughput, error rates, and resource usage.
 
 import asyncio
 import psutil
-import logging
-import time
 from typing import Dict, List, Optional, Any, Callable
-from dataclasses import dataclass
 from datetime import datetime, timedelta
+from dataclasses import dataclass
+from pydance.utils.logging import get_logger
 
 @dataclass
 class PerformanceMetrics:
@@ -298,4 +296,3 @@ class PerformanceMonitor:
 
 # Global performance monitor
 performance_monitor = PerformanceMonitor()
-

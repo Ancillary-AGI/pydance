@@ -1,8 +1,5 @@
-from typing import Callable, Any, TYPE_CHECKING, Awaitable
+from typing import Callable, Any, Awaitable
 from enum import Enum
-
-if TYPE_CHECKING:
-    pass
 
 class HandlerType(Enum):
     """Handler type enumeration."""

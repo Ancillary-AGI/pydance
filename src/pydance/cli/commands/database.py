@@ -5,7 +5,6 @@ Database management commands for Pydance CLI
 import argparse
 from typing import List, Any
 
-from . import BaseCommand
 
 
 class MigrateCommand(BaseCommand):
@@ -39,7 +38,6 @@ class MigrateCommand(BaseCommand):
         async def run_migrations():
             try:
                 # Get database configuration
-                from pydance.db.config import DatabaseConfig
                 db_config = DatabaseConfig.from_env()
                 if not db_config:
                     print("❌ No database configuration found")
@@ -51,7 +49,6 @@ class MigrateCommand(BaseCommand):
                 # Handle different actions
                 if args.action == 'status':
                     print(f"🔍 Checking migration status for app: {app_package}")
-                    from pydance.migrations.framework import check_migration_status
                     status = await check_migration_status(db_config, app_package)
                     print("📊 Migration Status:")
                     print(f"  • Total models: {status['total_models']}")
@@ -64,7 +61,6 @@ class MigrateCommand(BaseCommand):
 
                 elif args.action == 'list':
                     print(f"📋 Listing all migrations for app: {app_package}")
-                    from pydance.migrations.framework import check_migration_status
                     status = await check_migration_status(db_config, app_package)
                     print("Available Models and Migrations:")
                     for model in status['models']:
@@ -93,7 +89,6 @@ class MigrateCommand(BaseCommand):
                 print(f"🔄 Running migrations for app: {app_package}")
 
                 # Run migrations
-                from pydance.migrations.framework import migrate_app
                 results = await migrate_app(
                     db_config,
                     app_package=app_package,
@@ -156,7 +151,6 @@ class MakeMigrationsCommand(BaseCommand):
 
                         # Find all model classes in the module
                         import inspect
-                        from pydance.db.models.base import BaseModel
 
                         for name, obj in inspect.getmembers(app_module):
                             if (inspect.isclass(obj) and
@@ -178,7 +172,6 @@ class MakeMigrationsCommand(BaseCommand):
                             module = importlib.import_module(path)
 
                             import inspect
-                            from pydance.db.models.base import BaseModel
 
                             for name, obj in inspect.getmembers(module):
                                 if (inspect.isclass(obj) and
@@ -201,7 +194,6 @@ class MakeMigrationsCommand(BaseCommand):
                 migration_name = args.name if args.name != 'auto' else None
 
                 # Create migrations
-                from pydance.migrations import make_migrations
                 migration = await make_migrations(models, migration_name)
 
                 print("✅ Migration created successfully!")
@@ -243,7 +235,6 @@ class ShowMigrationsCommand(BaseCommand):
                 print("📋 Migration Status")
                 print("=" * 60)
 
-                from pydance.migrations import show_migrations
                 status_text = await show_migrations()
 
                 if not status_text or "No migrations found" in status_text:
@@ -254,7 +245,6 @@ class ShowMigrationsCommand(BaseCommand):
                 print(status_text)
 
                 # Show summary
-                from pydance.migrations import get_migration_status
                 summary = await get_migration_status()
 
                 print("\n📊 Summary:")
@@ -300,7 +290,6 @@ class DbshellCommand(BaseCommand):
 
         async def run_dbshell():
             try:
-                from pydance.cli.shell import dbshell
                 await dbshell()
                 return 0
             except Exception as e:
@@ -311,7 +300,6 @@ class DbshellCommand(BaseCommand):
 
 
 # Register commands
-from . import registry
 
 registry.register(MigrateCommand())
 registry.register(MakeMigrationsCommand())

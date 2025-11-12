@@ -1,18 +1,14 @@
 
-from pydance.utils.logging import get_logger
 """
 Core payment processing system for Pydance.
 Handles multiple payment providers with security and compliance features.
 """
 
-import asyncio
-import json
-import logging
 import uuid
 from typing import Dict, List, Optional, Any, Union
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
+from dataclasses import dataclass
 from decimal import Decimal
 
 class PaymentStatus(Enum):
@@ -248,4 +244,3 @@ def initialize_payment_processor(config: PaymentConfig):
     global payment_processor
     payment_processor = PaymentProcessor(config)
     return payment_processor
-

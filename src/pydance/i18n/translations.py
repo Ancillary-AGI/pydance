@@ -22,7 +22,6 @@ Example:
 """
 
 import gettext as gettext_module
-from pathlib import Path
 from typing import Dict, Optional, Callable, Any
 
 import json
@@ -168,17 +167,14 @@ _translations = Translations()
 
 def gettext(key: str, **kwargs) -> str:
     """Translate a string"""
-    from .utils import get_locale
     return _translations.get_translation(key, locale=get_locale(), **kwargs)
 
 def ngettext(key: str, count: int, **kwargs) -> str:
     """Translate a plural string"""
-    from .utils import get_locale
     return _translations.get_plural_translation(key, count, locale=get_locale(), **kwargs)
 
 def pgettext(context: str, key: str, **kwargs) -> str:
     """Translate a string with context"""
-    from .utils import get_locale
     # For simplicity, ignore context in this implementation
     return _translations.get_translation(key, locale=get_locale(), **kwargs)
 

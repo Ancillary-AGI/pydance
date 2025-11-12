@@ -1,16 +1,11 @@
 
-from pydance.utils.logging import get_logger
 """
 Performance anti-pattern detector for Pydance applications.
 Identifies common performance issues and suggests improvements.
 """
 
-import asyncio
 import inspect
-import logging
 from typing import Dict, List, Optional, Any, Callable
-from dataclasses import dataclass
-from datetime import datetime
 
 @dataclass
 class AntiPattern:

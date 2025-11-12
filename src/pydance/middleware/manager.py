@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Enhanced Middleware Manager for Pydance Framework
 
@@ -15,13 +14,12 @@ This module provides an advanced middleware management system with:
 - Middleware metrics and analytics
 """
 
-import asyncio
-import logging
 import time
 import uuid
 from typing import Dict, List, Callable, Any, Optional, Type, Union, Awaitable, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
+from pydance.utils.logging import get_logger
 
 logger = get_logger(__name__)
 

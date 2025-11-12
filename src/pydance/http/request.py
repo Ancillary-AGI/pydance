@@ -19,21 +19,12 @@ import hashlib
 import re
 import time
 import threading
-from typing import Dict, List, Any, AsyncGenerator, Optional, Union, TYPE_CHECKING, Tuple
+from typing import Dict, List, Any, AsyncGenerator, Optional, Union, Tuple
 from urllib.parse import parse_qs, unquote, urlparse
-from email.utils import parsedate_to_datetime
-from datetime import datetime
-import io
-import gzip
-from functools import lru_cache
 from dataclasses import dataclass, field
 from enum import Enum
-
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from pydance.core.exceptions import BadRequest, UnsupportedMediaType
-    from pydance.i18n import _
+from functools import lru_cache
+from datetime import datetime
 
 
 class RequestSecurity(Enum):

@@ -12,7 +12,6 @@ from typing import Any, Dict, List, Optional, Union, Type, Callable
 
 # Re-export all field types from the database models for convenience
 # This avoids duplication and ensures consistency
-from pydance.db.models.base import Field
 
 
 # Type aliases for better code readability

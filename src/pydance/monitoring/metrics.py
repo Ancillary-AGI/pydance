@@ -8,8 +8,8 @@ from typing import Dict, Any, Optional, List
 import time
 import asyncio
 import json
-from collections import defaultdict
 from dataclasses import dataclass, field
+from collections import defaultdict
 
 
 @dataclass
@@ -421,8 +421,3 @@ def init_builtin_metrics():
 
 # Initialize built-in metrics
 init_builtin_metrics()
-
-
-
-
-

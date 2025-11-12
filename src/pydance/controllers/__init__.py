@@ -3,7 +3,6 @@ Controllers package for Pydance  framework.
 Provides base controller classes and utilities for MVC pattern implementation.
 """
 
-from pydance.controllers.base import (
     BaseController, Controller,
     middleware, get, post, put, delete, patch
 )

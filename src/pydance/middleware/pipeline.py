@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Enhanced middleware pipeline system for Pydance Framework.
 
@@ -8,15 +7,15 @@ inspired by Express.js, FastAPI, and Django patterns but adapted for Pydance.
 """
 
 import time
-import asyncio
 import inspect
 from typing import List, Dict, Any, Optional, Callable, Union, Awaitable
-from functools import wraps
-from contextvars import ContextVar
 from dataclasses import dataclass, field
 from enum import Enum
+from contextvars import ContextVar
+from functools import wraps
 
 from pydance.middleware.base import MiddlewareContext, MiddlewareType, MiddlewareScope
+from pydance.utils.logging import get_logger
 
 
 class PipelineStage(Enum):
@@ -338,7 +337,6 @@ def create_timing_middleware(name: str = "timing"):
 
 def create_logging_middleware(logger_name: str = "pipeline"):
     """Create middleware that logs requests"""
-    import logging
 
     logger = get_logger(logger_name)
 

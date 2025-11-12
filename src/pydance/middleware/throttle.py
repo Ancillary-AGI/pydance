@@ -25,17 +25,14 @@ Usage patterns:
             return {"created": True}
 """
 
-import time
 from typing import Callable, Dict, Any, Optional, Union, List
 from dataclasses import dataclass
-
+from pydance.middleware.base import HTTPMiddleware
+from pydance.http.response import Response
 from pydance.utils.rate_limiting import (
     RateLimiter, RateLimitConfig, RateLimitResult,
     RateLimitAlgorithm, RateLimitExceeded
 )
-from pydance.http.response import Response
-from pydance.middleware.base import HTTPMiddleware
-from pydance.routing.types import HandlerType
 
 
 @dataclass
@@ -191,7 +188,7 @@ class ThrottleMiddleware(HTTPMiddleware):
 
         return response
 
-    async def __call__(self, request, handler: HandlerType):
+    async def __call__(self, request, handler):
         """Middleware entry point"""
         # Check exemptions
         if self._is_exempt(request):

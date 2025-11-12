@@ -5,7 +5,6 @@ Database models for users, permissions, roles, and sessions.
 """
 
 from typing import Dict, Any, List, Optional
-from datetime import datetime
 from pydance.db.models.base import BaseModel, Field
 
 

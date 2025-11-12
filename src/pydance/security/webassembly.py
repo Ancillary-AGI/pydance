@@ -9,9 +9,7 @@ from datetime import datetime, timedelta
 import asyncio
 import hashlib
 import secrets
-import base64
 import json
-from pathlib import Path
 import aiofiles
 import wasmtime
 

@@ -1,10 +1,8 @@
 # server_framework/templating/languages/jinja.py
 import jinja2
 from typing import Dict, Any
-from pathlib import Path
 from pydance.i18n.translations import gettext, ngettext
 from pydance.i18n.formatters import format_date, format_time, format_datetime, format_number, format_currency, format_percent, format_scientific
-from pydance.templating.engine import AbstractTemplateEngine
 
 class JinjaTemplateEngine(AbstractTemplateEngine):
     """Jinja2 template engine with i18n support"""

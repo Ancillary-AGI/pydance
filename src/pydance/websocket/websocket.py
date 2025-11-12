@@ -1,8 +1,5 @@
 import json
-from typing import Dict, Any, List, Optional, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from pydance.core.exceptions import WebSocketException
+from typing import Dict, Any, List, Optional
 
 class WebSocket:
     def __init__(self, scope, receive, send, app: "Application"):
@@ -22,7 +19,6 @@ class WebSocket:
         return {key.decode().lower(): value.decode() for key, value in headers}
     
     def _parse_query_params(self, query_string: bytes) -> Dict[str, List[str]]:
-        from urllib.parse import parse_qs
         return parse_qs(query_string.decode())
     
     async def accept(self, subprotocol: Optional[str] = None, headers: Optional[Dict[str, str]] = None) -> None:

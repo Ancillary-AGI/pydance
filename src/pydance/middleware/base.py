@@ -34,16 +34,23 @@ Example:
 """
 
 import time
-import logging
-from pydance.utils.logging import get_logger
 from abc import ABC, abstractmethod
 from typing import Callable, Any, Optional, Union, Coroutine, Dict, List
 from dataclasses import dataclass, field
 from enum import Enum
+from pydance.utils.logging import get_logger
 
-from pydance.http.request import Request
-from pydance.http.response import Response
-from pydance.websocket import WebSocket
+# Forward declarations to avoid circular imports
+try:
+    from pydance.http.request import Request
+    from pydance.http.response import Response
+    from pydance.websocket.websocket import WebSocket
+except ImportError:
+    # Fallback for type hints during import
+    Request = Any
+    Response = Any
+    WebSocket = Any
+
 
 
 class MiddlewareType(Enum):

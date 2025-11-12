@@ -3,14 +3,9 @@ Comprehensive unit tests for the Pydance Application server module.
 Tests application initialization, configuration, routing, middleware, and lifecycle management.
 """
 
-import asyncio
 import pytest
-import tempfile
 from unittest.mock import Mock, patch, MagicMock
-from pydance.server.application import Application
-from pydance.config.settings import Settings
 from pydance.http import Request, Response
-from pydance.exceptions import HTTPException
 
 
 class TestApplication:

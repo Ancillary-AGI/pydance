@@ -3,10 +3,7 @@ Cache metrics collection and monitoring.
 """
 
 import asyncio
-import time
 from typing import Dict, List, Optional, Any, DefaultDict
-from collections import defaultdict
-from datetime import datetime
 
 class CacheMetricsCollector:
     """

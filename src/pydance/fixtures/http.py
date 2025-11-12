@@ -8,7 +8,6 @@ import pytest
 @pytest.fixture
 async def client(app):
     """Test client for making HTTP requests."""
-    from httpx import AsyncClient
 
     async with AsyncClient(app=app, base_url="http://testserver") as client:
         yield client

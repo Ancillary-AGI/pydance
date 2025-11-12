@@ -8,7 +8,6 @@ import hashlib
 import hmac
 import secrets
 from typing import Dict, List, Any, Optional, Union, Callable, Type, Pattern
-from datetime import datetime
 
 
 from pydance.exceptions import ValidationError, FieldValidationError

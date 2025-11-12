@@ -8,11 +8,11 @@ from .circuit_breaker import (
     CircuitBreaker, CircuitBreakerConfig, CircuitBreakerState,
     CircuitBreakerManager, CircuitBreakerOpenException, CircuitBreakerTimeoutException
 )
-from .retry import (
+from .retry_mechanism import (
     RetryMechanism, RetryConfig, RetryStrategy, RetryCondition,
     RetryManager, with_exponential_backoff, with_fixed_retry
 )
-from .degradation import (
+from .graceful_degradation import (
     GracefulDegradation, DegradationStrategy, DegradationRule
 )
 from .auto_recovery import (
@@ -40,4 +40,3 @@ __all__ = [
     # Load Balancing
     'LoadBalancer', 'LoadBalancingStrategy', 'BackendServer', 'LoadBalancerManager'
 ]
-

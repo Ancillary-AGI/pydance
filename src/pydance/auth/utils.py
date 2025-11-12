@@ -8,7 +8,6 @@ import hashlib
 import hmac
 import secrets
 import base64
-import os
 from typing import Dict, Any, Optional, Tuple
 from datetime import datetime, timedelta
 
@@ -19,9 +18,6 @@ def hash_password(password: str, salt: Optional[str] = None) -> Dict[str, str]:
         salt = secrets.token_hex(16)
 
     # Use PBKDF2 with SHA3 for key derivation
-    from cryptography.hazmat.primitives import hashes
-    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-    from cryptography.hazmat.backends import default_backend
 
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA3_256(),
@@ -48,9 +44,6 @@ def verify_password(password: str, stored_hash: Dict[str, str]) -> bool:
         algorithm = stored_hash.get('algorithm', 'sha3_256')
         iterations = stored_hash.get('iterations', 100000)
 
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-        from cryptography.hazmat.backends import default_backend
 
         kdf = PBKDF2HMAC(
             algorithm=getattr(hashes, algorithm.upper())(),
@@ -197,7 +190,6 @@ def is_safe_url(url: str, allowed_hosts: Optional[list] = None) -> bool:
         return True  # Relative URL
 
     try:
-        from urllib.parse import urlparse
         parsed = urlparse(url)
 
         if not parsed.netloc:

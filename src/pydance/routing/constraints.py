@@ -6,7 +6,6 @@ Provides named constraint patterns similar to Laravel and Django, but with enhan
 
 import re
 from typing import Dict, Pattern, Callable, Any, Optional, Union
-from functools import lru_cache
 
 
 class RouteConstraints:

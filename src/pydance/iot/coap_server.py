@@ -1,12 +1,10 @@
 
-from pydance.utils.logging import get_logger
 """
 CoAP Server for IoT communication.
 Provides Constrained Application Protocol support.
 """
 
 import asyncio
-import logging
 from typing import Dict, Any, Optional, Callable
 from dataclasses import dataclass
 
@@ -90,4 +88,3 @@ class CoAPServer:
             "resources": list(self.resources.keys()),
             "dtls_enabled": self.config.enable_dtls
         }
-

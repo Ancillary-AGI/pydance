@@ -7,7 +7,6 @@ import asyncio
 import pytest
 import time
 from unittest.mock import Mock, AsyncMock, patch
-from pydance.middleware.manager import (
     MiddlewareManager, MiddlewareInfo, RequestContext,
     MiddlewarePriority, MiddlewareType, MiddlewarePhase
 )

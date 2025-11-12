@@ -93,7 +93,6 @@ class BaseUser(BaseModel):
         elif cls._password_hash_algorithm == "sha3_256":
             return hashlib.sha3_256(password.encode()).hexdigest()
         else:
-            from pydance.exceptions import ConfigurationError
             raise ConfigurationError(f"Unsupported hash algorithm: {cls._password_hash_algorithm}")
 
     @classmethod
@@ -154,28 +153,23 @@ class BaseUser(BaseModel):
             try:
                 validate_email(email)
             except EmailNotValidError:
-                from pydance.exceptions import InvalidEmailFormat
                 raise InvalidEmailFormat(email)
 
         # Validate username format
         if not re.match(r'^[a-zA-Z0-9_]{3,50}$', username):
-            from pydance.exceptions import InvalidUsernameFormat
             raise InvalidUsernameFormat(username)
 
         # Validate password strength
         if not cls.is_password_strong(password):
-            from pydance.exceptions import PasswordTooWeak
             raise PasswordTooWeak()
 
         # Check for existing user
         existing_email = await cls.query().filter(email=email).first()
         if existing_email:
-            from pydance.exceptions import UserAlreadyExists
             raise UserAlreadyExists(email)
 
         existing_username = await cls.query().filter(username=username).first()
         if existing_username:
-            from pydance.exceptions import UserAlreadyExists
             raise UserAlreadyExists(username)
 
         # Hash password
@@ -216,7 +210,6 @@ class BaseUser(BaseModel):
     def set_password(self, password: str):
         """Set user password"""
         if not self.is_password_strong(password):
-            from pydance.exceptions import PasswordTooWeak
             raise PasswordTooWeak('Password does not meet strength requirements')
 
         self.password_hash = self.hash_password(password)
@@ -327,11 +320,9 @@ class BaseUser(BaseModel):
     async def change_password(self, new_password: str, old_password: Optional[str] = None):
         """Change user password with optional old password verification"""
         if old_password and not self.check_password(old_password):
-            from pydance.exceptions import InvalidCredentials
             raise InvalidCredentials("Current password is incorrect")
 
         if not self.is_password_strong(new_password):
-            from pydance.exceptions import PasswordTooWeak
             raise PasswordTooWeak()
 
         self.password_hash = self.hash_password(new_password)

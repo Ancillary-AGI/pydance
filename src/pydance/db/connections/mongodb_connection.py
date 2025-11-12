@@ -1,11 +1,5 @@
 from typing import List, Dict, Any, AsyncGenerator, Type, Optional, Tuple
-from motor.motor_asyncio import AsyncIOMotorClient
-from contextlib import asynccontextmanager
 from pymongo import ASCENDING, DESCENDING
-from bson import ObjectId
-from pydance.db.connections.base import DatabaseConnection
-from pydance.db.config import DatabaseConfig
-from pydance.db.models.base import Field
 
 
 class MongoDBConnection(DatabaseConnection):
@@ -229,7 +223,6 @@ class MongoDBConnection(DatabaseConnection):
 
     async def _create_connection(self) -> Any:
         """Create a new MongoDB connection for pooling"""
-        from motor.motor_asyncio import AsyncIOMotorClient
         params = self.config.get_connection_params()
         return AsyncIOMotorClient(
             host=params['host'],
@@ -263,7 +256,6 @@ class MongoDBConnection(DatabaseConnection):
 
     async def insert_migration_record(self, model_name: str, version: int, schema_definition: dict, operations: dict, migration_id: str = None) -> None:
         """Insert a migration record for MongoDB"""
-        from datetime import datetime
         migrations_collection = self.db.migrations
         migration_doc = {
             'model_name': model_name,

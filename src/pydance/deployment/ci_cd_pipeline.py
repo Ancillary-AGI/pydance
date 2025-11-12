@@ -1,11 +1,8 @@
 
-from pydance.utils.logging import get_logger
 """
 CI/CD pipeline for automated deployment.
 """
 
-import asyncio
-import logging
 from typing import Dict, Any, Optional, List
 from enum import Enum
 
@@ -175,4 +172,3 @@ class CICDPipeline:
                 "success": False,
                 "error": str(e)
             }
-

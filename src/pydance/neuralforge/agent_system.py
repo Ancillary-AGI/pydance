@@ -5,9 +5,9 @@ Provides intelligent agents with capabilities, memory, and task processing abili
 """
 
 import json
-from enum import Enum
 from typing import Dict, List, Optional, Any, Callable
 from dataclasses import dataclass, field
+from enum import Enum
 from datetime import datetime
 
 from .llm_engine import LLMEngine, LLMConfig, LLMProvider
@@ -220,8 +220,3 @@ class NeuralAgent:
             "capabilities": self.list_capabilities(),
             "memory_size": len(self.memory.long_term)
         }
-
-
-
-
-

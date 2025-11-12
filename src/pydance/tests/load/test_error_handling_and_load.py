@@ -1,11 +1,9 @@
 """
 System tests for error handling and load testing
 """
-import subprocess
 import time
 import os
 import pytest
-import requests
 import threading
 import queue
 
@@ -21,7 +19,6 @@ class TestErrorHandlingAndLoad:
 
         # Create app.py with error routes
         app_content = '''
-from pydance import Application
 
 app = Application()
 
@@ -35,7 +32,6 @@ async def error_route(request):
 
 @app.route('/async-error')
 async def async_error_route(request):
-    import asyncio
     await asyncio.sleep(0.1)
     raise RuntimeError("Async test error")
 '''
@@ -97,8 +93,6 @@ async def async_error_route(request):
         """Test system handling of concurrent connections"""
         import threading
         import queue
-        from pydance import Application
-        from pydance.routing import Router
 
         results = queue.Queue()
         errors = []
@@ -191,7 +185,6 @@ async def async_error_route(request):
         import gc
 
         # Test object lifecycle and cleanup
-        from pydance import Application
 
         # Create application instance
         app = Application()

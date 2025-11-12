@@ -8,7 +8,6 @@ ensuring seamless integration between server and client state.
 import asyncio
 import json
 from typing import Any, Dict, List, Optional, Callable, Union
-from dataclasses import dataclass
 
 
 @dataclass

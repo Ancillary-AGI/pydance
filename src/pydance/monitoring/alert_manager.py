@@ -4,9 +4,9 @@ Provides alerting capabilities for metrics and system events.
 """
 
 from typing import Dict, Any, List, Callable, Optional
-from dataclasses import dataclass
-from enum import Enum
 import time
+from enum import Enum
+from dataclasses import dataclass
 
 
 class AlertSeverity(Enum):

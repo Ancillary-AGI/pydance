@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Authentication and Authorization system for Pydance  framework.
 Provides session management, token authentication, OAuth, and RBAC.
@@ -11,17 +10,9 @@ import secrets
 import jwt
 import time
 import re
-import logging
 from typing import Dict, List, Any, Optional, Callable
-from datetime import datetime
-from functools import wraps
-from dataclasses import dataclass
-from enum import Enum
 
-from pydance.db.models.user import BaseUser
 from pydance.utils.form_validation import EmailField, CharField
-from pydance.caching import get_cache_manager
-from pydance.exceptions import HTTPException
 
 # Use BaseUser from models/user.py instead of creating a duplicate
 User = BaseUser
@@ -462,7 +453,6 @@ def login_required(func: Callable) -> Callable:
     async def wrapper(request, *args, **kwargs):
         if not hasattr(request, 'user') or not request.user:
             # Return 401 Unauthorized
-            from pydance.http.response import Response
             return Response("Authentication required", status_code=401)
 
         return await func(request, *args, **kwargs)
@@ -475,11 +465,9 @@ def permission_required(permission: str) -> Callable:
         @wraps(func)
         async def wrapper(request, *args, **kwargs):
             if not hasattr(request, 'user') or not request.user:
-                from pydance.http.response import Response
                 return Response("Authentication required", status_code=401)
 
             if not request.user.has_perm(permission):
-                from pydance.http.response import Response
                 return Response("Permission denied", status_code=403)
 
             return await func(request, *args, **kwargs)
@@ -493,11 +481,9 @@ def role_required(role: str) -> Callable:
         @wraps(func)
         async def wrapper(request, *args, **kwargs):
             if not hasattr(request, 'user') or not request.user:
-                from pydance.core.http.response import Response
                 return Response("Authentication required", status_code=401)
 
             if not request.user.has_role(role):
-                from pydance.http.response import Response
                 return Response("Role required", status_code=403)
 
             return await func(request, *args, **kwargs)
@@ -590,7 +576,6 @@ class AuthSecurityMiddleware:
         """Pre-request security checks."""
         # Check allowed hosts
         if not self._is_allowed_host(request):
-            from pydance.exceptions import HTTPException
             raise HTTPException(403, "Host not allowed")
 
         # Rate limiting
@@ -632,14 +617,12 @@ class AuthSecurityMiddleware:
         required_permissions = self._get_required_permissions(request)
         if required_permissions:
             if not self._has_permissions(context, required_permissions):
-                from pydance.exceptions import HTTPException
                 raise HTTPException(403, "Insufficient permissions")
 
         # Check roles
         required_roles = self._get_required_roles(request)
         if required_roles:
             if not self._has_roles(context, required_roles):
-                from pydance.exceptions import HTTPException
                 raise HTTPException(403, "Insufficient roles")
 
     async def _post_response_security(self, request, response, context: SecurityContext):
@@ -664,7 +647,6 @@ class AuthSecurityMiddleware:
         await self._log_security_event(request, None, context, error=str(error))
 
         # Return appropriate error response
-        from pydance.exceptions import HTTPException
         if isinstance(error, HTTPException):
             return error.get_response()
         else:
@@ -718,7 +700,6 @@ class AuthSecurityMiddleware:
         attempts['last_attempt'] = current_time
 
         if attempts['count'] >= self.max_login_attempts:
-            from pydance.exceptions import HTTPException
             raise HTTPException(429, "Too many requests")
 
     async def _validate_security_headers(self, request):

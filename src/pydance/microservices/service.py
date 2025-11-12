@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Enhanced microservices architecture for Pydance  framework.
 
@@ -17,15 +16,12 @@ from dataclasses import dataclass, field
 from enum import Enum
 import asyncio
 import time
-import logging
 import json
-import threading
 import random
 from datetime import datetime, timedelta
-import socket
 import aiohttp
-from pydance.db.connections import DatabaseConnection
-from pydance.db.config import DatabaseConfig
+from pydance.db.connections.base import DatabaseConfig, DatabaseConnection
+from pydance.utils.logging import get_logger
 
 
 class ServiceStatus(Enum):

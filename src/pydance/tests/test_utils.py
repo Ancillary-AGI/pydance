@@ -4,13 +4,10 @@ Testing utilities for Pydance applications.
 Provides helper functions and utilities for common testing patterns.
 """
 
-import json
 import time
 from typing import Dict, Any, Optional, List, Callable
-from datetime import datetime
 
 from pydance.auth.core import create_user, auth_manager
-from .test_client import TestResponse
 
 
 def create_test_user(username: str = None, email: str = None, password: str = None,
@@ -386,7 +383,6 @@ class MockDataGenerator:
     @staticmethod
     def create_user_data(count=10):
         """Create mock user data"""
-        from datetime import datetime
         users = []
         for i in range(count):
             users.append({

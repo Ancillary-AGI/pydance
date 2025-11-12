@@ -3,7 +3,6 @@ Integration tests for full Pydance  application
 """
 import pytest
 
-from pydance import Application
 
 
 @pytest.mark.integration

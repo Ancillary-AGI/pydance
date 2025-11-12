@@ -6,12 +6,7 @@ pydance-client integration, hydration, caching, and cross-framework support.
 """
 
 import pytest
-import asyncio
-import json
 import tempfile
-import os
-from pathlib import Path
-from unittest.mock import patch
 
 from pydance.ssr.renderer import SSRRenderer, SSRConfig, SSRFramework
 

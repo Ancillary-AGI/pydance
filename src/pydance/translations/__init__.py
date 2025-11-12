@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Internationalization and localization system for Pydance applications.
 
@@ -13,15 +12,12 @@ This module provides comprehensive i18n support including:
 """
 
 import json
-import os
 import gettext
 import locale
 import threading
 from typing import Dict, List, Any, Optional, Union, Callable
-from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime, date, time
-import logging
 
 
 @dataclass

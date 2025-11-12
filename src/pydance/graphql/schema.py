@@ -3,11 +3,8 @@ GraphQL schema definition for Pydance framework.
 Provides type system, schema construction, and field definitions with full GraphQL spec compliance.
 """
 
-from __future__ import annotations
-
 from typing import Dict, Any, Optional, List, Callable, Union, Type, Set
 import json
-import re
 import asyncio
 
 

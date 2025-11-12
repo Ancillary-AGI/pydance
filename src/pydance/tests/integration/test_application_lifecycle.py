@@ -3,7 +3,6 @@ Integration tests for application lifecycle and error handling
 """
 import pytest
 
-from pydance import Application
 
 
 @pytest.mark.integration
@@ -29,7 +28,6 @@ class TestApplicationLifecycle:
     async def test_application_startup_shutdown(self, lifecycle_app):
         """Test application startup and shutdown"""
         # Mock database connection for startup/shutdown
-        from unittest.mock import AsyncMock
         mock_instance = AsyncMock()
 
         lifecycle_app.db_connection = mock_instance
@@ -67,7 +65,6 @@ class TestApplicationLifecycle:
     async def test_concurrent_requests(self, lifecycle_app):
         """Test handling concurrent requests"""
         import asyncio
-        from pydance.tests.test_client import TestClient
 
         client = TestClient(lifecycle_app)
 

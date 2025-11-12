@@ -3,17 +3,12 @@ Background processing and queue system for Pydance  framework.
 Provides job queues, workers, cron scheduling, and task management.
 """
 
-import asyncio
 import threading
 import time
 import uuid
-import json
-import pickle
 from typing import Dict, List, Any, Optional, Callable, Union, Type
 from datetime import datetime, timedelta
-from functools import wraps
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-import heapq
 import logging
 
 

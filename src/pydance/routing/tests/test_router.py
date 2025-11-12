@@ -4,7 +4,6 @@ Tests route matching, parameter extraction, caching, middleware integration, and
 """
 
 import pytest
-import asyncio
 from unittest.mock import Mock, patch
 from pydance.routing.router import Router, RouteGroup, RouteMatch
 from pydance.http import Request, Response

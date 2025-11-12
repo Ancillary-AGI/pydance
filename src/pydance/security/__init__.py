@@ -6,9 +6,9 @@ Provides enterprise-grade security features for mission-critical applications.
 # Authentication moved to auth module - use from pydance.auth import AuthManager
 from .file_validation import (
     FileValidator, BasicFileValidator, ClamAVValidator,
-    AWSGuardDutyValidator, CompositeValidator, SecurityManager,
-    get_security_manager
+    AWSGuardDutyValidator, CompositeValidator
 )
+from .security_manager import SecurityManager, get_security_manager
 
 __all__ = [
     'EncryptionService',
@@ -25,4 +25,3 @@ __all__ = [
     'SecurityManager',
     'get_security_manager'
 ]
-

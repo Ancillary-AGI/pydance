@@ -4,10 +4,7 @@ Tests for advanced regex routing functionality in Pydance.
 Tests the enhanced route parameter constraints that go beyond Laravel/Django.
 """
 
-import pytest
-from pydance.routing.route import Route
 from pydance.routing.constraints import get_route_constraints, register_constraint
-from pydance.routing.router import Router
 
 
 class TestAdvancedRegexRouting:
@@ -309,7 +306,6 @@ class TestProtectedRoutes:
 
     def test_auth_middleware_protection(self):
         """Test that auth middleware protects routes."""
-        from pydance.auth.middleware import AuthMiddleware
 
         router = Router()
         middleware = AuthMiddleware()
@@ -335,7 +331,6 @@ class TestProtectedRoutes:
 
     def test_admin_middleware_protection(self):
         """Test admin middleware protection."""
-        from pydance.auth.middleware import AdminAuthMiddleware
 
         router = Router()
         middleware = AdminAuthMiddleware()
@@ -351,7 +346,6 @@ class TestProtectedRoutes:
 
     def test_route_groups_with_middleware(self):
         """Test route groups with middleware."""
-        from pydance.auth.middleware import AuthMiddleware
 
         router = Router()
         auth_middleware = AuthMiddleware()

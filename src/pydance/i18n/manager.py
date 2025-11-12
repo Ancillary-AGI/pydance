@@ -1,10 +1,8 @@
 """
 Internationalization (i18n) support for Pydance  framework
 """
-import os
 import json
 from typing import Dict, Any, Optional
-from pathlib import Path
 
 # Import the new i18n system
 from .translations import Translations, gettext as _gettext, ngettext as _ngettext

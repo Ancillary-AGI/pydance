@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 import asyncio
 import json
 import aiohttp
-from enum import Enum
 
 
 class SIEMProvider(Enum):

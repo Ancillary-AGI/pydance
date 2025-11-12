@@ -1,14 +1,10 @@
 
-from pydance.utils.logging import get_logger
 """
 Webhook handler for payment provider notifications.
 """
 
-import asyncio
 import hmac
 import hashlib
-import json
-import logging
 from typing import Dict, Any, Optional
 
 class WebhookHandler:

@@ -3,8 +3,6 @@ Test fixtures for Pydance testing framework.
 """
 
 import pytest
-from pydance import Application
-from pydance.config.settings import Settings
 
 
 @pytest.fixture
@@ -32,7 +30,6 @@ def test_settings():
 @pytest.fixture
 def test_app():
     """Create test application instance"""
-    from pydance.server.application import Application
     app = Application()
     return app
 
@@ -40,7 +37,6 @@ def test_app():
 @pytest.fixture
 def test_client(test_app):
     """Create test client for application"""
-    from pydance.testing.test_client import TestClient
     return TestClient(test_app)
 
 
@@ -49,14 +45,12 @@ def db_session():
     """Create test database session"""
     # This would set up a test database session
     # For now, return a mock
-    from unittest.mock import Mock
     return Mock()
 
 
 @pytest.fixture
 def authenticated_user():
     """Create authenticated user for testing"""
-    from pydance.db.models.user import BaseUser
     user = BaseUser(
         username="testuser",
         email="test@example.com",
@@ -68,7 +62,6 @@ def authenticated_user():
 @pytest.fixture
 def test_database():
     """Create test database for testing"""
-    from unittest.mock import Mock
     db = Mock()
     db.connect.return_value = None
     db.disconnect.return_value = None

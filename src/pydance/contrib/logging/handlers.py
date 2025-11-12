@@ -5,7 +5,6 @@ Logging handlers for different output destinations.
 import logging
 import logging.handlers
 import sys
-from typing import Optional
 
 
 class ConsoleHandler(logging.StreamHandler):

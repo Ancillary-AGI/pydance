@@ -3,15 +3,11 @@ Passkeys (WebAuthn) authentication backend for Pydance.
 """
 
 import secrets
-import hashlib
 import base64
 import json
 from typing import Dict, Any, Optional, List, Tuple
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from pydance.http.request import Request
-from pydance.db.models.user import BaseUser
 
 
 @dataclass

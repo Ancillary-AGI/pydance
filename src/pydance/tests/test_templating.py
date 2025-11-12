@@ -3,7 +3,6 @@
 Test the templating system
 """
 
-from pydance.templating import render_template_string
 
 # Test lean template engine
 template = """

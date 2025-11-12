@@ -1,15 +1,11 @@
 
-from pydance.utils.logging import get_logger
 """
 Graceful degradation system for maintaining service availability.
 """
 
 import asyncio
 import time
-import logging
 from typing import Dict, List, Optional, Any, Callable, Tuple
-from dataclasses import dataclass
-from enum import Enum
 
 class DegradationStrategy(Enum):
     FAIL_FAST = "fail_fast"

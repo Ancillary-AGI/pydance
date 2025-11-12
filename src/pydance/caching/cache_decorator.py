@@ -2,13 +2,11 @@
 Cache decorators for easy function result caching.
 """
 
-import asyncio
 import functools
 import hashlib
-import inspect
 from typing import Any, Callable, Optional, Dict, Tuple
-
 from pydance.caching.cache_manager import CacheManager
+
 
 def cache_result(ttl_seconds: int = 3600, key_prefix: str = "", namespace: str = "default"):
     """Decorator to cache function results."""
@@ -90,4 +88,3 @@ def set_cache_manager(manager: CacheManager):
     """Set global cache manager."""
     global cache_manager
     cache_manager = manager
-

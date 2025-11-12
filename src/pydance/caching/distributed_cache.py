@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Multi-level distributed caching system for Pydance  framework.
 
@@ -13,20 +12,13 @@ This module provides aggressive caching strategies with:
 """
 
 import asyncio
-import logging
 import time
-import hashlib
 import json
 from typing import Dict, List, Optional, Any, Callable, AsyncGenerator, Set
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
-from enum import Enum
-import aioredis
-from concurrent.futures import ThreadPoolExecutor
-import threading
 
 from pydance.caching import CacheManager, MemoryCache, RedisCache, DatabaseCache
-from pydance.monitoring.metrics import get_metrics_collector
 
 
 class CacheLevel(Enum):

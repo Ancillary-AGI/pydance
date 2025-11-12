@@ -200,7 +200,6 @@ def create_app(app_factory: Optional[Callable] = None, **kwargs):
         return app_factory(**kwargs)
 
     # Generic fallback - return a mock app
-    from pydance.testing.mock import Mock
     mock_app = Mock(name='test_app')
 
     # Add common ASGI app methods
@@ -234,7 +233,6 @@ def database_session(session_factory: Optional[Callable] = None):
         return session_factory()
 
     # Generic fallback - return a mock session
-    from pydance.testing.mock import Mock
     return Mock(name='database_session')
 
 

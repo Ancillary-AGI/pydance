@@ -9,11 +9,12 @@ import threading
 import psutil
 import os
 from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
-from functools import wraps
-from contextlib import contextmanager
 import logging
 import statistics
 import gc
+from contextlib import contextmanager
+from functools import wraps
+from concurrent.futures import ThreadPoolExecutor
 
 T = TypeVar('T')
 logger = logging.getLogger(__name__)
@@ -307,7 +308,6 @@ class ThreadingUtils:
     @staticmethod
     def create_thread_pool(max_workers: Optional[int] = None):
         """Create a configured thread pool"""
-        from concurrent.futures import ThreadPoolExecutor
         return ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="pydance-perf")
 
     @staticmethod

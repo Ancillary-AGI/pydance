@@ -5,11 +5,9 @@ Route classes for Pydance routing system with advanced regex parameter support.
 import re
 import asyncio
 from typing import Callable, Dict, List, Optional, Tuple, Any, Union, Set, Pattern
+from enum import Enum
 from dataclasses import dataclass
-from urllib.parse import unquote
-from pydance.middleware.resolver import middleware_resolver
 from pydance.routing.types import HandlerType
-from pydance.routing.constraints import get_route_constraints
 
 
 class Route:

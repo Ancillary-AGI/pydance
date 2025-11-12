@@ -12,23 +12,12 @@ and quality assurance metrics including:
 """
 
 import ast
-import inspect
 import os
 import re
-import sys
-import time
-import traceback
 from typing import Dict, List, Any, Optional, Type, Callable, Set, Tuple
 from dataclasses import dataclass, field
-from datetime import datetime
-from enum import Enum
-from pathlib import Path
-import subprocess
 import json
-import tempfile
-import shutil
 
-from pydance.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -321,12 +310,10 @@ Generated unit tests for {module_name}.
 This file was automatically generated. Review and customize as needed.
 """
 
-import unittest
 from unittest.mock import Mock, patch
 from pydance.tests.test_utils import create_test_data, assert_response_ok
 
 # Import the module under test
-from pydance.{module_name} import *
 
 class Test{class_name}Generated(unittest.TestCase):
     """Generated test cases for {class_name}"""
@@ -439,7 +426,6 @@ Integration tests for {module} module.
 Generated integration test template.
 """
 
-import unittest
 from pydance.tests.test_utils import create_test_user, assert_response_ok
 
 class Test{module.title()}Integration(unittest.TestCase):

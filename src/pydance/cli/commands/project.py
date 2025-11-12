@@ -4,10 +4,8 @@ Project management commands for Pydance CLI
 
 import os
 import argparse
-from pathlib import Path
 from typing import List, Any
 
-from . import BaseCommand
 
 
 class StartProjectCommand(BaseCommand):
@@ -157,10 +155,6 @@ class StartProjectCommand(BaseCommand):
 {project_name} - Pydance  Application
 """
 
-from pydance import Application
-from pydance.server.config import Config
-from pydance.core.database import DatabaseConnection
-import asyncio
 
 # Create application instance
 app = Application()
@@ -219,7 +213,6 @@ async def api_info(request):
 
 if __name__ == '__main__':
     # Run directly for development
-    import uvicorn
     uvicorn.run(app, host='127.0.0.1', port=8000, reload=True)
 '''
 
@@ -232,16 +225,13 @@ if __name__ == '__main__':
 {project_name} Management Script
 """
 
-import sys
 import os
-from pathlib import Path
 
 # Add current directory to Python path
 sys.path.insert(0, str(Path(__file__).parent))
 
 def main():
     """Main entry point"""
-    from pydance.cli import main
     main()
 
 if __name__ == '__main__':
@@ -512,7 +502,6 @@ MIT License
 Tests for {project_name}
 """
 
-import pytest
 
 
 def test_home_endpoint():
@@ -610,7 +599,6 @@ Models for {app_name} app
 """
 
 from pydance.models.base import BaseModel, Field
-from datetime import datetime
 
 class ExampleModel(BaseModel):
     """Example model"""
@@ -630,7 +618,6 @@ class ExampleModel(BaseModel):
 Views for {app_name} app
 """
 
-from pydance.views.base import TemplateView
 
 class HomeView(TemplateView):
     template_name = "{app_name}/home.html"
@@ -649,7 +636,6 @@ class HomeView(TemplateView):
 Controllers for {app_name} app
 """
 
-from pydance.controllers.base import BaseController
 
 class {app_name.title()}Controller(BaseController):
     """Controller for {app_name}"""
@@ -711,7 +697,6 @@ class CollectStaticCommand(BaseCommand):
 
 
 # Register commands
-from . import registry
 
 registry.register(StartProjectCommand())
 registry.register(StartAppCommand())

@@ -1,9 +1,6 @@
 from typing import List, Dict, Any, AsyncGenerator, Type, Optional, Tuple
 import aiomysql
-from contextlib import asynccontextmanager
-from pydance.db.config import DatabaseConfig
 from pydance.db.models.base import Field, StringField, IntegerField, BooleanField, DateTimeField, FieldType
-from .base import DatabaseConnection
 
 
 class MySQLConnection(DatabaseConnection):
@@ -874,5 +871,4 @@ class MySQLConnection(DatabaseConnection):
 
     def get_field_type_mapping(self) -> Dict[str, str]:
         """Get MySQL field type mapping."""
-        from pydance.db.connections.base import COMMON_FIELD_TYPE_MAPPINGS
         return COMMON_FIELD_TYPE_MAPPINGS['mysql']

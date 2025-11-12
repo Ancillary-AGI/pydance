@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Event System for Pydance Framework
 
@@ -16,12 +15,9 @@ Key Features:
 """
 
 import asyncio
-import logging
 import uuid
 from typing import Dict, List, Callable, Any, Optional, Set, Union, Awaitable
 from dataclasses import dataclass, field
-from datetime import datetime
-from enum import Enum
 
 logger = get_logger(__name__)
 

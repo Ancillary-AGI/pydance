@@ -11,30 +11,18 @@ This module provides enterprise-grade database connection handling with:
 """
 
 import asyncio
-import logging
 import time
 import threading
-import weakref
 from typing import Dict, List, Any, Optional, Union, AsyncGenerator, TYPE_CHECKING, Type, Tuple
 from dataclasses import dataclass, field
-from enum import Enum
-from contextlib import asynccontextmanager
 import queue
-import heapq
 import statistics
 from collections import defaultdict, deque
 
-from pydance.db.config import DatabaseConfig
 from pydance.exceptions import ConnectionError, DatabaseError, IntegrityError
 from pydance.db.models.base import ConnectionState, ConnectionStats, ManagedConnection
-from pydance.utils.logging import get_logger
-from pydance.caching.cache_manager import get_cache_manager
 
 if TYPE_CHECKING:
-    import asyncpg
-    import aiomysql
-    import aiosqlite
-    import pymongo
 
 logger = get_logger(__name__)
 

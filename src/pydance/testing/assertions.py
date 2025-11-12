@@ -4,7 +4,6 @@ Custom Assertions for Pydance Testing
 Provides specialized assertions for testing Pydance applications.
 """
 
-from pydance.testing.client import TestResponse
 
 
 def assert_response_status(response: TestResponse, expected_status: int):

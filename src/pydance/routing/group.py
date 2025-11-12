@@ -3,7 +3,6 @@ Route group functionality for Pydance  routing system.
 """
 
 from typing import Callable, List, Optional, Dict, Any, Union, Set
-from pydance.routing.route import Route
 
 
 class RouteGroup:

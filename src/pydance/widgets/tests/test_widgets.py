@@ -1,7 +1,6 @@
 """
 Unit tests for Pydance  Rich Widgets
 """
-import pytest
 
 from pydance.widgets.core import RichText, RichSelect, RichTitle
 from pydance.widgets.forms import RichFile, RichDate, RichColor, RichRating

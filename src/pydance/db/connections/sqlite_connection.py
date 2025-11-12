@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 SQLite Database Backend
 
@@ -29,16 +28,10 @@ Example usage:
 
 import sqlite3
 import json
-import os
 import asyncio
 from typing import List, Dict, Any, AsyncGenerator, Type, Optional, Tuple, Union
-from contextlib import asynccontextmanager
-import logging
 import threading
-from decimal import Decimal
 
-from .base import DatabaseConnection
-from pydance.db.config import DatabaseConfig
 from pydance.db.models.base import Field, StringField, IntegerField, BooleanField, DateTimeField, FieldType
 
 logger = get_logger(__name__)
@@ -927,7 +920,6 @@ class SQLiteConnection(DatabaseConnection):
 
     def get_type_mappings(self) -> Dict[Any, str]:
         """Get SQLite-specific type mappings"""
-        from pydance.db.models.base import FieldType
         return {
             FieldType.BOOLEAN: "INTEGER",
             FieldType.UUID: "TEXT",
@@ -939,7 +931,6 @@ class SQLiteConnection(DatabaseConnection):
 
     def format_default_value(self, value: Any) -> str:
         """Format default value for SQLite"""
-        from decimal import Decimal
         if isinstance(value, str):
             if value.upper() in ['CURRENT_TIMESTAMP', 'CURRENT_DATE']:
                 return value
@@ -1170,5 +1161,4 @@ class SQLiteConnection(DatabaseConnection):
 
     def get_field_type_mapping(self) -> Dict[str, str]:
         """Get SQLite field type mapping."""
-        from pydance.db.connections.base import COMMON_FIELD_TYPE_MAPPINGS
         return COMMON_FIELD_TYPE_MAPPINGS['sqlite']

@@ -16,7 +16,6 @@ from collections import defaultdict, deque
 import threading
 import hmac
 import gzip
-from pydance.middleware import CORSMiddleware
 # Security Exceptions
 class SecurityError(Exception):
     """Base security exception"""
@@ -131,7 +130,6 @@ class SecurityConfig:
         """Get CSRF secret key from settings or generate secure one."""
         try:
             # Try to import settings - handle circular imports gracefully
-            from pydance.config.settings import settings
             return getattr(settings, 'CSRF_SECRET_KEY', None) or self._generate_secure_key('csrf')
         except ImportError:
             # Fallback if settings not available yet
@@ -141,7 +139,6 @@ class SecurityConfig:
         """Get WebSocket secret key from settings or generate secure one."""
         try:
             # Try to import settings - handle circular imports gracefully
-            from pydance.config.settings import settings
             return getattr(settings, 'WEBSOCKET_SECRET_KEY', None) or self._generate_secure_key('websocket')
         except ImportError:
             # Fallback if settings not available yet

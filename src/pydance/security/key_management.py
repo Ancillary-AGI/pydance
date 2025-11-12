@@ -8,11 +8,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 import asyncio
 import secrets
-import hashlib
-from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, ec
-from cryptography.hazmat.backends import default_backend
-from cryptography.exceptions import InvalidSignature
 import base64
 
 # Import quantum security
@@ -435,7 +431,6 @@ class KeyManager:
         if not QUANTUM_AVAILABLE:
             raise RuntimeError("Quantum security module not available")
 
-        from .quantum_security import get_quantum_security_manager
         quantum_manager = get_quantum_security_manager()
 
         # Generate quantum keypair
@@ -475,7 +470,6 @@ class KeyManager:
         if not QUANTUM_AVAILABLE:
             return None
 
-        from .quantum_security import get_quantum_security_manager
         quantum_manager = get_quantum_security_manager()
 
         return quantum_manager.key_store.get(key_id)
@@ -489,7 +483,6 @@ class KeyManager:
         if not quantum_key:
             raise ValueError(f"Quantum key {key_id} not found")
 
-        from .quantum_security import get_quantum_security_manager
         quantum_manager = get_quantum_security_manager()
 
         provider = quantum_manager.providers[quantum_key.algorithm]
@@ -504,7 +497,6 @@ class KeyManager:
         if not quantum_key:
             return False
 
-        from .quantum_security import get_quantum_security_manager
         quantum_manager = get_quantum_security_manager()
 
         provider = quantum_manager.providers[quantum_key.algorithm]
@@ -519,7 +511,6 @@ class KeyManager:
         if not quantum_key:
             raise ValueError(f"Quantum key {key_id} not found")
 
-        from .quantum_security import get_quantum_security_manager
         quantum_manager = get_quantum_security_manager()
 
         provider = quantum_manager.providers[quantum_key.algorithm]

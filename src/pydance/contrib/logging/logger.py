@@ -1,15 +1,11 @@
 
-from pydance.utils.logging import get_logger
 """
 Structured logging system for Pydance  framework.
 """
 
 import logging
-import json
-import sys
 import threading
 from typing import Dict, Any, Optional, List
-from datetime import datetime
 
 from .formatters import JSONFormatter, StructuredFormatter, ColoredFormatter
 from .handlers import ConsoleHandler, FileHandler

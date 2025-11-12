@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Unified Exceptions Module for Pydance Framework.
 
@@ -8,9 +7,9 @@ with proper error codes, HTTP status mappings, and production-ready error handli
 """
 
 from typing import Dict, Any, Optional, List, Union
-from dataclasses import dataclass
-import logging
 import json
+from dataclasses import dataclass
+from pydance.utils.logging import get_logger
 
 logger = get_logger(__name__)
 

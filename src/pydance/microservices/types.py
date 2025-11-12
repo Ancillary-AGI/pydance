@@ -3,7 +3,6 @@ Microservices types for Pydance.
 """
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
-from datetime import datetime
 
 @dataclass
 class ServiceInstance:

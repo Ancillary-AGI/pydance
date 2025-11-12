@@ -11,8 +11,6 @@ import secrets
 import string
 import warnings
 from typing import Any, Dict, List, Optional, Union
-from pathlib import Path
-from dotenv import load_dotenv
 
 # Laravel-style env() helper function (moved before Settings so Settings can use it)
 def env(key: str, default: Any = None) -> Any:

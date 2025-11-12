@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Session Management System for Pydance Framework
 
@@ -16,13 +15,11 @@ This module provides comprehensive session management with:
 
 import asyncio
 import json
-import logging
 import secrets
 import time
 import uuid
 from typing import Dict, List, Callable, Any, Optional, Type, Union, Awaitable, Set
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime, timedelta
 from abc import ABC, abstractmethod
 
@@ -431,9 +428,6 @@ class SessionCrypto:
         import base64
         import hashlib
         import hmac
-        from cryptography.fernet import Fernet
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
         # Generate encryption key from secret
         kdf = PBKDF2HMAC(
@@ -461,9 +455,6 @@ class SessionCrypto:
         import base64
         import hashlib
         import hmac
-        from cryptography.fernet import Fernet
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
         try:
             # Split data and HMAC

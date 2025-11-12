@@ -1,19 +1,12 @@
 
-from pydance.utils.logging import get_logger
 """
 Migration framework integration for Pydance.
 Provides high-level migration functions and model introspection.
 """
 
-import asyncio
-import logging
 import inspect
 from typing import Dict, List, Any, Optional, Type
-from datetime import datetime
-from pathlib import Path
 
-from pydance.db.config import DatabaseConfig
-from pydance.db.models.base import BaseModel
 from .migrator import MigrationRunner, MigrationManager, Migrator
 from .migration import Migration, MigrationOperation, MigrationOperationType
 
@@ -165,7 +158,6 @@ class MigrationFramework:
             }
 
         # Save migration to file
-        from .migration import MigrationGenerator
         generator = MigrationGenerator()
         migration_file = generator.save_migration_file(migration)
 

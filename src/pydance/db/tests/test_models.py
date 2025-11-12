@@ -2,11 +2,7 @@
 Unit tests for refactored models
 """
 import pytest
-import asyncio
-from pydance.db.models.base import BaseModel
 from pydance.db.models.user import BaseUser, UserRole, UserStatus
-from pydance.db.models.factory import ModelFactory
-from pydance.db.config import DatabaseConfig
 from pydance.db.models.base import StringField, IntegerField, BooleanField
 
 

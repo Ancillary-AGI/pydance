@@ -1,7 +1,6 @@
 """
 Template types for Pydance.
 """
-from enum import Enum
 from dataclasses import dataclass, field
 from typing import Dict, Any
 

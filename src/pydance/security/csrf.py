@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 CSRF (Cross-Site Request Forgery) protection system.
 """
@@ -8,9 +7,7 @@ import secrets
 import hashlib
 import time
 from typing import Dict, Optional, Any
-from dataclasses import dataclass
 from datetime import datetime, timedelta
-import logging
 
 @dataclass
 class CSRFToken:

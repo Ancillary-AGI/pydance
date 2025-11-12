@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Base service class for Pydance framework.
 
@@ -8,13 +7,13 @@ with proper dependency injection, lifecycle management, and error handling.
 """
 
 import asyncio
-import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List, Type, TypeVar, Generic
 from dataclasses import dataclass
 from datetime import datetime
-
+from pydance.utils.logging import get_logger
 from pydance.core.exceptions import BaseFrameworkException
+
 
 logger = get_logger(__name__)
 

@@ -3,13 +3,8 @@ Modern Python Template Engine
 A high-performance, pure Python template rendering system with async support.
 """
 
-import re
 import asyncio
 from typing import Dict, Any, Optional, Union, List, Callable
-from pathlib import Path
-import hashlib
-import pickle
-from dataclasses import dataclass
 from abc import ABC, abstractmethod
 
 
@@ -57,10 +52,8 @@ def get_template_engine(engine_type: str = "lean", template_dir: str = "template
     template_path = Path(template_dir)
 
     if engine_type == "lean":
-        from .languages.lean import LeanTemplateEngine
         return LeanTemplateEngine(template_path)
     elif engine_type == "jinja":
-        from .languages.jinja import JinjaTemplateEngine
         return JinjaTemplateEngine(template_path)
     else:
         raise ValueError(f"Unknown template engine: {engine_type}")

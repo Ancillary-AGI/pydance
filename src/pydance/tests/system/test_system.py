@@ -1,17 +1,11 @@
 """
 System tests for Pydance framework - End-to-end testing with comprehensive coverage
 """
-import subprocess
 import time
-import os
 import pytest
 import requests
 import asyncio
-import aiohttp
-import json
 from typing import Dict, Any, List
-import tempfile
-import shutil
 from unittest.mock import patch, MagicMock
 
 
@@ -26,11 +20,8 @@ class TestSystem:
 
         # Create comprehensive app.py with all framework features
         app_content = '''
-from pydance import Application
-from pydance.db import models
 from pydance.auth import login_required, permission_required
 from pydance.graphql import Schema, Query, Mutation, ObjectType, Field, String, Int
-from pydance.caching import get_cache_manager
 import asyncio
 
 app = Application()
@@ -142,7 +133,6 @@ async def admin_route(request):
 
 @app.route('/graphql', methods=['POST'])
 async def graphql_endpoint(request):
-    from pydance.graphql import GraphQLManager
     manager = GraphQLManager(schema)
 
     data = await request.json()
@@ -184,7 +174,6 @@ async def middleware_test(request):
 async def db_test(request):
     try:
         # Test database connection
-        from pydance.db import get_connection
         conn = await get_connection()
         await conn.execute_query("SELECT 1 as test")
         return {'database': 'connected', 'status': 'ok'}
@@ -194,7 +183,6 @@ async def db_test(request):
 # Authentication test routes
 @app.route('/auth/login', methods=['POST'])
 async def login(request):
-    from pydance.auth import auth_manager
     data = await request.json()
     user = auth_manager.authenticate(request, **data)
     if user:
@@ -204,7 +192,6 @@ async def login(request):
 
 @app.route('/auth/logout')
 async def logout(request):
-    from pydance.auth import auth_manager
     session_key = request.cookies.get('session_id')
     if session_key:
         auth_manager.logout(request, session_key)
@@ -251,11 +238,8 @@ async def metrics(request):
         # Create manage.py for testing
         manage_content = '''
 #!/usr/bin/env python
-import sys
-import os
 sys.path.insert(0, os.path.dirname(__file__))
 
-from pydance.management import execute_from_command_line
 
 if __name__ == "__main__":
     execute_from_command_line(sys.argv)
@@ -401,7 +385,6 @@ MIDDLEWARE = [
 
     def test_graphql_integration(self, system_app):
         """Test GraphQL integration"""
-        from pydance.graphql.query import GraphQLQuery
         from pydance.graphql.schema import ObjectType, Field, String
 
         # Test GraphQL object type creation
@@ -418,7 +401,6 @@ MIDDLEWARE = [
     def test_authentication_system(self, system_app):
         """Test authentication system"""
         # Test that auth module can be imported
-        from pydance.auth import core
         assert core is not None
 
         # Test that AuthManager exists and can be instantiated
@@ -430,7 +412,6 @@ MIDDLEWARE = [
         """Test WebSocket functionality"""
         # Test that WebSocket-related imports work
         try:
-            from pydance.websocket import __init__
             assert __init__ is not None
         except ImportError:
             # WebSocket module may not be fully implemented
@@ -449,13 +430,11 @@ MIDDLEWARE = [
 
     def test_middleware_integration(self, system_app):
         """Test middleware integration"""
-        from pydance.middleware.base import BaseMiddleware
 
         # Test that base middleware class exists
         assert BaseMiddleware is not None
 
         # Test middleware manager exists
-        from pydance.middleware.manager import get_middleware_manager
         manager = get_middleware_manager()
         assert manager is not None
         assert hasattr(manager, 'add') or hasattr(manager, 'middlewares')
@@ -463,7 +442,6 @@ MIDDLEWARE = [
     def test_performance_endpoints(self, system_app):
         """Test performance-related endpoints"""
         import time
-        from pydance.utils.math_operations import MathOps
 
         # Test math utilities
         math_ops = MathOps()
@@ -482,8 +460,6 @@ MIDDLEWARE = [
     def test_system_integration_health(self, system_app):
         """Test overall system health and integration"""
         # Test core framework imports
-        from pydance import Application
-        from pydance.routing import Router
 
         # Test that core classes can be instantiated
         app = Application()
@@ -495,13 +471,11 @@ MIDDLEWARE = [
 
         # Test that other modules can be imported (may not instantiate without config)
         try:
-            from pydance.templating import TemplateEngine
             assert TemplateEngine is not None
         except ImportError:
             pass
 
         try:
-            from pydance.caching import CacheManager
             assert CacheManager is not None
         except ImportError:
             pass
@@ -510,7 +484,6 @@ MIDDLEWARE = [
         """Simulate load testing with multiple concurrent requests"""
         import threading
         import queue
-        from pydance import Application
 
         results = queue.Queue()
         errors = []

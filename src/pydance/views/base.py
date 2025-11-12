@@ -7,11 +7,7 @@ from typing import Dict, Any, Optional, Type, List, Union
 from abc import ABC, abstractmethod
 import inspect
 
-from pydance.http.request import Request
-from pydance.http.response import Response
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from pydance.server.application import Application
 from pydance.exceptions import HTTPException, NotFound
 
 
@@ -250,7 +246,6 @@ def render_to(template_name: str):
     """Decorator to render function result to template"""
     def decorator(func):
         async def wrapper(request, *args, **kwargs):
-            from pydance.server.application import Application
             app = Application()
 
             result = await func(request, *args, **kwargs) if inspect.iscoroutinefunction(func) else func(request, *args, **kwargs)

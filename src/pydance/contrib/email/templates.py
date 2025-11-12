@@ -13,7 +13,6 @@ This module provides a comprehensive email template system that supports:
 import re
 from typing import Optional, Dict, Any, List, Union
 
-from pydance.templating.engine import TemplateEngine
 
 
 class MarkdownRenderer:

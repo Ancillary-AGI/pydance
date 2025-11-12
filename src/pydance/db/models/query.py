@@ -2,14 +2,11 @@
 Query builder for database operations.
 """
 
-import json
 from typing import Dict, List, Optional, Any, Tuple, Union, Type, TypeVar, Generic
 import asyncio
 import math
-import inspect
 
 from pydance.db.models.base import Field, Relationship, RelationshipType, OrderDirection, PaginatedResponse, AggregationResult, LazyLoad, BaseModel
-from pydance.utils.collections import Collection
 
 T = TypeVar('T', bound=BaseModel)
 
@@ -260,7 +257,6 @@ class QueryBuilder(Generic[T]):
             local_keys = [getattr(instance, rel.local_key) for instance in instances]
 
             # Create through model dynamically
-            from .base import BaseModel
             through_class = type('ThroughModel', (BaseModel,), {
                 '_table_name': rel.through_table,
                 '_columns': {

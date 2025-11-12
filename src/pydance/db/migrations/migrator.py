@@ -1,26 +1,15 @@
 
-from pydance.utils.logging import get_logger
 """
 Migration runner and manager for Pydance framework.
 Handles both database-stored and file-based migrations with comprehensive model diffing.
 Database-agnostic implementation supporting all database backends.
 """
 
-import asyncio
 import json
-import logging
-import os
-import re
-import hashlib
 from typing import Dict, List, Any, Optional, Tuple, Set, Type
-from datetime import datetime
-from pathlib import Path
-from dataclasses import dataclass
 
-from pydance.db.connections import DatabaseConnection
-from pydance.db.config import DatabaseConfig
 from pydance.db.models.base import BaseModel, Field
-from .migration import (
+from pydance.db.migrations.migration import (
     Migration, MigrationFile, MigrationGenerator, MigrationOperationType,
     MigrationOperation, ModelMigration
 )
@@ -62,7 +51,6 @@ class Migrator:
     async def initialize(self):
         """Create migrations table/collection if it doesn't exist and load applied migrations"""
         if not self.db_config:
-            from pydance.db.config import DatabaseConfig
             self.db_config = DatabaseConfig.from_env()
         db = DatabaseConnection.get_instance(self.db_config)
 
@@ -225,7 +213,6 @@ class Migrator:
             raise ValueError("Migration must have at least one operation with a model_name")
 
         # Generate schema definition from the model
-        from .migration import Migration
         schema_definition = {}  # This would need to be generated from the model
 
         await db.insert_migration_record(
@@ -775,7 +762,6 @@ class Migrator:
 
             # Find all model classes
             import inspect
-            from pydance.db.models.base import BaseModel
 
             models = []
             for name, obj in inspect.getmembers(app_module):
@@ -809,7 +795,6 @@ class MigrationRunner:
     async def initialize(self):
         """Initialize migration system"""
         if not self.db_config:
-            from pydance.db.config import DatabaseConfig
             self.db_config = DatabaseConfig.from_env()
 
         self.db_connection = DatabaseConnection.get_instance(self.db_config)

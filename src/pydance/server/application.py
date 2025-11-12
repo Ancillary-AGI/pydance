@@ -6,31 +6,18 @@ A framework for building ASGI applications with routing, middleware, and configu
 """
 
 import inspect
-import asyncio
-import time
-from pathlib import Path
 from typing import Dict, List, Callable, Any, Optional, Type, Union, Awaitable
 from dataclasses import dataclass, field
 
-from pydance.utils.logging import get_logger
-from pydance.config.settings import settings
-from pydance.config import AppConfig
-from pydance.routing import Router
-from pydance.middleware.manager import get_middleware_manager
-from pydance.middleware.types import MiddlewareType
 from pydance.core.exceptions import HTTPException, WebSocketException, WebSocketDisconnect
 from pydance.http import Request, Response
-from pydance.websocket import WebSocket
-from pydance.templating.engine import AbstractTemplateEngine
+from pydance.utils.logging import get_logger
+from pydance.config import AppConfig
+from pydance.middleware.manager import MiddlewareType
 
 logger = get_logger(__name__)
 
-from pydance.core.di import Container
 from pydance.monitoring import MetricsCollector, HealthChecker
-from pydance.caching import get_cache_manager
-from pydance.graphql import GraphQLManager
-from pydance.core.events import get_event_bus
-from pydance.core.plugins import get_plugin_manager
 
 
 class Application:
@@ -46,7 +33,6 @@ class Application:
     - Optional features (monitoring, GraphQL, caching)
 
     Example:
-        from pydance.server import Application
 
         app = Application()
 
@@ -163,8 +149,6 @@ class Application:
             return
 
         if hasattr(self.config, 'DATABASE_URL') and self.config.DATABASE_URL:
-            from pydance.db.config import DatabaseConfig
-            from pydance.db.connections import DatabaseConnection
 
             db_config = DatabaseConfig.from_url(self.config.DATABASE_URL)
             self.db_connection = DatabaseConnection.get_instance(db_config)
@@ -402,7 +386,6 @@ class Application:
     async def startup(self) -> None:
         """Initialize the application."""
         # Configure logging from settings
-        from pydance.utils.logging import logger_manager
         logger_manager.configure_from_settings()
 
         # Initialize template engine based on configuration
@@ -417,7 +400,6 @@ class Application:
             self.template_engine = engine_class(Path(template_dirs[0]))
         except (ImportError, AttributeError, ValueError) as e:
             logger.warning(f"Failed to load template engine {template_engine_type}, falling back to default: {e}")
-            from pydance.templating.engine import get_template_engine
             self.template_engine = get_template_engine("lean", template_dirs[0])
 
         # Start event bus if enabled
@@ -437,7 +419,6 @@ class Application:
 
         # Emit startup event
         if hasattr(self, 'event_bus'):
-            from pydance.core.events import StartupEvent
             await self.event_bus.publish(StartupEvent(app_name="pydance"))
 
         logger.info("Application started")
@@ -446,7 +427,6 @@ class Application:
         """Shutdown the application."""
         # Emit shutdown event
         if hasattr(self, 'event_bus'):
-            from pydance.core.events import ShutdownEvent
             await self.event_bus.publish(ShutdownEvent(app_name="pydance"))
 
         # Stop plugins if enabled
@@ -470,7 +450,6 @@ class Application:
         """Run the application with a server."""
         try:
             # Lazy import to avoid circular dependencies
-            from pydance.server.server import Server
 
             server = Server(self, self.config)
             server.run(host=host, port=port)
@@ -482,7 +461,6 @@ class Application:
     async def serve(self, host: str = '127.0.0.1', port: int = 8000) -> None:
         """Start serving requests (non-blocking)."""
         try:
-            from pydance.server.server import Server
 
             server = Server(self, self.config)
             await server.serve(host=host, port=port)
@@ -612,7 +590,6 @@ class Application:
                                          send: Callable[[Any], Any]) -> None:
         """Handle exceptions during WebSocket processing."""
         try:
-            from pydance.websocket import WebSocketDisconnect
             websocket = WebSocket(scope, receive, send, self)
 
             if isinstance(exc, WebSocketDisconnect):

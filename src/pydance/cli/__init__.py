@@ -8,7 +8,6 @@ This module provides the main entry point for the CLI system.
 def main():
     """Main CLI entry point"""
     try:
-        from .cli import PydanceCLI
     except ImportError:
         # Fallback for different import contexts
         import cli as cli_module

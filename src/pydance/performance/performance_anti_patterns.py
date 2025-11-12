@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Performance Anti-Patterns and Best Practices for Pydance  Framework
 
@@ -10,11 +9,7 @@ that can occur when implementing high-performance optimizations.
 import asyncio
 import logging
 import time
-import weakref
 from typing import Dict, List, Optional, Any, Callable, Set
-from dataclasses import dataclass
-from contextlib import asynccontextmanager
-import threading
 import functools
 
 

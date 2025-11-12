@@ -2,15 +2,12 @@
 Caching system for Pydance  framework.
 """
 
-import asyncio
 import hashlib
 import json
 import pickle
 from typing import Any, Optional, Dict, List, Union, Callable
-from functools import wraps
 from datetime import datetime, timedelta
 
-from .backends import CacheBackend
 
 
 class Cache:

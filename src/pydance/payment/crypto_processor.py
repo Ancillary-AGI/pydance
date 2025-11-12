@@ -1,14 +1,9 @@
 
-from pydance.utils.logging import get_logger
 """
 Cryptocurrency payment processor implementation.
 """
 
-import asyncio
-import json
-import logging
 from typing import Dict, Any, Optional
-from decimal import Decimal
 
 class CryptoProcessor:
     """

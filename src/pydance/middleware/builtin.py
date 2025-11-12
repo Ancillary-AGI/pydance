@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Consolidated built-in middleware implementations for Pydance.
 
@@ -20,6 +19,8 @@ import json
 from pydance.middleware.base import HTTPMiddleware, WebSocketMiddleware
 from pydance.http.request import Request
 from pydance.http.response import Response
+from pydance.utils.logging import get_logger
+from pydance.monitoring.metrics import get_metrics_collector
 
 
 # ==================== CORE HTTP MIDDLEWARE ====================
@@ -65,7 +66,6 @@ class CORSMiddleware(HTTPMiddleware):
 
     async def _handle_preflight_request(self, request: Request) -> Request:
         """Handle preflight OPTIONS request"""
-        from pydance.http.response import Response as HTTPResponse
         response = HTTPResponse(200)
         response.headers.update({
             "Access-Control-Allow-Origin": request.headers.get("origin"),
@@ -135,7 +135,6 @@ class PerformanceMonitoringMiddleware(HTTPMiddleware):
         self.enable_gc_monitoring = self.config.get('enable_gc_monitoring', True)
         # Initialize metrics collector (will be None if not available)
         try:
-            from pydance.monitoring import get_metrics_collector
             self.metrics_collector = get_metrics_collector()
         except ImportError:
             self.metrics_collector = None
@@ -251,7 +250,6 @@ class AuthenticationMiddleware(HTTPMiddleware):
                 break
 
         if not user and not self.optional:
-            from pydance.exceptions import HTTPException
             raise HTTPException(401, "Authentication required")
 
         request.user = user
@@ -281,7 +279,6 @@ class CSRFMiddleware(HTTPMiddleware):
             token = self._get_token_from_request(request)
 
         if not token or not self._validate_token(token):
-            from pydance.exceptions import HTTPException
             raise HTTPException(403, "CSRF token validation failed")
 
         return request
@@ -378,7 +375,6 @@ class ValidationMiddleware(HTTPMiddleware):
                     validation_errors.append(f"Validation error for {field}: {str(e)}")
 
         if validation_errors:
-            from pydance.exceptions import HTTPException
             raise HTTPException(400, {"validation_errors": validation_errors})
 
         return request
@@ -425,7 +421,6 @@ class ErrorHandlingMiddleware(HTTPMiddleware):
             return await self._handle_error(e, request)
 
     async def _handle_error(self, error: Exception, request: Request) -> Response:
-        from pydance.http.response import Response as HTTPResponse
 
         status_code = self._get_status_code(error)
         error_response = {
@@ -466,7 +461,6 @@ class RateLimitingMiddleware(HTTPMiddleware):
         client_key = self._get_client_key(request)
 
         if self._is_rate_limited(client_key):
-            from pydance.exceptions import HTTPException
             raise HTTPException(429, "Too Many Requests")
 
         return request

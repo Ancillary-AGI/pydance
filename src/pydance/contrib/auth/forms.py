@@ -5,7 +5,6 @@ Authentication forms for login, registration, and password reset.
 from typing import Optional, Dict, Any
 
 from pydance.widgets import TextWidget, PasswordWidget, EmailWidget, ButtonWidget
-from pydance.widgets.forms import Form
 
 
 class LoginForm(Form):
@@ -43,7 +42,6 @@ class LoginForm(Form):
 
     def create_checkbox(self, name: str, label: str, **kwargs) -> 'CheckboxWidget':
         """Create a checkbox widget"""
-        from pydance.widgets import CheckboxWidget
         return CheckboxWidget(name=name, label=label, **kwargs)
 
     async def validate(self, data: Dict[str, Any]) -> bool:
@@ -139,7 +137,6 @@ class RegisterForm(Form):
 
     def create_checkbox(self, name: str, label: str, **kwargs) -> 'CheckboxWidget':
         """Create a checkbox widget"""
-        from pydance.widgets import CheckboxWidget
         return CheckboxWidget(name=name, label=label, **kwargs)
 
     async def validate(self, data: Dict[str, Any]) -> bool:
@@ -317,7 +314,6 @@ class ProfileUpdateForm(Form):
 
     def create_select(self, name: str, label: str, options: list, **kwargs) -> 'SelectWidget':
         """Create a select widget"""
-        from pydance.widgets import SelectWidget
         return SelectWidget(name=name, label=label, options=options, **kwargs)
 
     async def validate(self, data: Dict[str, Any]) -> bool:

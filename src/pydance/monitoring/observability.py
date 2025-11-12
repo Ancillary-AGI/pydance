@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Enhanced observability for Pydance  framework.
 
@@ -8,11 +7,7 @@ based on the distributed streaming framework patterns.
 """
 
 import time
-import logging
 from typing import Dict, List, Any, Optional, Callable
-from datetime import datetime
-from dataclasses import dataclass
-from contextlib import asynccontextmanager
 import asyncio
 import threading
 

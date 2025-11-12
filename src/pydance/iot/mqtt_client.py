@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 MQTT Client for IoT communication.
 Provides MQTT protocol support for device communication.
@@ -7,7 +6,6 @@ Provides MQTT protocol support for device communication.
 
 import asyncio
 import json
-import logging
 from typing import Dict, Any, Optional, Callable, List
 from dataclasses import dataclass
 
@@ -166,4 +164,3 @@ def initialize_mqtt_client(config: MQTTConfig):
     global mqtt_client
     mqtt_client = MQTTClient(config)
     return mqtt_client
-

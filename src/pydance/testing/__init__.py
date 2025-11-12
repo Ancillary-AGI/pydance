@@ -27,7 +27,6 @@ from pydance.testing.client import TestClient, TestResponse
 from pydance.testing.mock import mock, Mock, MagicMock, patch, patch_object, patch_dict, patch_multiple
 
 # Assertions and test utilities
-from pydance.testing.assertions import (
     assert_response_status,
     assert_response_json,
     assert_response_success,
@@ -36,7 +35,6 @@ from pydance.testing.assertions import (
 )
 
 # Test fixtures and factories
-from pydance.testing.fixtures import (
     create_user,
     create_post,
     create_app,

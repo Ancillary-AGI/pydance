@@ -3,7 +3,6 @@ Modern Python Streaming Module
 High-performance async streaming processor for real-time data handling.
 """
 
-from .core import *
 
 __all__ = [
     'StreamConfig',

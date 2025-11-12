@@ -5,8 +5,11 @@ Provides DatabaseConfig, DatabaseConnection, models, migrations, and type defini
 """
 
 
+# Core database
+from .connections.base import DatabaseConfig, DatabaseConnection
+
 # Types and fields
-from pydance.db.models.base import (
+from .types import (
     FieldType, RelationshipType, OrderDirection, PoolConfig, ConnectionStats,
     DistributedCacheConfig, PaginationParams, PaginationMetadata, PaginationLink,
     PaginatedResponse, AggregationResult, LazyLoad, Field, StringField,
@@ -19,9 +22,11 @@ from pydance.db.models.base import (
 )
 
 # Models
+from .models.base import BaseModel
+from .models.query import QueryBuilder
 
 # Migrations
-from pydance.db.migrations import (
+from .migrations.migrator import (
     Migration, MigrationOperation, MigrationOperationType,
     MigrationFile, MigrationGenerator, MigrationRunner, MigrationManager,
     MigrationFramework, migration_manager, make_migrations, migrate,

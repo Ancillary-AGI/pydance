@@ -1,7 +1,6 @@
 """Performance-related type definitions."""
 from dataclasses import dataclass, field
 from typing import Dict, Any, Union, List
-from datetime import datetime
 
 @dataclass
 class PerformanceThreshold:

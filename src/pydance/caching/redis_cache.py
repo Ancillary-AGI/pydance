@@ -1,15 +1,11 @@
 
-from pydance.utils.logging import get_logger
 """
 Redis cache implementation for distributed caching.
 """
 
-import asyncio
 import json
-import logging
 from typing import Optional, Any, Dict
 
-from pydance.caching.cache_manager import CacheConfig
 
 class RedisCache:
     """

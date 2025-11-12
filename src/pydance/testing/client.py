@@ -4,10 +4,8 @@ Test Client for Pydance Applications
 Provides a test client for making HTTP requests to Pydance applications during testing.
 """
 
-import asyncio
 import json
 from typing import Dict, Any, Optional, Union, List
-from urllib.parse import urlencode
 
 
 class TestResponse:

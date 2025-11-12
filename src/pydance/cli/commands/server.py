@@ -8,10 +8,8 @@ import signal
 import subprocess
 import time
 import argparse
-from pathlib import Path
 from typing import List, Any
 
-from . import BaseCommand
 
 
 class StartCommand(BaseCommand):
@@ -324,7 +322,6 @@ class StatusCommand(BaseCommand):
 
 
 # Register commands
-from . import registry
 
 registry.register(StartCommand())
 registry.register(StopCommand())

@@ -3,9 +3,6 @@ GraphQL middleware for Pydance framework.
 """
 
 from typing import Dict, Any, Optional
-from pydance.http.request import Request
-from pydance.http.response import Response
-from pydance.middleware.base import HTTPMiddleware
 
 
 class GraphQLMiddleware(HTTPMiddleware):

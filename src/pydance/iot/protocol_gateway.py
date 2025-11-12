@@ -1,14 +1,11 @@
 
-from pydance.utils.logging import get_logger
 """
 Protocol gateway for IoT communication.
 Provides unified interface for different IoT protocols.
 """
 
 import asyncio
-import logging
 from typing import Dict, Any, Optional, Callable, List
-from dataclasses import dataclass
 
 @dataclass
 class ProtocolGatewayConfig:

@@ -13,7 +13,6 @@ def get_cache_manager(config=None) -> CacheManager:
     """Get global cache manager instance"""
     global _cache_manager
     if _cache_manager is None:
-        from pydance.server.config import AppConfig
         app_config = config or AppConfig()
         cache_config = CacheConfig()
         _cache_manager = CacheManager(cache_config)

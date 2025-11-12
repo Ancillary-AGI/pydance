@@ -4,13 +4,9 @@ Authentication Middleware for Pydance Framework
 Middleware for handling authentication, sessions, and authorization.
 """
 
-import asyncio
 from typing import Dict, Any, Optional, Callable, Awaitable
 from datetime import datetime, timedelta
 
-from pydance.http.request import Request
-from pydance.http.response import Response
-from pydance.middleware.base import HTTPMiddleware
 from pydance.exceptions import HTTPException, Unauthorized, Forbidden
 
 from pydance.auth.core import auth_manager, get_current_user

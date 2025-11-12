@@ -3,10 +3,7 @@ Tests for internationalization functionality.
 """
 
 import pytest
-from datetime import datetime
-from pydance import Application
 from pydance.i18n import gettext, ngettext, lazy_gettext, set_locale, get_locale
-from pydance.testing.test_client import TestClient
 
 
 @pytest.mark.asyncio
@@ -42,7 +39,6 @@ async def test_locale_middleware():
 
     @app.route("/test/")
     async def test_handler(request):
-        from pydance.i18n import get_locale
         return {"locale": get_locale()}
 
     client = TestClient(app)
@@ -63,7 +59,6 @@ async def test_locale_middleware():
 @pytest.mark.asyncio
 async def test_date_formatting():
     """Test date formatting by locale"""
-    from pydance.i18n.formatters import format_date
 
     test_date = datetime(2023, 12, 25)
 
@@ -85,7 +80,6 @@ async def test_date_formatting():
 @pytest.mark.asyncio
 async def test_number_formatting():
     """Test number formatting by locale"""
-    from pydance.i18n.formatters import format_number
 
     test_number = 1234567.89
 
@@ -120,7 +114,6 @@ async def test_lazy_translation():
 @pytest.mark.asyncio
 async def test_translation_context():
     """Test translation with context"""
-    from pydance.i18n import pgettext
 
     set_locale("en")
     assert pgettext("menu", "File") == "File"
@@ -154,7 +147,6 @@ async def test_timezone_handling():
 @pytest.mark.asyncio
 async def test_currency_formatting():
     """Test currency formatting by locale"""
-    from pydance.i18n.formatters import format_currency
 
     amount = 1234.56
 
@@ -175,7 +167,6 @@ async def test_currency_formatting():
 @pytest.mark.asyncio
 async def test_rtl_language_support():
     """Test right-to-left language support"""
-    from pydance.i18n.utils import is_rtl_language
 
     assert is_rtl_language("ar") == True
     assert is_rtl_language("he") == True
@@ -188,7 +179,6 @@ async def test_rtl_language_support():
 @pytest.mark.asyncio
 async def test_locale_validation():
     """Test locale validation"""
-    from pydance.i18n.utils import validate_locale
 
     assert validate_locale("en") == True
     assert validate_locale("es-ES") == True
@@ -199,7 +189,6 @@ async def test_locale_validation():
 @pytest.mark.asyncio
 async def test_translation_file_loading():
     """Test loading translation files"""
-    from pydance.i18n.translations import Translations
 
     manager = Translations()
     manager.load_translations("tests/fixtures/translations")

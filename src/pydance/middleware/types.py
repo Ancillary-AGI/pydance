@@ -3,7 +3,6 @@
 from typing import Callable, Any, Union, Type, Coroutine
 
 # Import all middleware types from base.py to consolidate
-from .base import (
     BaseMiddleware,
     HTTPMiddleware,
     WebSocketMiddleware,
@@ -12,8 +11,6 @@ from .base import (
 )
 
 # Consolidated middleware types (merged from base.py)
-from pydance.http.request import Request
-from pydance.http.response import Response
 
 MiddlewareCallable = Callable[[Request, Callable], Coroutine[Any, Any, Response]]
 MiddlewareClass = Union[MiddlewareCallable, type[HTTPMiddleware], type[WebSocketMiddleware]]

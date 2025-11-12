@@ -4,7 +4,6 @@ Test script to verify our changes work correctly
 """
 
 import sys
-import os
 
 def test_logging():
     """Test that logging works correctly"""
@@ -63,10 +62,8 @@ async def test_template_form_errors():
     print("Testing template form errors functionality...")
 
     try:
-        from pydance.templating.languages.lean import LeanTemplateEngine
         from pydance.utils.form_validation import Form, CharField
         import tempfile
-        import os
 
         class TestForm(Form):
             name = CharField(required=True)

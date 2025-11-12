@@ -2,7 +2,6 @@
 Utilities for internationalization and localization
 """
 import threading
-from datetime import datetime
 import pytz
 
 # Thread-local storage for locale and timezone

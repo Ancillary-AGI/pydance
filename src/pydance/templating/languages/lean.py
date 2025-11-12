@@ -1,14 +1,8 @@
 import re
-import os
-import hashlib
-import time
 from typing import Callable, Dict, Any, List, Optional, Union, Tuple
-from pathlib import Path
 import math
 import json
-import functools
 
-from pydance.templating.engine import AbstractTemplateEngine
 # from pydance.security_middleware import get_security_middleware  # Optional import
 
 class TemplateError(Exception):
@@ -232,7 +226,6 @@ class LeanTemplateEngine(AbstractTemplateEngine):
 
         # Apply security sanitization if enabled
         try:
-            from pydance.security_middleware import get_security_middleware
             security_middleware = get_security_middleware()
             content = security_middleware.sanitize_template_output(content)
         except ImportError:

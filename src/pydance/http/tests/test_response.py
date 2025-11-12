@@ -9,7 +9,6 @@ import json
 import gzip
 import time
 from unittest.mock import Mock, patch
-from pydance.http.response import (
     Response, ResponseMetrics, CompressionOptimizer, ResponseSecurityHeaders,
     CompressionAlgorithm, JSONResponse, HTMLResponse, PlainTextResponse,
     RedirectResponse, FileResponse

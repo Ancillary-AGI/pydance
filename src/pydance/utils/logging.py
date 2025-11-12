@@ -8,16 +8,18 @@ import logging
 import logging.handlers
 import logging.config
 import sys
-import os
 import json
 import threading
-import time
 from typing import Dict, Any, Optional, List, Callable, Union
-from datetime import datetime
-from pathlib import Path
-from enum import Enum
 import traceback
 import inspect
+from enum import Enum
+from datetime import datetime
+from pathlib import Path
+try:
+    from pydance.config import default_config as settings
+except ImportError:
+    settings = None
 
 
 class LogLevel(Enum):
@@ -332,7 +334,6 @@ class LoggerManager:
     def configure_from_settings(self):
         """Configure logging from Pydance settings"""
         try:
-            from pydance.config.settings import settings
 
             # Build configuration from settings
             config = {

@@ -2,13 +2,7 @@
 Logging middleware for request/response logging.
 """
 
-from typing import Optional
-from datetime import datetime
 
-from pydance.http.request import Request
-from pydance.http.response import Response
-from pydance.middleware import HTTPMiddleware
-from pydance.contrib.logging.logger import get_logger
 
 
 class LoggingMiddleware(HTTPMiddleware):

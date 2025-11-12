@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Pydance Router - Simple ASGI router for web applications.
 
@@ -11,18 +10,15 @@ Features:
 """
 
 from typing import Callable, List, Optional, Dict, Any, Tuple, Union, Set
-import logging
 from dataclasses import dataclass, field
 import re
-from collections import defaultdict
-from functools import lru_cache
 import asyncio
+from pydance.utils.logging import get_logger
+from pydance.middleware.base import MiddlewareType
+from pydance.routing.route import Route
 
 logger = get_logger(__name__)
 
-from pydance.routing.route import Route
-from pydance.middleware.base import MiddlewareType
-from pydance.core.events import get_event_bus
 
 
 @dataclass
@@ -225,7 +221,6 @@ class Router:
     def add_permanent_redirect(self, from_path: str, to_path: str, name: Optional[str] = None):
         """Add a permanent redirect (301)."""
         def redirect_handler(request, **kwargs):
-            from pydance.http.response import Response
             redirect_url = to_path
             # Replace parameters in redirect URL
             for key, value in kwargs.items():
@@ -237,7 +232,6 @@ class Router:
     def add_temporary_redirect(self, from_path: str, to_path: str, name: Optional[str] = None):
         """Add a temporary redirect (302)."""
         def redirect_handler(request, **kwargs):
-            from pydance.http.response import Response
             redirect_url = to_path
             # Replace parameters in redirect URL
             for key, value in kwargs.items():
@@ -376,7 +370,6 @@ class Router:
         # Emit optimization event
         event_bus = get_event_bus()
         if event_bus:
-            from pydance.core.events import Event
             asyncio.create_task(event_bus.publish(Event('router_optimized', {'router': self.__class__.__name__})))
 
     def enable_advanced_caching(self) -> None:
@@ -444,7 +437,6 @@ class Router:
         # Emit optimization event
         event_bus = get_event_bus()
         if event_bus:
-            from pydance.events import Event
             await event_bus.publish(Event('router_optimized', {'router': self.__class__.__name__}))
 
 

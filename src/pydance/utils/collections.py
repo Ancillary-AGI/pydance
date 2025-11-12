@@ -4,7 +4,6 @@ Efficient custom collections for working with models and large datasets
 """
 
 import threading
-from typing import (
     TypeVar, Generic, Iterator, List, Dict, Any, Optional, Callable,
     Union, Set, Tuple, Iterable, Sized, Container, Sequence
 )
@@ -12,11 +11,8 @@ from collections import defaultdict, deque
 from functools import lru_cache, partial
 import heapq
 import bisect
-import weakref
-import gc
 from abc import ABC, abstractmethod
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 import time
 
 T = TypeVar('T')

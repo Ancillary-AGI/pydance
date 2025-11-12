@@ -2,13 +2,10 @@
 Pydance  Test Configuration and Fixtures
 """
 import asyncio
-import os
 import tempfile
-from pathlib import Path
 from typing import AsyncGenerator, Generator
 
 import pytest
-from faker import Faker
 
 from pydance import Application, AppConfig
 
@@ -66,7 +63,6 @@ def cleanup_test_artifacts():
 @pytest.fixture
 def client(app):
     """Test client fixture."""
-    from pydance.tests.test_client import TestClient
     return TestClient(app)
 
 

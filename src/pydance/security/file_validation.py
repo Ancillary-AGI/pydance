@@ -7,7 +7,6 @@ from abc import ABC, abstractmethod
 from typing import BinaryIO, Dict, Optional, List
 import hashlib
 import mimetypes
-from pathlib import Path
 from pydance.exceptions import FileUploadError, FileTooLarge, InvalidFileType
 
 class FileValidator(ABC):
@@ -122,7 +121,6 @@ class AWSGuardDutyValidator(FileValidator):
         }
         
         try:
-            import boto3
             # This would integrate with AWS GuardDuty for advanced threat detection
             # Implementation would depend on specific AWS setup
             results['metadata']['aws_guardduty'] = 'not_implemented'
@@ -219,7 +217,6 @@ def get_security_manager(config=None) -> SecurityManager:
     """Get global security manager instance"""
     global security_manager
     if security_manager is None:
-        from pydance.server.config import AppConfig
         config = config or AppConfig()
         security_manager = SecurityManager(config)
     return security_manager

@@ -6,12 +6,9 @@ Focused on numerical methods, matrix operations, and mathematical utilities.
 """
 
 import math
-import cmath
 import statistics
 from typing import List, Tuple, Union, Optional
 from decimal import Decimal, getcontext
-from functools import lru_cache
-import operator
 
 
 class MathOperations:

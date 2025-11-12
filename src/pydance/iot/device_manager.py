@@ -1,13 +1,9 @@
 
-from pydance.utils.logging import get_logger
 """
 Device manager for IoT devices.
 Manages device registration, authentication, and communication.
 """
 
-import asyncio
-import json
-import logging
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
 from datetime import datetime
@@ -204,4 +200,3 @@ class DeviceManager:
             "devices_by_type": devices_by_type,
             "max_devices": self.config.max_devices
         }
-

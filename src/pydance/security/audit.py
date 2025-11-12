@@ -4,12 +4,8 @@ Comprehensive audit logging for compliance and security monitoring.
 
 import json
 import asyncio
-from datetime import datetime
 from typing import Dict, List, Any, Optional
-from dataclasses import dataclass
-from enum import Enum
 import logging
-from pathlib import Path
 
 class AuditEvent(Enum):
     LOGIN = "login"

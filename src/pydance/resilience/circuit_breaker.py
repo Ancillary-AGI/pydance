@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Circuit Breaker Pattern Implementation for Pydance
 
@@ -8,10 +7,10 @@ Provides fault tolerance and resilience for microservices and external API calls
 
 import asyncio
 import time
-import logging
 from typing import Dict, Any, Optional, Callable, Union
 from dataclasses import dataclass, field
 from enum import Enum
+from pydance.utils.logging import get_logger
 
 
 class CircuitBreakerState(Enum):

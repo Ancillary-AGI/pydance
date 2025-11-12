@@ -7,10 +7,7 @@ pages at build time for improved performance and SEO.
 
 import asyncio
 import json
-import os
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
-from dataclasses import dataclass
 
 
 @dataclass

@@ -5,8 +5,6 @@ These tests ensure that previously fixed bugs don't reappear
 import pytest
 from unittest.mock import patch, MagicMock
 
-from pydance import Application
-from pydance.exceptions import HTTPException
 
 
 @pytest.mark.regression
@@ -132,7 +130,6 @@ class TestRegression:
 
     def test_route_pattern_compilation_regression(self):
         """Regression test for route pattern compilation"""
-        from pydance.routing import Route
 
         # Test various route patterns that previously caused issues
         test_patterns = [
@@ -248,7 +245,6 @@ class TestRegression:
         try:
             from pydance import Application, AppConfig
             from pydance.routing import Router, Route
-            from pydance.exceptions import HTTPException
             from pydance.security import Security, CryptoUtils
         except ImportError as e:
             pytest.fail(f"Import error: {e}")

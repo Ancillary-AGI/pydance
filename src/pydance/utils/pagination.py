@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Unified Pagination Module for Pydance  Framework.
 
@@ -12,7 +11,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, Any, Optional, List, Union, TypeVar, Generic, Callable
 from urllib.parse import urlencode, urlparse, parse_qs, urlunparse
-import logging
 
 logger = get_logger(__name__)
 
@@ -551,7 +549,6 @@ class CursorPaginator(BasePaginator[T]):
 
             # Convert back to appropriate type
             if value_type == 'datetime':
-                from datetime import datetime
                 return datetime.fromisoformat(value)
             elif value_type == 'int':
                 return int(value)

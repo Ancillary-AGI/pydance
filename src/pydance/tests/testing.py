@@ -10,14 +10,8 @@ import json
 import asyncio
 from typing import Dict, List, Any, Optional, Callable, Type, Union
 from unittest.mock import Mock, patch, MagicMock
-import inspect
-import sys
-from io import StringIO
 from contextlib import redirect_stdout, redirect_stderr
-from urllib.parse import urlencode
 
-from pydance.http.request import Request
-from pydance.server.application import Application
 
 
 class PydanceTestCase(unittest.TestCase):
@@ -38,7 +32,6 @@ class PydanceTestCase(unittest.TestCase):
 
     def create_app(self, config: Dict[str, Any] = None) -> Application:
         """Create test application"""
-        from pydance.server.application import Application
         app = Application()
 
         # Configure for testing
@@ -633,7 +626,6 @@ class TestUtils:
     def create_test_request(method: str = 'GET', path: str = '/',
                            headers: Dict[str, str] = None, body: bytes = b'') -> Request:
         """Create test request"""
-        from pydance.http.request import Request
 
         # Create ASGI scope
         scope = {
@@ -664,7 +656,6 @@ class TestUtils:
     def create_test_user(username: str = 'testuser', email: str = 'test@example.com',
                         is_staff: bool = False) -> 'User':
         """Create test user"""
-        from pydance.auth import User
         return User(
             id=1,
             username=username,
@@ -746,7 +737,6 @@ class TestDataFactory:
     @staticmethod
     def create_user(**kwargs) -> 'User':
         """Create test user"""
-        from pydance.auth import User
         defaults = {
             'id': 1,
             'username': 'testuser',

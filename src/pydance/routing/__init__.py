@@ -12,8 +12,8 @@ Ultra-high-performance routing with advanced features:
 
 from typing import Any
 from pydance.routing.route import Route, WebSocketRoute
-from pydance.routing.router import Router
 from pydance.routing.types import RouteType, RouteMatch, RouteConfig
+from pydance.routing.router import Router
 
 # Import middleware aliases and groups from middleware module to avoid duplication
 from pydance.middleware import MIDDLEWARE_ALIASES, MIDDLEWARE_GROUPS
@@ -38,28 +38,23 @@ def route(name: str, parameters: dict = None) -> str:
     Raises:
         ValueError: If route name not found
     """
-    from .router import get_router
     router = get_router()
     return router.reverse(name, **(parameters or {}))
 
 def register_route(name: str, pattern: str) -> None:
     """Register a named route pattern."""
-    from .router import get_router
     router = get_router()
     # Create a dummy route for the pattern
-    from .route import Route
     dummy_route = Route(pattern, lambda: None, name=name)
     router.named_routes[name] = dummy_route
 
 def has_route(name: str) -> bool:
     """Check if a named route exists."""
-    from .router import get_router
     router = get_router()
     return router.get_route_by_name(name) is not None
 
 def list_routes() -> dict:
     """List all registered named routes."""
-    from .router import get_router
     router = get_router()
     return {name: route.path for name, route in router.named_routes.items()}
 

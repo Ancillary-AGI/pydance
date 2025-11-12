@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Maintenance mode middleware for Pydance framework.
 Provides site maintenance functionality similar to Laravel/Django.
@@ -7,17 +6,15 @@ Provides site maintenance functionality similar to Laravel/Django.
 
 import asyncio
 import json
-import logging
-import os
-import time
 from typing import Dict, Any, Optional, List, Callable
 from datetime import datetime, timedelta
-from dataclasses import dataclass
 from enum import Enum
+from dataclasses import dataclass
 from pathlib import Path
-
+from pydance.utils.logging import get_logger
 from pydance.http.request import Request
 from pydance.http.response import Response
+
 
 
 class MaintenanceStatus(str, Enum):

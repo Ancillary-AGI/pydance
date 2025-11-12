@@ -1,6 +1,5 @@
 from typing import Optional, Union
 from datetime import datetime, date, time
-import locale as locale_module
 from babel import numbers, dates
 from .utils import get_locale, get_timezone
 

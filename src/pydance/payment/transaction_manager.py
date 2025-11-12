@@ -1,13 +1,10 @@
 
-from pydance.utils.logging import get_logger
 """
 Transaction manager for payment processing.
 Handles transaction storage, retrieval, and lifecycle management.
 """
 
 import asyncio
-import json
-import logging
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 
@@ -98,7 +95,6 @@ class TransactionManager:
     def _deserialize_transaction(self, data: Dict[str, Any]) -> Any:
         """Deserialize transaction data."""
         from pydance.payment.payment_processor import PaymentTransaction, PaymentStatus, PaymentMethod
-        from decimal import Decimal
 
         return PaymentTransaction(
             id=data["id"],

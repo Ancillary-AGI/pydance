@@ -5,12 +5,8 @@ Provides multiple storage options including local, S3, GCS, and Azure.
 
 from abc import ABC, abstractmethod
 from typing import BinaryIO, Optional, Dict, List, AsyncGenerator
-from pathlib import Path
 import aiofiles
-import aiohttp
-from azure.storage.blob import BlobServiceClient
 import boto3
-from botocore.config import Config
 
 class StorageBackend(ABC):
     """Abstract base class for storage backends"""
@@ -245,7 +241,6 @@ def get_storage_manager(config=None) -> StorageManager:
     """Get global storage manager instance"""
     global storage_manager
     if storage_manager is None:
-        from .config import AppConfig
         config = config or AppConfig()
         storage_manager = StorageManager(config.storage)
     return storage_manager

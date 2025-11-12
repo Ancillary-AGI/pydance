@@ -3,7 +3,6 @@ Modern Python Template Engine
 A high-performance, pure Python template rendering system with async support.
 """
 
-from .engine import (
     TemplateConfig,
     TemplateError,
     TemplateSyntaxError,

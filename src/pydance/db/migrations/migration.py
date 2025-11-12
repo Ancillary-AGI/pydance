@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Database Migration System - Database Agnostic Migration Framework
 
@@ -15,19 +14,13 @@ with any database backend through the DatabaseBackend interface. It supports:
 - Comprehensive error handling
 """
 
-import asyncio
 import json
 import logging
 import time
 from typing import Dict, List, Any, Optional, Callable, Union, Type, Set
-from datetime import datetime
 from dataclasses import dataclass, field
-from enum import Enum
-from pathlib import Path
 from abc import ABC, abstractmethod
 
-from pydance.db.connections import DatabaseConnection
-from pydance.db.connections.base import DatabaseBackend
 from pydance.db.models.base import BaseModel, Field
 
 
@@ -418,9 +411,7 @@ Migration: {self.migration.name}
 Generated: {datetime.now().isoformat()}
 """
 
-import asyncio
 from pydance.db.migrations.migration import Migration, MigrationOperation, MigrationOperationType
-from pydance.db.connections import DatabaseConnection
 
 # Migration operations
 operations = [

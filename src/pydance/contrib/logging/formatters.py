@@ -5,7 +5,6 @@ Logging formatters for structured output.
 import json
 import logging
 from typing import Dict, Any
-from datetime import datetime
 
 
 class JSONFormatter(logging.Formatter):

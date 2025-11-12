@@ -2,15 +2,14 @@
 Performance profiling and benchmarking tools for Pydance.
 """
 
-import asyncio
 import cProfile
 import functools
 import io
 import pstats
 import time
 import tracemalloc
-from contextlib import contextmanager
 from typing import Any, Callable, Dict, List, Optional, Tuple
+from contextlib import contextmanager
 
 class Profiler:
     """
@@ -130,4 +129,3 @@ class MemoryProfiler:
 # Global profiler instances
 profiler = Profiler()
 memory_profiler = MemoryProfiler()
-

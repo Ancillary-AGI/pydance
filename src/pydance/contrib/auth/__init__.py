@@ -1,6 +1,5 @@
 """
 """
-from typing import List
 
 from .auth import Auth, UserSession, AuthToken
 from .backends import SessionBackend, TokenBackend, DatabaseBackend

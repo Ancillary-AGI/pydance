@@ -1,14 +1,11 @@
 
-from pydance.utils.logging import get_logger
 """
 Performance optimizer for Pydance applications.
 Automatically optimizes performance based on monitoring data.
 """
 
 import asyncio
-import logging
 from typing import Dict, List, Optional, Any, Callable
-from dataclasses import dataclass
 
 @dataclass
 class OptimizationRule:

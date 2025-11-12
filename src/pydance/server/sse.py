@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Server-Sent Events (SSE) Support for Pydance Framework
 
@@ -17,12 +16,10 @@ This module provides comprehensive Server-Sent Events support with:
 
 import asyncio
 import json
-import logging
 import time
 import uuid
 from typing import Dict, List, Callable, Any, Optional, Type, Union, Awaitable, Set
 from dataclasses import dataclass, field
-from enum import Enum
 
 logger = get_logger(__name__)
 

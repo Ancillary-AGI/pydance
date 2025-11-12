@@ -2,13 +2,10 @@
 Email backend implementations for different email sending methods.
 """
 
-import asyncio
 import smtplib
-import ssl
 from typing import Optional, Dict, Any
 from abc import ABC, abstractmethod
 
-from .mail import EmailMessage
 
 
 class EmailBackend(ABC):
@@ -178,7 +175,6 @@ class FileBackend(EmailBackend):
         """Save email to file"""
         try:
             import os
-            from datetime import datetime
 
             # Generate filename
             timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')

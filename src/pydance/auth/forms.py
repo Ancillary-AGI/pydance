@@ -47,7 +47,6 @@ class LoginForm(BaseForm):
         cleaned_data = super().clean()
 
         if not self.errors:
-            from .core import auth_manager
             username = cleaned_data.get('username')
             password = cleaned_data.get('password')
 
@@ -62,7 +61,6 @@ class LoginForm(BaseForm):
     async def save(self) -> Dict[str, Any]:
         """Save form and create session"""
         if self.user:
-            from .core import auth_manager
             session_id = auth_manager.create_session(self.user['id'])
             return {
                 'user': self.user,
@@ -160,7 +158,6 @@ class RegistrationForm(BaseForm):
         cleaned_data = super().clean()
 
         if not self.errors:
-            from .core import auth_manager
             username = cleaned_data.get('username')
             email = cleaned_data.get('email')
 
@@ -173,7 +170,6 @@ class RegistrationForm(BaseForm):
     async def save(self) -> Dict[str, Any]:
         """Save form and create user"""
         if not self.errors:
-            from .core import auth_manager
             username = self.cleaned_data.get('username')
             email = self.cleaned_data.get('email')
             password = self.cleaned_data.get('password')
@@ -205,7 +201,6 @@ class PasswordChangeForm(BaseForm):
         if not self.user:
             raise ValidationError("User not authenticated")
 
-        from .core import auth_manager
         if not auth_manager.verify_password(value, self.user.get('password_hash', '')):
             raise ValidationError("Old password is incorrect")
 

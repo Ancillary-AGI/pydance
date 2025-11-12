@@ -27,7 +27,7 @@ from .event_sourcing import (
 )
 
 # API design patterns
-from .rest_api_patterns import (
+from .api_design import (
     HttpMethod, Link, APIResponse, APIError, RateLimiter,
     DistributedRateLimiter, PaginationParams, Paginator,
     APIResource, ValidationError, NotFoundError,
@@ -58,8 +58,3 @@ __all__ = [
     # Legacy (backward compatibility)
     'LegacyServiceDiscovery', 'ConsulDiscovery', 'ZookeeperDiscovery'
 ]
-
-
-
-
-

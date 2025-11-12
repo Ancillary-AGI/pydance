@@ -6,18 +6,13 @@ Implements elliptic curve cryptography, SHA3 hashing, and secure key management.
 import hashlib
 import hmac
 import secrets
-import os
 from typing import Optional, Dict, Any, Tuple, Union
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, rsa, padding
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.backends import default_backend
-from cryptography.exceptions import InvalidSignature
 import base64
 import json
 
 # Import quantum security module
-from .quantum_security import (
     get_quantum_security_manager,
     QuantumAlgorithm,
     generate_quantum_keypair,

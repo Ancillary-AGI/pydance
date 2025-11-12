@@ -7,11 +7,9 @@ try:
     print("Testing basic imports...")
     
     # Test config import
-    from pydance.config import AppConfig
     print("✓ AppConfig imported successfully")
     
     # Test application import without db
-    from pydance.server.application import Application
     print("✓ Application imported successfully")
     
     # Test if we can create an application

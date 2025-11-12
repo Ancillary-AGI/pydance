@@ -2,10 +2,7 @@
 Integration tests for database-agnostic model operations
 """
 import pytest
-import asyncio
-from pydance.db.models.base import BaseModel
 from pydance.db.models.user import BaseUser, UserRole, UserStatus
-from pydance.db.config import DatabaseConfig
 from pydance.db.models.base import StringField, IntegerField, BooleanField, EmailField
 
 
@@ -42,7 +39,6 @@ class TestDatabaseAgnosticOperations:
     async def test_model_crud_operations(self, db_config):
         """Test Create, Read, Update, Delete operations"""
         # Set up database connection for the models
-        from pydance.db.connections import DatabaseConnection
         db_conn = DatabaseConnection.get_instance(db_config)
         await db_conn.connect()
 
@@ -90,7 +86,6 @@ class TestDatabaseAgnosticOperations:
     async def test_user_authentication_flow(self, db_config):
         """Test user authentication with database operations"""
         # Set up database connection
-        from pydance.db.connections import DatabaseConnection
         db_conn = DatabaseConnection.get_instance(db_config)
         await db_conn.connect()
 
@@ -184,7 +179,6 @@ class TestDatabaseAgnosticOperations:
         """Test model field validation"""
         # Test email validation - just check that the library is attemptable
         try:
-            from email_validator import validate_email
             validate_email("test@example.com")
             email_valid = True
         except:

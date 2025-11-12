@@ -9,8 +9,6 @@ import re
 from typing import Dict, Any, List, Optional, Type, get_type_hints
 from dataclasses import dataclass, field
 
-from pydance.http.response import Response
-from pydance.server.application import Application
 
 
 @dataclass

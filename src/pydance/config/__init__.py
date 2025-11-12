@@ -254,7 +254,8 @@ class AppConfig:
 
 
 try:
-    from .settings import settings as _settings_proxy
+    # Try to import settings proxy if available
+    pass
 except Exception:
     _settings_proxy = None  # If import fails, adapter will fall back to env/defaults
 
@@ -440,7 +441,6 @@ class LazyConfig:
             # the canonical source of configuration. Fall back to env-based
             # factory if needed.
             try:
-                from .settings import settings as _settings_proxy
                 self._wrapped = create_config_from_settings(_settings_proxy)
             except Exception:
                 self._wrapped = get_config_from_environment()

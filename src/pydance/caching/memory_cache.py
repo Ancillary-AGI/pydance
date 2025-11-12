@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 In-memory cache implementation with LRU eviction.
 """
@@ -7,13 +6,10 @@ In-memory cache implementation with LRU eviction.
 import asyncio
 import heapq
 import json
-import logging
 import time
 from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from pydance.caching.cache_manager import CacheConfig
 
 @dataclass
 class CacheItem:

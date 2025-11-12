@@ -6,13 +6,8 @@ import asyncio
 from typing import Dict, Any, Optional, Callable, List, Union
 import inspect
 
-from pydance.http.request import Request
-from pydance.http.response import Response
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from pydance.server.application import Application
 
-from pydance.middleware.resolver import middleware_resolver
 
 
 class BaseController:

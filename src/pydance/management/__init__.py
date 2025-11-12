@@ -2,7 +2,6 @@ import argparse
 import sys
 from typing import Dict, List, Any, Optional
 
-from pydance.db.migrations.migrator import MigrationManager
 
 
 class ManagementCommand:

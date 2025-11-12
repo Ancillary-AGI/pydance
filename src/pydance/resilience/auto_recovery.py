@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Auto-recovery system for self-healing applications.
 Monitors system health and automatically recovers from failures.
@@ -7,13 +6,8 @@ Monitors system health and automatically recovers from failures.
 
 import asyncio
 import psutil
-import logging
-import signal
-import os
 from typing import Dict, List, Optional, Any, Callable, Tuple
-from dataclasses import dataclass
 from datetime import datetime, timedelta
-from enum import Enum
 
 class RecoveryStrategy(Enum):
     RESTART_SERVICE = "restart_service"

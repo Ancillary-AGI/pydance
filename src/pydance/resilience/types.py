@@ -1,7 +1,6 @@
 """
 Load balancing types for Pydance.
 """
-from dataclasses import dataclass
 from typing import Dict, Any
 
 @dataclass

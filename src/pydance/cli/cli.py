@@ -6,9 +6,7 @@ Refactored to use modular command system for better maintainability.
 """
 
 import argparse
-import sys
 
-from .cli.commands import registry
 
 
 class PydanceCLI:

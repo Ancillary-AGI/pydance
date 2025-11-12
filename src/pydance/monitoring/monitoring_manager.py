@@ -4,7 +4,6 @@ Coordinates monitoring, metrics collection, and alerting.
 """
 
 from typing import Dict, Any, Optional, List
-from dataclasses import dataclass
 import time
 import asyncio
 
@@ -80,19 +79,15 @@ class MonitoringManager:
     async def _initialize_components(self):
         """Initialize monitoring components"""
         if self.config.metrics_enabled:
-            from .metrics import MetricsCollector
             self.metrics_collector = MetricsCollector()
 
         if self.config.alerting_enabled:
-            from .alert_manager import AlertManager
             self.alert_manager = AlertManager()
 
         if self.config.logging_enabled:
-            from .log_aggregator import LogAggregator
             self.log_aggregator = LogAggregator()
 
         if self.config.dashboard_enabled:
-            from .dashboard_generator import DashboardGenerator
             self.dashboard_generator = DashboardGenerator()
 
     async def _run_metrics_collection(self):
@@ -244,7 +239,6 @@ class MonitoringManager:
         db_health = {"databases": {}}
 
         try:
-            from pydance.db import DatabaseConnection
             db = DatabaseConnection.get_instance()
             if db:
                 # Test connection
@@ -262,7 +256,6 @@ class MonitoringManager:
         cache_health = {"caches": {}}
 
         try:
-            from pydance.caching import get_cache_manager
             cache_manager = get_cache_manager()
             if cache_manager:
                 metrics = cache_manager.get_metrics()
@@ -284,7 +277,6 @@ class MonitoringManager:
 
         # Check Redis if configured
         try:
-            from pydance.caching.cache_manager import RedisCache
             redis_cache = RedisCache(None)
             await redis_cache.initialize()
             await redis_cache.close()

@@ -16,13 +16,11 @@ import threading
 import weakref
 from typing import Dict, List, Any, Optional, Type, TypeVar, Generic, Callable, Union
 from dataclasses import dataclass, field
-from enum import Enum
 from collections import deque, defaultdict
 import time
 import sys
 from functools import wraps, lru_cache
 
-from pydance.utils.logging import get_logger
 
 logger = get_logger(__name__)
 

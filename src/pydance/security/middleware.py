@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Security Middleware for Pydance Framework
 
@@ -14,17 +13,13 @@ secure-by-default settings including:
 - Attack prevention
 """
 
-import logging
 import secrets
 import time
 import re
 from typing import Dict, List, Callable, Any, Optional, Union, Awaitable
 from dataclasses import dataclass, field
-from collections import defaultdict
 
 from pydance.http import Request, Response
-from pydance.exceptions import HTTPException
-from pydance.middleware import HTTPMiddleware
 
 logger = get_logger(__name__)
 

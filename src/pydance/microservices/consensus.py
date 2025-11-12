@@ -1,5 +1,4 @@
 
-from pydance.utils.logging import get_logger
 """
 Distributed consensus implementation for Pydance framework.
 
@@ -11,7 +10,6 @@ This module provides a complete Raft consensus algorithm implementation with:
 """
 
 import asyncio
-import logging
 import random
 import time
 import json
@@ -19,13 +17,10 @@ import socket
 import struct
 import threading
 from typing import List, Dict, Any, Optional, Callable
-from datetime import datetime
 from dataclasses import dataclass, field
-from enum import Enum
 import pickle
 import uuid
 
-from pydance.db.connections import DatabaseConnection
 
 logger = get_logger(__name__)
 

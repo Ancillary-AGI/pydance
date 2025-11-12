@@ -1,25 +1,15 @@
 
-from pydance.utils.logging import get_logger
 """
 Deployment manager for automated application deployment.
 Handles containerization, orchestration, and deployment strategies.
 """
 
 import asyncio
-import json
-import logging
-import subprocess
-import shutil
 from typing import Dict, List, Optional, Any, Callable
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from pathlib import Path
+from dataclasses import dataclass
 
-from pydance.deployment.docker_manager import DockerManager
-from pydance.deployment.kubernetes_manager import KubernetesManager
-from pydance.deployment.deployment_monitor import DeploymentMonitor
-from pydance.deployment.rollback_manager import RollbackManager
 
 class DeploymentStatus(Enum):
     PENDING = "pending"
@@ -326,4 +316,3 @@ def initialize_deployment_manager(config: DeploymentConfig):
     global deployment_manager
     deployment_manager = DeploymentManager(config)
     return deployment_manager
-

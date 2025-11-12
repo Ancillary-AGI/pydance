@@ -1,18 +1,13 @@
 
-from pydance.utils.logging import get_logger
 """
 Real authentication and authorization system for Pydance framework with JWT tokens and password hashing.
 """
 
 import jwt
 import bcrypt
-import hashlib
 import secrets
 from typing import Dict, List, Optional, Any, Union
 from datetime import datetime, timedelta
-import logging
-from dataclasses import dataclass
-from enum import Enum
 
 logger = get_logger(__name__)
 
