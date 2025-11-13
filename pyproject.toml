@@ -225,11 +225,7 @@ exclude = ["tests*", "docs*", "examples*"]
 
 [tool.setuptools.package-data]
 pydance = [
-    "static/css/*.css",
-    "static/js/*.js",
     "translations/*.json",
-    "templates/**/*.html",
-    "templates/**/*.jinja",
 ]
 
 
