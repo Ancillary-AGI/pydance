@@ -45,8 +45,8 @@ def test_imports():
         print("[OK] Template imports")
         
         # Events and plugins
-        from pydance.events import EventBus, Event
-        from pydance.plugins import PluginManager
+        from pydance.core.events import EventBus, Event
+        from pydance.core.plugins import PluginManager
         print("[OK] Events/Plugins imports")
         
         # WebSocket and SSE
@@ -55,7 +55,7 @@ def test_imports():
         print("[OK] WebSocket/SSE imports")
         
         # Exceptions
-        from pydance.exceptions import HTTPException, BadRequest, NotFound
+        from pydance.core.exceptions import HTTPException, BadRequest, NotFound
         print("[OK] Exception imports")
         
         return True
@@ -232,7 +232,7 @@ async def test_async_features():
     print("\nTesting async features...")
     
     try:
-        from pydance.events import EventBus, Event
+        from pydance.core.events import EventBus, Event
         from pydance.server.sse import SSEManager
         
         # Test event bus
@@ -257,7 +257,7 @@ def test_exceptions():
     print("\nTesting exceptions...")
     
     try:
-        from pydance.exceptions import HTTPException, BadRequest, NotFound, ValidationError
+        from pydance.core.exceptions import HTTPException, BadRequest, NotFound, ValidationError
         
         # Test basic exception
         exc = BadRequest("Invalid input")

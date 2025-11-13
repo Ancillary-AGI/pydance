@@ -10,17 +10,8 @@ import uuid
 from datetime import datetime, date, time
 from typing import Any, Dict, List, Optional, Union, Callable, Type
 from dataclasses import dataclass, field
-
-# Optional Tailwind CSS support
-try:
-    from pydance.templating.tailwind import get_tailwind, TailwindConfig, enable_tailwind, disable_tailwind
-    TAILWIND_AVAILABLE = True
-except ImportError:
-    TAILWIND_AVAILABLE = False
-    get_tailwind = None
-    TailwindConfig = None
-    enable_tailwind = None
-    disable_tailwind = None
+from enum import Enum
+from pydance.templating.tailwind import get_tailwind, TailwindConfig, enable_tailwind, disable_tailwind
 
 
 class WidgetTheme(Enum):
@@ -201,7 +192,7 @@ class BaseWidget:
 
     def get_css_classes(self) -> str:
         """Get CSS classes for the widget"""
-        if TAILWIND_AVAILABLE and get_tailwind().is_enabled():
+        if get_tailwind().is_enabled():
             return self.get_tailwind_classes()
         else:
             return self.get_legacy_classes()
@@ -228,9 +219,6 @@ class BaseWidget:
 
     def get_tailwind_classes(self) -> str:
         """Get Tailwind CSS classes for the widget"""
-        if not TAILWIND_AVAILABLE:
-            return self.get_legacy_classes()
-
         tw = get_tailwind()
         base_classes = []
 

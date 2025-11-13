@@ -19,10 +19,11 @@ import queue
 import statistics
 from collections import defaultdict, deque
 
-from pydance.exceptions import ConnectionError, DatabaseError, IntegrityError
+from pydance.core.exceptions import ConnectionError, DatabaseError, IntegrityError
 from pydance.db.models.base import ConnectionState, ConnectionStats, ManagedConnection
 
 if TYPE_CHECKING:
+    pass
 
 logger = get_logger(__name__)
 

@@ -17,7 +17,7 @@ from .service import (
 
 # Distributed consensus
 from .consensus import (
-    RaftConsensus, ConsensusState, LogEntry, DistributedLock
+    ConsensusManager, LogEntry, DistributedLock, RaftConsensus, ConsensusState
 )
 
 # Event sourcing and CQRS
@@ -27,15 +27,19 @@ from .event_sourcing import (
 )
 
 # API design patterns
-from .api_design import (
-    HttpMethod, Link, APIResponse, APIError, RateLimiter,
-    DistributedRateLimiter, PaginationParams, Paginator,
-    APIResource, ValidationError, NotFoundError,
-    UnauthorizedError, ForbiddenError
-)
+# from .api_design import (
+#     HttpMethod, Link, APIResponse, APIError, RateLimiter,
+#     DistributedRateLimiter, PaginationParams, Paginator,
+#     APIResource, ValidationError, NotFoundError,
+#     UnauthorizedError, ForbiddenError
+# )
 
 # Legacy service discovery (for backward compatibility)
-from .service_discovery import ConsulDiscovery, ZookeeperDiscovery
+try:
+    from .service_discovery import ConsulDiscovery, ZookeeperDiscovery
+except ImportError:
+    ConsulDiscovery = None
+    ZookeeperDiscovery = None
 
 __all__ = [
     # Service architecture
@@ -43,17 +47,17 @@ __all__ = [
     'InMemoryServiceDiscovery',
 
     # Distributed consensus
-    'RaftConsensus', 'ConsensusState', 'LogEntry', 'DistributedLock',
+    'ConsensusManager', 'LogEntry', 'DistributedLock', 'RaftConsensus', 'ConsensusState',
 
     # Event sourcing and CQRS
     'Event', 'EventStore', 'Aggregate', 'Command', 'CommandHandler',
     'Repository', 'EventPublisher',
 
-    # API design patterns
-    'HttpMethod', 'Link', 'APIResponse', 'APIError', 'RateLimiter',
-    'DistributedRateLimiter', 'PaginationParams', 'Paginator',
-    'APIResource', 'ValidationError', 'NotFoundError',
-    'UnauthorizedError', 'ForbiddenError',
+    # API design patterns (commented out - module not available)
+    # 'HttpMethod', 'Link', 'APIResponse', 'APIError', 'RateLimiter',
+    # 'DistributedRateLimiter', 'PaginationParams', 'Paginator',
+    # 'APIResource', 'ValidationError', 'NotFoundError',
+    # 'UnauthorizedError', 'ForbiddenError',
 
     # Legacy (backward compatibility)
     'LegacyServiceDiscovery', 'ConsulDiscovery', 'ZookeeperDiscovery'

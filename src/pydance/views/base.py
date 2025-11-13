@@ -7,8 +7,7 @@ from typing import Dict, Any, Optional, Type, List, Union
 from abc import ABC, abstractmethod
 import inspect
 
-if TYPE_CHECKING:
-from pydance.exceptions import HTTPException, NotFound
+from pydance.core.exceptions import HTTPException, NotFound
 
 
 class View(ABC):

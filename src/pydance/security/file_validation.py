@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from typing import BinaryIO, Dict, Optional, List
 import hashlib
 import mimetypes
-from pydance.exceptions import FileUploadError, FileTooLarge, InvalidFileType
+from pydance.core.exceptions import FileUploadError, FileTooLarge, InvalidFileType
 
 class FileValidator(ABC):
     """Abstract base class for file validators"""

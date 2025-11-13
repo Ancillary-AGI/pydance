@@ -16,10 +16,7 @@ import inspect
 from enum import Enum
 from datetime import datetime
 from pathlib import Path
-try:
-    from pydance.config import default_config as settings
-except ImportError:
-    settings = None
+from pydance.config import default_config as settings
 
 
 class LogLevel(Enum):

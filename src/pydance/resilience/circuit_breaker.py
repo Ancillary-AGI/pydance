@@ -264,9 +264,48 @@ async def call_with_circuit_breaker(name: str, func: Callable, *args, **kwargs):
     breaker = circuit_breaker_registry.get_circuit_breaker(name)
     return await breaker.call(func, *args, **kwargs)
 
+# Additional classes for backward compatibility
+class CircuitBreakerOpenException(Exception):
+    """Exception raised when circuit breaker is open"""
+    pass
+
+
+class CircuitBreakerTimeoutException(Exception):
+    """Exception raised when circuit breaker times out"""
+    pass
+
+
+class CircuitBreakerManager:
+    """
+    Manager for multiple circuit breakers.
+
+    This is an alias for CircuitBreakerRegistry for backward compatibility.
+    """
+
+    def __init__(self):
+        self.registry = circuit_breaker_registry
+
+    def get_circuit_breaker(self, name: str, config: Optional[CircuitBreakerConfig] = None) -> CircuitBreaker:
+        """Get circuit breaker by name"""
+        return self.registry.get_circuit_breaker(name, config)
+
+    def get_all_states(self) -> Dict[str, Dict[str, Any]]:
+        """Get states of all circuit breakers"""
+        return self.registry.get_all_states()
+
+    def reset_all(self):
+        """Reset all circuit breakers"""
+        self.registry.reset_all()
+
+    def remove_circuit_breaker(self, name: str):
+        """Remove circuit breaker"""
+        self.registry.remove_circuit_breaker(name)
+
+
 __all__ = [
     'CircuitBreakerState', 'CircuitBreakerConfig', 'CircuitBreakerMetrics',
     'CircuitBreaker', 'CircuitBreakerRegistry', 'circuit_breaker_registry',
     'circuit_breaker', 'CircuitBreakerContext', 'get_circuit_breaker',
-    'call_with_circuit_breaker'
+    'call_with_circuit_breaker', 'CircuitBreakerOpenException',
+    'CircuitBreakerTimeoutException', 'CircuitBreakerManager'
 ]

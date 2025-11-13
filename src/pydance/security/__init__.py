@@ -18,7 +18,7 @@ __all__ = [
     'CSRFProtection',
     'SecurityHeaders',
     'FileValidator',
-    'BasicFileValidator', 
+    'BasicFileValidator',
     'ClamAVValidator',
     'AWSGuardDutyValidator',
     'CompositeValidator',

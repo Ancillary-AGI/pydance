@@ -18,38 +18,21 @@ from .engine import (
 
 from .languages import LeanTemplateEngine, JinjaTemplateEngine
 
-# Optional Tailwind CSS support
-try:
-    from .tailwind import (
-        TailwindConfig,
-        TailwindCSS,
-        get_tailwind,
-        configure_tailwind,
-        enable_tailwind,
-        disable_tailwind,
-        tw_classes,
-        tw_responsive,
-        tw_dark,
-        BUTTON_TEMPLATE,
-        INPUT_TEMPLATE,
-        CARD_TEMPLATE,
-        ALERT_TEMPLATE
-    )
-except ImportError:
-    # Tailwind support not available
-    TailwindConfig = None
-    TailwindCSS = None
-    get_tailwind = None
-    configure_tailwind = None
-    enable_tailwind = None
-    disable_tailwind = None
-    tw_classes = None
-    tw_responsive = None
-    tw_dark = None
-    BUTTON_TEMPLATE = None
-    INPUT_TEMPLATE = None
-    CARD_TEMPLATE = None
-    ALERT_TEMPLATE = None
+from .tailwind import (
+    TailwindConfig,
+    TailwindCSS,
+    get_tailwind,
+    configure_tailwind,
+    enable_tailwind,
+    disable_tailwind,
+    tw_classes,
+    tw_responsive,
+    tw_dark,
+    BUTTON_TEMPLATE,
+    INPUT_TEMPLATE,
+    CARD_TEMPLATE,
+    ALERT_TEMPLATE
+)
 
 __all__ = [
     'TemplateConfig',

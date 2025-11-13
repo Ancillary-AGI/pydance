@@ -523,7 +523,7 @@ MIDDLEWARE = [
 
     def test_error_handling_and_recovery(self, system_app):
         """Test error handling and recovery mechanisms"""
-        from pydance.exceptions import BaseFrameworkException, ValidationError, AuthenticationError
+        from pydance.core.exceptions import BaseFrameworkException, ValidationError, AuthenticationError
 
         # Test exception hierarchy
         assert issubclass(ValidationError, BaseFrameworkException)

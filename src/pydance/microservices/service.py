@@ -19,7 +19,13 @@ import time
 import json
 import random
 from datetime import datetime, timedelta
-import aiohttp
+try:
+    import aiohttp
+    AIOHTTP_AVAILABLE = True
+except ImportError:
+    aiohttp = None
+    AIOHTTP_AVAILABLE = False
+
 from pydance.db.connections.base import DatabaseConfig, DatabaseConnection
 from pydance.utils.logging import get_logger
 
@@ -627,6 +633,75 @@ def get_service_discovery() -> ServiceDiscovery:
     if _service_discovery is None:
         _service_discovery = ServiceDiscovery()
     return _service_discovery
+
+class InMemoryServiceDiscovery(ServiceDiscovery):
+    """Simple in-memory service discovery for development and testing"""
+
+    def __init__(self):
+        super().__init__(ServiceRegistry())
+        self._services: Dict[str, List[ServiceInstance]] = {}
+        self.logger = get_logger("InMemoryServiceDiscovery")
+
+    async def discover(self, service_name: str) -> Optional[ServiceInstance]:
+        """Discover a service instance from in-memory registry"""
+        instances = self._services.get(service_name, [])
+        healthy_instances = [i for i in instances if i.status == ServiceStatus.HEALTHY]
+
+        if not healthy_instances:
+            return None
+
+        # Return first healthy instance (simple round-robin could be added later)
+        return healthy_instances[0]
+
+    async def discover_all(self, service_name: str) -> List[ServiceInstance]:
+        """Discover all instances of a service"""
+        return [i for i in self._services.get(service_name, []) if i.status == ServiceStatus.HEALTHY]
+
+    async def register(self, name: str, address: str, port: int,
+                      version: str, metadata: Dict[str, Any] = None) -> bool:
+        """Register a service in memory"""
+        try:
+            instance = ServiceInstance(
+                name=name,
+                address=address,
+                port=port,
+                version=version,
+                status=ServiceStatus.HEALTHY,
+                metadata=metadata or {},
+                registered_at=datetime.utcnow(),
+                last_heartbeat=datetime.utcnow()
+            )
+
+            if name not in self._services:
+                self._services[name] = []
+
+            self._services[name].append(instance)
+            self.logger.info(f"Registered service: {name} at {address}:{port}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Failed to register service {name}: {e}")
+            return False
+
+    async def unregister(self, name: str, address: str, port: int) -> bool:
+        """Unregister a service from memory"""
+        try:
+            if name not in self._services:
+                return False
+
+            instances = self._services[name]
+            for i, instance in enumerate(instances):
+                if instance.address == address and instance.port == port:
+                    instances.pop(i)
+                    self.logger.info(f"Unregistered service: {name} at {address}:{port}")
+                    return True
+
+            return False
+
+        except Exception as e:
+            self.logger.error(f"Failed to unregister service {name}: {e}")
+            return False
+
 
 def get_load_balancer(strategy: str = "round_robin") -> LoadBalancer:
     """Get global load balancer instance"""

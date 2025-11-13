@@ -7,14 +7,7 @@ and to eliminate code duplication. This module provides convenient access to all
 utility classes and functions.
 """
 
-# Import utilities from focused modules to avoid circular imports
-try:
-    from .performance_utilities import PerformanceMonitor, PerformanceMetrics, PerformanceProfiler
-except ImportError:
-    # psutil not available
-    PerformanceMonitor = None
-    PerformanceMetrics = None
-    PerformanceProfiler = None
+from .performance_utilities import PerformanceMonitor, PerformanceMetrics, PerformanceProfiler
 
 # Import locale support
 from .locale_support import (

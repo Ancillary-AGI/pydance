@@ -6,7 +6,6 @@ This module provides performance monitoring, benchmarking, and optimization tool
 
 import time
 import threading
-import psutil
 import os
 from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
 import logging
@@ -15,6 +14,8 @@ import gc
 from contextlib import contextmanager
 from functools import wraps
 from concurrent.futures import ThreadPoolExecutor
+import tracemalloc
+import psutil
 
 T = TypeVar('T')
 logger = logging.getLogger(__name__)
@@ -25,22 +26,9 @@ class PerformanceMonitor:
 
     def __init__(self):
         self.start_time = time.time()
-        self.check_psutil()
-
-    def check_psutil(self):
-        """Check if psutil is available"""
-        try:
-            import psutil
-            self.psutil_available = True
-        except ImportError:
-            self.psutil_available = False
-            logger.warning("psutil not available, some metrics will be limited")
 
     def get_memory_usage(self) -> Dict[str, float]:
         """Get current memory usage"""
-        if not self.psutil_available:
-            return {'error': 'psutil not available'}
-
         process = psutil.Process(os.getpid())
         memory_info = process.memory_info()
 
@@ -52,9 +40,6 @@ class PerformanceMonitor:
 
     def get_cpu_usage(self) -> Dict[str, float]:
         """Get CPU usage information"""
-        if not self.psutil_available:
-            return {'error': 'psutil not available'}
-
         return {
             'process_percent': psutil.Process(os.getpid()).cpu_percent(),
             'system_percent': psutil.cpu_percent(interval=0.1)
@@ -62,9 +47,6 @@ class PerformanceMonitor:
 
     def get_system_info(self) -> Dict[str, Any]:
         """Get system information"""
-        if not self.psutil_available:
-            return {'error': 'psutil not available'}
-
         return {
             'cpu_count': psutil.cpu_count(),
             'cpu_count_logical': psutil.cpu_count(logical=True),
@@ -232,9 +214,6 @@ def profile_function(func: Callable[..., T], *args, **kwargs) -> tuple[T, Dict[s
 
 def memory_usage(func: Callable[..., T], *args, **kwargs) -> tuple[T, Dict[str, float]]:
     """Measure memory usage of a function"""
-    if not psutil:
-        raise ImportError("psutil required for memory profiling")
-
     process = psutil.Process(os.getpid())
 
     # Get initial memory
@@ -323,11 +302,6 @@ class MemoryProfiler:
     @staticmethod
     def profile_memory_usage(func: Callable[..., T], *args, **kwargs) -> tuple[T, Dict[str, Any]]:
         """Profile memory usage during function execution"""
-        try:
-            import tracemalloc
-        except ImportError:
-            raise ImportError("tracemalloc required for memory profiling")
-
         tracemalloc.start()
         gc.collect()  # Clean up before measurement
 

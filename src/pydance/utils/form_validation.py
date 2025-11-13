@@ -10,7 +10,7 @@ import secrets
 from typing import Dict, List, Any, Optional, Union, Callable, Type, Pattern
 
 
-from pydance.exceptions import ValidationError, FieldValidationError
+from pydance.core.exceptions import ValidationError, FieldValidationError
 
 
 class Validator:

@@ -8,7 +8,7 @@ from typing import Optional, Dict, Any, List, Union, Type
 from datetime import datetime, timedelta
 from abc import ABC, abstractmethod
 
-from pydance.exceptions import HTTPException, Unauthorized, Forbidden
+from pydance.core.exceptions import HTTPException, Unauthorized, Forbidden
 from pydance.contrib.auth.backends import SessionBackend, TokenBackend
 
 

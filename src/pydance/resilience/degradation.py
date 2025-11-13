@@ -6,6 +6,9 @@ Graceful degradation system for maintaining service availability.
 import asyncio
 import time
 from typing import Dict, List, Optional, Any, Callable, Tuple
+from enum import Enum
+from dataclasses import dataclass
+from pydance.utils.logging import get_logger
 
 class DegradationStrategy(Enum):
     FAIL_FAST = "fail_fast"
@@ -140,4 +143,3 @@ class GracefulDegradation:
 
 # Global graceful degradation instance
 graceful_degradation = GracefulDegradation()
-

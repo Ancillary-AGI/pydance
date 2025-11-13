@@ -13,7 +13,7 @@ from typing import Dict, Any, Optional, Callable, Awaitable, List
 from datetime import datetime, timedelta
 import json
 
-from pydance.exceptions import HTTPException, Unauthorized, Forbidden, RateLimitExceeded
+from pydance.core.exceptions import HTTPException, Unauthorized, Forbidden, RateLimitExceeded
 
 logger = get_logger(__name__)
 

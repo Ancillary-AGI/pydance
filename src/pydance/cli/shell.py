@@ -12,7 +12,7 @@ import json
 import logging
 from typing import Dict, Any, Optional, List
 
-from pydance.exceptions import ValidationError, DatabaseError
+from pydance.core.exceptions import ValidationError, DatabaseError
 from pydance.utils.types import Field, Relationship
 import time
 
@@ -963,4 +963,3 @@ if __name__ == "__main__":
         args.func(args)
     else:
         parser.print_help()
-

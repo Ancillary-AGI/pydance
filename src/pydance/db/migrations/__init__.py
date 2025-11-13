@@ -6,17 +6,19 @@ Moved from src/pydance/migrations/ to src/pydance/db/migrations/ for better orga
 """
 
 # Re-export all migration functionality for backward compatibility
+from .migrator import (
     MigrationRunner, MigrationManager, MigrationStatus,
     migration_manager, make_migrations, migrate, show_migrations,
     rollback_migration, get_migration_status
 )
 
+from .migration import (
     Migration, MigrationOperation, MigrationOperationType,
     MigrationFile, MigrationGenerator
 )
 
-    MigrationFramework, migration_framework, migrate_app,
-    check_migration_status, discover_models, analyze_model_changes
+from .migrator import (
+    Migrator
 )
 
 __all__ = [
@@ -30,6 +32,5 @@ __all__ = [
     'MigrationFile', 'MigrationGenerator',
 
     # Framework integration
-    'MigrationFramework', 'migration_framework', 'migrate_app',
-    'check_migration_status', 'discover_models', 'analyze_model_changes'
+    'Migrator'
 ]

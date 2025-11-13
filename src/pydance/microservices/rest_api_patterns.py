@@ -16,7 +16,7 @@ from typing import Dict, List, Any, Optional, Union
 
 
 from pydance.rate_limiting import RateLimiter, RateLimitConfig, RateLimitAlgorithm
-from pydance.pagination import PaginationParams, Paginator, PaginationResult
+from pydance.utils.pagination import PaginationParams, PaginationResult
 
 
 class HttpMethod(Enum):

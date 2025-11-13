@@ -19,15 +19,10 @@ from .core import (
     WidgetTheme, WidgetSize, WidgetType, ThemeManager
 )
 
-# Optional form widgets (may not be implemented yet)
-try:
-    from .forms import (
-        FormWidget, FieldWidget, ButtonWidget, InputWidget,
-        TextareaWidget, SelectWidget, CheckboxWidget, RadioWidget
-    )
-except ImportError:
-    FormWidget = FieldWidget = ButtonWidget = InputWidget = None
-    TextareaWidget = SelectWidget = CheckboxWidget = RadioWidget = None
+from .forms import (
+    FormWidget, FieldWidget, ButtonWidget, InputWidget,
+    TextareaWidget, SelectWidget, CheckboxWidget, RadioWidget
+)
 
 __version__ = "1.0.0"
 __all__ = [

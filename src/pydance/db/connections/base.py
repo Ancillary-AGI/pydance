@@ -23,7 +23,7 @@ from contextlib import asynccontextmanager
 from pydance.core.exceptions import ConnectionError, DatabaseError, IntegrityError
 from pydance.db.models.base import ConnectionState, ConnectionStats, ManagedConnection
 from pydance.utils.logging import get_logger
-from pydance.config.database import DatabaseConfig
+from pydance.config import DatabaseConfig
 
 if TYPE_CHECKING:
     import asyncpg

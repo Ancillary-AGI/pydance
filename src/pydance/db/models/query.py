@@ -2,7 +2,7 @@
 Query builder for database operations.
 """
 
-from typing import Dict, List, Optional, Any, Tuple, Union, Type, TypeVar, Generic
+from typing import Dict, List, Optional, Any, Tuple, Union, Type, TypeVar, Generic, Collection
 import asyncio
 import math
 

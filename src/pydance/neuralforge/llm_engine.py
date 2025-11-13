@@ -6,9 +6,15 @@ Provides a unified interface for multiple LLM providers including OpenAI, Anthro
 
 import time
 from typing import Dict, Optional, Any
-import aiohttp
 from enum import Enum
 from dataclasses import dataclass
+
+try:
+    import aiohttp
+    AIOHTTP_AVAILABLE = True
+except ImportError:
+    aiohttp = None
+    AIOHTTP_AVAILABLE = False
 
 
 class LLMProvider(Enum):
@@ -45,6 +51,9 @@ class LLMEngine:
     """
 
     def __init__(self):
+        if not AIOHTTP_AVAILABLE:
+            raise ImportError("aiohttp is required for LLMEngine. Install it with: pip install aiohttp")
+
         self.providers: Dict[LLMProvider, callable] = {
             LLMProvider.OPENAI: self._call_openai,
             LLMProvider.ANTHROPIC: self._call_anthropic,

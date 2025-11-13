@@ -9,7 +9,7 @@ import json
 import time
 from unittest.mock import Mock, AsyncMock, patch
 from pydance.http.request import Request, RequestState, OptimizedHeaders, RequestSecurity, RequestMetrics
-from pydance.exceptions import BadRequest, UnsupportedMediaType
+from pydance.core.exceptions import BadRequest, UnsupportedMediaType
 
 
 class TestOptimizedHeaders:

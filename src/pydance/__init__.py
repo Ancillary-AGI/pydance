@@ -53,6 +53,7 @@ if logger_manager:
 from pydance.server.application import Application, Pydance
 from pydance.http import Request, Response
 from pydance.core.exceptions import HTTPException, ValidationError
+from pydance.config import AppConfig, default_config as settings
 
 # Database components
 
@@ -64,73 +65,18 @@ from pydance.core.exceptions import HTTPException, ValidationError
 from pydance.caching import get_cache_manager, CacheManager, CacheConfig
 
 # Storage system
-try:
-    from pydance.storage import get_storage_manager, StorageManager
-except ImportError:
-    get_storage_manager = None
-    StorageManager = None
+from pydance.storage import get_storage_manager, StorageManager
 
-# Advanced modules (optional imports - some have external dependencies)
-try:
-    from pydance.neuralforge import NeuralForge, LLMEngine, NeuralAgent
-except ImportError:
-    NeuralForge = None
-    LLMEngine = None
-    NeuralAgent = None
-
-try:
-    from pydance.microservices import Service, MicroserviceManager
-except ImportError:
-    Service = None
-    MicroserviceManager = None
-
-try:
-    from pydance.iot import IoTManager, DeviceManager
-except ImportError:
-    IoTManager = None
-    DeviceManager = None
-
-try:
-    from pydance.payment import PaymentProcessor, PaymentManager
-except ImportError:
-    PaymentProcessor = None
-    PaymentManager = None
-
-try:
-    from pydance.streaming import StreamManager, StreamingServer
-except ImportError:
-    StreamManager = None
-    StreamingServer = None
-
-try:
-    from pydance.security import SecurityManager, QuantumSecurity
-except ImportError:
-    SecurityManager = None
-    QuantumSecurity = None
-
-try:
-    from pydance.monitoring import MonitoringManager, MetricsCollector
-except ImportError:
-    MonitoringManager = None
-    MetricsCollector = None
-
-try:
-    from pydance.performance import PerformanceMonitor, PerformanceOptimizer
-except ImportError:
-    PerformanceMonitor = None
-    PerformanceOptimizer = None
-
-try:
-    from pydance.resilience import CircuitBreaker, AutoRecoveryManager
-except ImportError:
-    CircuitBreaker = None
-    AutoRecoveryManager = None
-
-try:
-    from pydance.deployment import DeploymentManager, KubernetesManager
-except ImportError:
-    DeploymentManager = None
-    KubernetesManager = None
+# Advanced modules (local framework modules)
+from pydance.neuralforge import LLMEngine, NeuralAgent
+from pydance.microservices import Service
+from pydance.iot import DeviceManager
+from pydance.payment import PaymentProcessor
+from pydance.security import SecurityManager
+from pydance.monitoring import MetricsCollector
+from pydance.performance import PerformanceMonitor
+from pydance.resilience import CircuitBreaker, AutoRecoveryManager
+from pydance.deployment import DeploymentManager
 
 __all__ = [
     # Core
@@ -154,20 +100,17 @@ __all__ = [
     'get_storage_manager', 'StorageManager',
 
     # Advanced Modules
-    'NeuralForge', 'LLMEngine', 'NeuralAgent',
-    'Service', 'MicroserviceManager',
-    'IoTManager', 'DeviceManager',
-    'PaymentProcessor', 'PaymentManager',
-    'StreamManager', 'StreamingServer',
-    'SecurityManager', 'QuantumSecurity',
-    'MonitoringManager', 'MetricsCollector',
-    'PerformanceMonitor', 'PerformanceOptimizer',
+    'LLMEngine', 'NeuralAgent',
+    'Service',
+    'DeviceManager',
+    'PaymentProcessor',
+    'SecurityManager',
+    'MetricsCollector',
+    'PerformanceMonitor',
     'CircuitBreaker', 'AutoRecoveryManager',
-    'DeploymentManager', 'KubernetesManager',
+    'DeploymentManager',
 
     # Core Systems
-    'EventBus', 'Event', 'get_event_bus',
-    'PluginManager', 'Plugin', 'get_plugin_manager',
 
     # Exceptions
     'HTTPException', 'ValidationError',

@@ -5,6 +5,7 @@ Supports Consul, ZooKeeper, and etcd backends.
 
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Any
+from dataclasses import dataclass
 import asyncio
 import aiohttp
 
@@ -260,8 +261,3 @@ def set_service_discovery(discovery: ServiceDiscovery):
     """Set global service discovery instance"""
     global _service_discovery
     _service_discovery = discovery
-
-
-
-
-

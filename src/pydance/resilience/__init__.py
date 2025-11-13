@@ -8,11 +8,11 @@ from .circuit_breaker import (
     CircuitBreaker, CircuitBreakerConfig, CircuitBreakerState,
     CircuitBreakerManager, CircuitBreakerOpenException, CircuitBreakerTimeoutException
 )
-from .retry_mechanism import (
+from .retry import (
     RetryMechanism, RetryConfig, RetryStrategy, RetryCondition,
     RetryManager, with_exponential_backoff, with_fixed_retry
 )
-from .graceful_degradation import (
+from .degradation import (
     GracefulDegradation, DegradationStrategy, DegradationRule
 )
 from .auto_recovery import (

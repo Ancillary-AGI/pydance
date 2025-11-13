@@ -4,7 +4,7 @@ Authentication decorators for route protection.
 
 from typing import Optional, List, Callable, Any
 
-from pydance.exceptions import Unauthorized, Forbidden
+from pydance.core.exceptions import Unauthorized, Forbidden
 
 
 def login_required(auth_instance=None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:

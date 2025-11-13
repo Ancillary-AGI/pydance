@@ -9,7 +9,7 @@ Provides DatabaseConfig, DatabaseConnection, models, migrations, and type defini
 from .connections.base import DatabaseConfig, DatabaseConnection
 
 # Types and fields
-from .types import (
+from .models.base import (
     FieldType, RelationshipType, OrderDirection, PoolConfig, ConnectionStats,
     DistributedCacheConfig, PaginationParams, PaginationMetadata, PaginationLink,
     PaginatedResponse, AggregationResult, LazyLoad, Field, StringField,
@@ -29,7 +29,7 @@ from .models.query import QueryBuilder
 from .migrations.migrator import (
     Migration, MigrationOperation, MigrationOperationType,
     MigrationFile, MigrationGenerator, MigrationRunner, MigrationManager,
-    MigrationFramework, migration_manager, make_migrations, migrate,
+    migration_manager, make_migrations, migrate,
     show_migrations, rollback_migration, get_migration_status
 )
 
@@ -54,6 +54,6 @@ __all__ = [
     # Migrations
     'Migration', 'MigrationOperation', 'MigrationOperationType',
     'MigrationFile', 'MigrationGenerator', 'MigrationRunner', 'MigrationManager',
-    'MigrationFramework', 'migration_manager', 'make_migrations', 'migrate',
+    'migration_manager', 'make_migrations', 'migrate',
     'show_migrations', 'rollback_migration', 'get_migration_status'
 ]

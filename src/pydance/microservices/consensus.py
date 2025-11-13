@@ -16,10 +16,15 @@ import json
 import socket
 import struct
 import threading
-from typing import List, Dict, Any, Optional, Callable
+from typing import List, Dict, Any, Optional, Callable, Tuple
 from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
 import pickle
 import uuid
+from pydance.utils.logging import get_logger
+from pydance.db.connections.base import DatabaseConnection
+from pydance.config import DatabaseConfig
 
 
 logger = get_logger(__name__)
@@ -170,10 +175,10 @@ class PersistentStorage:
         self.node_id = node_id
         if db_connection is None:
             try:
-                db_connection = DatabaseConnection.get_instance(db_config)
+                db_connection = DatabaseConnection.get_instance(DatabaseConfig())
             except Exception as e:
                 logger.warning(f"Could not get database connection: {e}")
-        
+
         self.db_connection = db_connection
         self._initialized = False
 
@@ -1203,8 +1208,48 @@ class DistributedLock:
         await self.release("context_manager")
 
 
+# Additional consensus classes for backward compatibility
+class ConsensusState(Enum):
+    """Consensus algorithm states"""
+    FOLLOWER = "follower"
+    CANDIDATE = "candidate"
+    LEADER = "leader"
+
+
+class RaftConsensus:
+    """
+    Raft consensus algorithm implementation.
+
+    This is an alias for ConsensusManager for backward compatibility.
+    """
+
+    def __init__(self, node_id: str, cluster_config: Dict[str, str],
+                 db_connection: Optional[DatabaseConnection] = None):
+        self.consensus_manager = ConsensusManager(node_id, cluster_config, db_connection)
+
+    async def initialize(self):
+        """Initialize the consensus system"""
+        await self.consensus_manager.initialize()
+
+    async def shutdown(self):
+        """Shutdown the consensus system"""
+        await self.consensus_manager.shutdown()
+
+    async def submit_command(self, command: Any, client_id: str = None) -> bool:
+        """Submit command to consensus system"""
+        return await self.consensus_manager.submit_command(command, client_id)
+
+    def get_state_machine_value(self, key: str) -> Any:
+        """Get value from state machine"""
+        return self.consensus_manager.get_state_machine_value(key)
+
+    def get_cluster_status(self) -> Dict[str, Any]:
+        """Get cluster status"""
+        return self.consensus_manager.get_cluster_status()
+
+
 # Factory functions
-def create_consensus_manager(node_id: str, cluster_config: Dict[str, str], 
+def create_consensus_manager(node_id: str, cluster_config: Dict[str, str],
                            db_connection: Optional[DatabaseConnection] = None) -> ConsensusManager:
     """Create consensus manager with optional database connection"""
     return ConsensusManager(node_id, cluster_config, db_connection)

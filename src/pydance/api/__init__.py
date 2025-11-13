@@ -6,9 +6,9 @@ Provides resource controllers, serialization, versioning, and API documentation.
 import inspect
 from typing import Dict, List, Any, Type, Callable
 
-from pydance.exceptions import HTTPException, ValidationError, PermissionDenied, NotFound, APIException
+from pydance.core.exceptions import HTTPException, ValidationError, PermissionDenied, NotFound, APIException
 
-from pydance.pagination import Pagination, PageNumberPagination, LimitOffsetPagination
+from pydance.utils.pagination import PageNumberPaginator, LimitOffsetPaginator, PaginationParams, PaginationResult
 
 
 class Field:
@@ -951,8 +951,8 @@ __all__ = [
     'Serializer', 'ModelSerializer', 'APIView', 'GenericAPIView',
     'ListAPIView', 'CreateAPIView', 'RetrieveAPIView', 'UpdateAPIView', 'DestroyAPIView',
     'ListCreateAPIView', 'RetrieveUpdateAPIView', 'RetrieveUpdateDestroyAPIView',
-    'ViewSet', 'ModelViewSet', 'APIRouter', 'Pagination', 'PageNumberPagination',
-    'LimitOffsetPagination', 'APIVersioning', 'APIException', 'ValidationError',
+    'ViewSet', 'ModelViewSet', 'APIRouter', 'PageNumberPaginator', 'LimitOffsetPaginator',
+    'PaginationParams', 'PaginationResult', 'APIVersioning', 'APIException', 'ValidationError',
     'PermissionDenied', 'NotFound', 'Throttling', 'APIResponse',
     'api_view', 'api_router', 'pagination', 'versioning'
 ]

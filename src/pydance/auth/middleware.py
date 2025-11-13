@@ -7,7 +7,7 @@ Middleware for handling authentication, sessions, and authorization.
 from typing import Dict, Any, Optional, Callable, Awaitable
 from datetime import datetime, timedelta
 
-from pydance.exceptions import HTTPException, Unauthorized, Forbidden
+from pydance.core.exceptions import HTTPException, Unauthorized, Forbidden
 
 from pydance.auth.core import auth_manager, get_current_user
 

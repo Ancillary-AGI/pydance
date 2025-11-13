@@ -41,7 +41,7 @@ async def async_error_route(request):
 
     def test_error_response_handling(self, error_app):
         """Test system-level error handling"""
-        from pydance.exceptions import BaseFrameworkException, ValidationError, AuthenticationError
+        from pydance.core.exceptions import BaseFrameworkException, ValidationError, AuthenticationError
 
         # Test exception hierarchy
         assert issubclass(ValidationError, BaseFrameworkException)
