@@ -3,8 +3,11 @@ Project management commands for Pydance CLI
 """
 
 import os
+import sys
 import argparse
+from pathlib import Path
 from typing import List, Any
+from . import BaseCommand
 
 
 

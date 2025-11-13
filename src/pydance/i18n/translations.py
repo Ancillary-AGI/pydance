@@ -23,6 +23,7 @@ Example:
 
 import gettext as gettext_module
 from typing import Dict, Optional, Callable, Any
+from pathlib import Path
 
 import json
 
@@ -165,6 +166,18 @@ class Translations:
 # Global translation instance
 _translations = Translations()
 
+# Simple locale management
+_current_locale = "en"
+
+def get_locale() -> str:
+    """Get the current locale"""
+    return _current_locale
+
+def set_locale(locale: str) -> None:
+    """Set the current locale"""
+    global _current_locale
+    _current_locale = locale
+
 def gettext(key: str, **kwargs) -> str:
     """Translate a string"""
     return _translations.get_translation(key, locale=get_locale(), **kwargs)
@@ -187,8 +200,3 @@ def lazy_gettext(key: str, **kwargs) -> Callable[[], str]:
 # Short aliases
 _ = gettext
 _n = ngettext
-
-
-
-
-

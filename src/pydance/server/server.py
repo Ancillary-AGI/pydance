@@ -1,6 +1,19 @@
 import asyncio
 import signal
 import logging
+from typing import Optional
+
+# Pydance imports
+from pydance.server.application import Application
+from pydance.config import AppConfig
+from pydance.utils.logging import get_logger
+
+# External dependencies (hypercorn)
+from hypercorn.config import Config as HyperConfig
+from hypercorn.asyncio import serve
+
+# Structured logging
+from pydance.contrib.logging import configure_logging
 
 
 class Server:
@@ -59,24 +72,10 @@ class Server:
     
     async def _start_multiprocess(self, config: HyperConfig) -> None:
         """Start server with multiple worker processes"""
-        import multiprocessing
-        
-        self.logger.info(f"Starting {self.config.workers} workers on {self.config.host}:{self.config.port}")
-        
-        for i in range(self.config.workers):
-            process = multiprocessing.Process(
-                target=run_single,
-                args=(self.app, config),
-                kwargs={"worker_id": i, "shutdown_trigger": self._shutdown_wait}
-            )
-            process.start()
-            self._workers.append(process)
-        
-        await self._shutdown_event.wait()
-        
-        for process in self._workers:
-            process.terminate()
-            process.join()
+        # For now, fall back to single process mode
+        # Multi-process support would require proper hypercorn integration
+        self.logger.warning("Multi-process mode not yet implemented, falling back to single process")
+        await self._start_single_process(config)
     
     def _setup_signal_handlers(self) -> None:
         """Setup signal handlers for graceful shutdown"""
@@ -122,7 +121,7 @@ class Server:
                     'format': 'json' if getattr(self.config, 'logging', {}).get('json_format', False) else 'structured',
                     'handlers': ['console']
                 }
-                structured_logger.configure_logging(log_config)
+                configure_logging(log_config)
             except Exception:
                 # Fallback to standard library logging
                 logging.basicConfig(

@@ -13,6 +13,10 @@ Author: Pydance  Framework
 
 from .llm_engine import LLMEngine, LLMConfig, LLMResponse, LLMProvider
 from .agent_system import NeuralAgent, AgentState, AgentCapability, AgentMemory
+from .mcp_integration import MCPServer
+from .communication import AgentCommunicator
+from .framework import NeuralForge
+from .economy import EconomySystem
 
 __version__ = "1.0.0"
 __all__ = [

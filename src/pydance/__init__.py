@@ -55,11 +55,26 @@ from pydance.http import Request, Response
 from pydance.core.exceptions import HTTPException, ValidationError
 from pydance.config import AppConfig, default_config as settings
 
-# Database components
+# Database components (optional - imported on-demand)
 
 # Event system
+from pydance.core.events import (
+    EventBus, Event, EventHandler, EventPriority,
+    ApplicationEvent, StartupEvent, ShutdownEvent,
+    RequestEvent, ResponseEvent, WebSocketEvent,
+    DatabaseEvent, CacheEvent, SecurityEvent,
+    get_event_bus, publish_event, publish_event_async,
+    subscribe, unsubscribe
+)
 
 # Plugin system
+from pydance.core.plugins import (
+    PluginManager, Plugin, PluginState, PluginPriority,
+    PluginMetadata, PluginContext, MiddlewarePlugin,
+    RoutePlugin, ServicePlugin, EventPlugin,
+    get_plugin_manager, load_plugins, unload_plugins,
+    get_plugin, call_plugin_hook
+)
 
 # Caching system
 from pydance.caching import get_cache_manager, CacheManager, CacheConfig
@@ -91,9 +106,7 @@ __all__ = [
     'request_logger', 'error_logger', 'graphql_logger', 'cache_logger',
     'logger_manager',
 
-    # Database
-    'DatabaseConfig',
-    'DatabaseConnection',
+    # Database (optional - imported on-demand)
 
     # Caching & Storage
     'get_cache_manager', 'CacheManager', 'CacheConfig',

@@ -8,16 +8,29 @@ A framework for building ASGI applications with routing, middleware, and configu
 import inspect
 from typing import Dict, List, Callable, Any, Optional, Type, Union, Awaitable
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from pydance.core.exceptions import HTTPException, WebSocketException, WebSocketDisconnect
 from pydance.http import Request, Response
 from pydance.utils.logging import get_logger
-from pydance.config import AppConfig
-from pydance.middleware.manager import MiddlewareType
+from pydance.config import AppConfig, settings
+from pydance.middleware.manager import MiddlewareType, get_middleware_manager
+from pydance.routing import Router
+from pydance.websocket import WebSocket
+from pydance.db.config import DatabaseConfig
+from pydance.db.connections import DatabaseConnection
+from pydance.templating import AbstractTemplateEngine, get_template_engine
 
 logger = get_logger(__name__)
 
+# Optional imports
 from pydance.monitoring import MetricsCollector, HealthChecker
+from pydance.core.di import Container
+from pydance.graphql import GraphQLManager
+from pydance.caching import get_cache_manager
+from pydance.core.events import get_event_bus, StartupEvent, ShutdownEvent
+from pydance.core.plugins import get_plugin_manager
+from pydance.utils.logging import logger_manager
 
 
 class Application:
@@ -450,6 +463,7 @@ class Application:
         """Run the application with a server."""
         try:
             # Lazy import to avoid circular dependencies
+            from pydance.server import Server
 
             server = Server(self, self.config)
             server.run(host=host, port=port)
@@ -461,6 +475,8 @@ class Application:
     async def serve(self, host: str = '127.0.0.1', port: int = 8000) -> None:
         """Start serving requests (non-blocking)."""
         try:
+            # Lazy import to avoid circular dependencies
+            from pydance.server import Server
 
             server = Server(self, self.config)
             await server.serve(host=host, port=port)

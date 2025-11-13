@@ -7,6 +7,7 @@ Focused on numerical methods, matrix operations, and mathematical utilities.
 
 import math
 import statistics
+from functools import lru_cache
 from typing import List, Tuple, Union, Optional
 from decimal import Decimal, getcontext
 

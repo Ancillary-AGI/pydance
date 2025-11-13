@@ -7,7 +7,10 @@ Provides agent-to-agent communication capabilities with message queuing and conv
 
 import asyncio
 import hashlib
+from datetime import datetime
 from typing import Dict, List, Optional, Any
+
+from pydance.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -496,8 +499,3 @@ class AgentCommunicator:
                 break
             except Exception as e:
                 logger.error(f"Error in periodic cleanup: {str(e)}")
-
-
-
-
-

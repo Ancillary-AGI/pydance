@@ -19,7 +19,3 @@ __all__ = [
     'ColoredFormatter',
     'LoggingMiddleware',
 ]
-
-
-
-

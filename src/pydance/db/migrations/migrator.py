@@ -17,6 +17,7 @@ from pydance.db.migrations.migration import (
     MigrationOperation, ModelMigration
 )
 from pydance.config import DatabaseConfig
+from pydance.db.connections import DatabaseConnection
 from pydance.utils.logging import get_logger
 
 

@@ -44,7 +44,7 @@ class ID(GraphQLType):
         super().__init__("ID")
 
 
-class List(GraphQLType):
+class GraphQLList(GraphQLType):
     """List type wrapper"""
     def __init__(self, of_type: GraphQLType):
         self.of_type = of_type

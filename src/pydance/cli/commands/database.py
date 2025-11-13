@@ -4,6 +4,14 @@ Database management commands for Pydance CLI
 
 import argparse
 from typing import List, Any
+from . import BaseCommand
+
+# Import database and migration functions
+from pydance.db.config import DatabaseConfig
+from pydance.db.migrations.framework import check_migration_status, migrate_app
+from pydance.db.migrations.migrator import make_migrations, show_migrations, get_migration_status
+from pydance.db.models.base import BaseModel
+from pydance.cli.shell import dbshell
 
 
 

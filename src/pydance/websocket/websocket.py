@@ -1,5 +1,10 @@
 import json
 from typing import Dict, Any, List, Optional
+from urllib.parse import parse_qs
+
+class WebSocketException(Exception):
+    """WebSocket-related exception"""
+    pass
 
 class WebSocket:
     def __init__(self, scope, receive, send, app: "Application"):

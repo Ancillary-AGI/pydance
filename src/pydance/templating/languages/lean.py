@@ -2,6 +2,9 @@ import re
 from typing import Callable, Dict, Any, List, Optional, Union, Tuple
 import math
 import json
+from pathlib import Path
+
+from ..engine import AbstractTemplateEngine
 
 # from pydance.security_middleware import get_security_middleware  # Optional import
 

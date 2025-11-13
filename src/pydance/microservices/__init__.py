@@ -35,11 +35,7 @@ from .event_sourcing import (
 # )
 
 # Legacy service discovery (for backward compatibility)
-try:
-    from .service_discovery import ConsulDiscovery, ZookeeperDiscovery
-except ImportError:
-    ConsulDiscovery = None
-    ZookeeperDiscovery = None
+from .service_discovery import ConsulDiscovery, ZookeeperDiscovery
 
 __all__ = [
     # Service architecture

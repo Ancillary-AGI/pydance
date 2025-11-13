@@ -1,8 +1,20 @@
 # server_framework/templating/languages/jinja.py
 import jinja2
 from typing import Dict, Any
-from pydance.i18n.translations import gettext, ngettext
-from pydance.i18n.formatters import format_date, format_time, format_datetime, format_number, format_currency, format_percent, format_scientific
+from pathlib import Path
+
+from ..engine import AbstractTemplateEngine
+
+# Optional i18n imports
+try:
+    from pydance.i18n.translations import gettext, ngettext
+    from pydance.i18n.formatters import format_date, format_time, format_datetime, format_number, format_currency, format_percent, format_scientific
+    HAS_I18N = True
+except ImportError:
+    HAS_I18N = False
+    gettext = lambda x: x
+    ngettext = lambda s, p, n: s if n == 1 else p
+    format_date = format_time = format_datetime = format_number = format_currency = format_percent = format_scientific = lambda x, **kwargs: str(x)
 
 class JinjaTemplateEngine(AbstractTemplateEngine):
     """Jinja2 template engine with i18n support"""

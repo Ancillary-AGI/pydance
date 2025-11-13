@@ -6,6 +6,8 @@ A high-performance, pure Python template rendering system with async support.
 import asyncio
 from typing import Dict, Any, Optional, Union, List, Callable
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass

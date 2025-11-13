@@ -7,6 +7,9 @@ Provides integration with MCP servers for resource access and tool execution.
 
 from typing import Dict, List, Optional, Any, Callable
 
+from pydance.utils.logging import get_logger
+from .llm_engine import LLMEngine
+from .agent_system import NeuralAgent
 
 logger = get_logger(__name__)
 
@@ -378,8 +381,3 @@ class MCPServer:
             "resource_permissions": len(self.resource_permissions),
             "tool_permissions": len(self.tool_permissions)
         }
-
-
-
-
-

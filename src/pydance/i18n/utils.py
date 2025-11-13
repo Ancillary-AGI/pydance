@@ -2,6 +2,7 @@
 Utilities for internationalization and localization
 """
 import threading
+from datetime import datetime
 import pytz
 
 # Thread-local storage for locale and timezone
@@ -42,8 +43,3 @@ def to_utc(dt: datetime) -> datetime:
 
 __all__ = ['get_locale', 'set_locale', 'get_timezone', 'set_timezone',
            'get_current_time', 'to_timezone', 'to_utc']
-
-
-
-
-

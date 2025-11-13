@@ -5,6 +5,7 @@ Logging handlers for different output destinations.
 import logging
 import logging.handlers
 import sys
+from typing import Optional
 
 
 class ConsoleHandler(logging.StreamHandler):
@@ -36,7 +37,3 @@ class SyslogHandler(logging.handlers.SysLogHandler):
 
     def __init__(self, address=('localhost', 514), facility=logging.handlers.SysLogHandler.LOG_USER):
         super().__init__(address, facility)
-
-
-
-

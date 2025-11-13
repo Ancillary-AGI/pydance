@@ -15,7 +15,13 @@ from contextlib import contextmanager
 from functools import wraps
 from concurrent.futures import ThreadPoolExecutor
 import tracemalloc
-import psutil
+
+try:
+    import psutil
+    HAS_PSUTIL = True
+except ImportError:
+    psutil = None
+    HAS_PSUTIL = False
 
 T = TypeVar('T')
 logger = logging.getLogger(__name__)
@@ -29,6 +35,9 @@ class PerformanceMonitor:
 
     def get_memory_usage(self) -> Dict[str, float]:
         """Get current memory usage"""
+        if not HAS_PSUTIL:
+            return {'error': 'psutil not available'}
+
         process = psutil.Process(os.getpid())
         memory_info = process.memory_info()
 
@@ -40,6 +49,9 @@ class PerformanceMonitor:
 
     def get_cpu_usage(self) -> Dict[str, float]:
         """Get CPU usage information"""
+        if not HAS_PSUTIL:
+            return {'error': 'psutil not available'}
+
         return {
             'process_percent': psutil.Process(os.getpid()).cpu_percent(),
             'system_percent': psutil.cpu_percent(interval=0.1)
@@ -47,6 +59,9 @@ class PerformanceMonitor:
 
     def get_system_info(self) -> Dict[str, Any]:
         """Get system information"""
+        if not HAS_PSUTIL:
+            return {'error': 'psutil not available'}
+
         return {
             'cpu_count': psutil.cpu_count(),
             'cpu_count_logical': psutil.cpu_count(logical=True),
@@ -214,6 +229,10 @@ def profile_function(func: Callable[..., T], *args, **kwargs) -> tuple[T, Dict[s
 
 def memory_usage(func: Callable[..., T], *args, **kwargs) -> tuple[T, Dict[str, float]]:
     """Measure memory usage of a function"""
+    if not HAS_PSUTIL:
+        result = func(*args, **kwargs)
+        return result, {'error': 'psutil not available'}
+
     process = psutil.Process(os.getpid())
 
     # Get initial memory
