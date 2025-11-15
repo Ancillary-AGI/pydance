@@ -3,12 +3,20 @@ Tailwind CSS Integration for Pydance Templates
 
 Provides optional Tailwind CSS support for templates, views, and components.
 Includes utility classes, component styles, and responsive design helpers.
+
+Features:
+- Automatic CSS class generation for components
+- Responsive design utilities
+- Dark mode support
+- Theme-aware styling
+- Integration with Pydance widgets and views
 """
 
 import asyncio
 from typing import Dict, Any, Optional, List, Union
 from pathlib import Path
 import json
+import re
 
 
 class TailwindConfig:

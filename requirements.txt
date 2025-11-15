@@ -1,7 +1,7 @@
-# Core dependencies for Pydance framework
-hypercorn>=0.13.0
-jinja2>=3.0.0
-click>=8.0.0
-python-dotenv>=0.19.0
-pytz>=2021.0
-uvloop>=0.15.0; sys_platform != 'win32'
+# Core dependencies for Pydance framework (minimal required)
+hypercorn>=0.13.0        # ASGI server
+jinja2>=3.0.0           # Template engine
+click>=8.0.0            # CLI framework
+python-dotenv>=0.19.0   # Environment variables
+pytz>=2021.0            # Timezone handling
+uvloop>=0.15.0; sys_platform != 'win32'  # Performance optimization

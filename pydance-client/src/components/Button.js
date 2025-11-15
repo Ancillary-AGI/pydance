@@ -1,10 +1,11 @@
 /**
  * Button - Reusable Button Component
  * Provides a flexible button component with different variants,
- * sizes, states, and loading indicators
+ * sizes, states, and loading indicators.
+ * Supports both traditional CSS and Tailwind CSS.
  */
 
-import { Component } from '/core/Component.js';
+import { Component } from '~/core/Component.js';
 
 export class Button extends Component {
   constructor(props = {}) {
@@ -14,11 +15,21 @@ export class Button extends Component {
       loading: props.loading || false,
       disabled: props.disabled || false
     };
+
+    // Initialize Tailwind if enabled - safe to call even if not used
+    this.tailwind = { isEnabled: () => false }; // Default fallback
+    try {
+      if (typeof window !== 'undefined' && window.getTailwindCSS) {
+        this.tailwind = window.getTailwindCSS();
+      }
+    } catch (e) {
+      // Gracefully fall back to traditional CSS
+    }
   }
 
   static getDefaultProps() {
     return {
-      variant: 'primary', // primary, secondary, outline, ghost, link
+      variant: 'primary', // primary, secondary, outline, ghost, danger
       size: 'md', // xs, sm, md, lg, xl
       type: 'button', // button, submit, reset
       disabled: false,
@@ -27,7 +38,8 @@ export class Button extends Component {
       rounded: false,
       icon: null,
       iconPosition: 'left', // left, right
-      children: null
+      children: null,
+      useTailwind: null // null = auto-detect, true = force tailwind, false = force traditional
     };
   }
 
@@ -40,6 +52,99 @@ export class Button extends Component {
     if (nextProps.disabled !== this.props.disabled) {
       this.setState({ disabled: nextProps.disabled });
     }
+  }
+
+  /**
+   * Determine if Tailwind CSS should be used for styling.
+   * @returns {boolean} True if Tailwind is enabled and available
+   */
+  shouldUseTailwind() {
+    // Explicit prop override takes precedence
+    const { useTailwind } = this.props;
+    if (useTailwind !== null) return useTailwind;
+
+    // Check global Tailwind configuration
+    return typeof window !== 'undefined' && window.PydanceTailwind?.enabled === true;
+  }
+
+  /**
+   * Generate CSS classes based on current configuration and props.
+   * @returns {string} Space-separated CSS classes
+   */
+  getCSSClasses() {
+    const { variant = 'primary', size = 'md', fullWidth = false, rounded = false, className = '' } = this.props;
+
+    if (this.shouldUseTailwind()) {
+      // Efficient Tailwind class generation with pre-computed class strings
+      return [
+        'inline-flex items-center justify-center gap-2 font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
+        this.getTailwindSizeClasses(size),
+        this.getTailwindVariantClasses(variant),
+        fullWidth ? 'w-full' : '',
+        rounded ? 'rounded-full' : '',
+        className
+      ].filter(Boolean).join(' ');
+    } else {
+      // Use traditional CSS classes with conditional logic
+      const conditionalClasses = [];
+      if (this.isDisabled()) conditionalClasses.push('pydance-button--disabled');
+      if (this.isLoading()) conditionalClasses.push('pydance-button--loading');
+      if (fullWidth) conditionalClasses.push('pydance-button--full-width');
+      if (rounded) conditionalClasses.push('pydance-button--rounded');
+      if (!this.props.children && this.props.icon) conditionalClasses.push('pydance-button--icon-only');
+
+      return [
+        'pydance-button',
+        `pydance-button--${variant}`,
+        `pydance-button--${size}`,
+        ...conditionalClasses,
+        className
+      ].filter(Boolean).join(' ');
+    }
+  }
+
+  /**
+   * Get Tailwind size classes for the given size.
+   * @param {string} size - Size variant
+   * @returns {string} Tailwind classes
+   * @private
+   */
+  getTailwindSizeClasses(size) {
+    const sizeClasses = {
+      xs: 'text-xs px-2 py-1 rounded',
+      sm: 'text-sm px-3 py-2 rounded-md',
+      md: 'text-sm px-4 py-2 rounded-md',
+      lg: 'text-base px-6 py-3 rounded-md',
+      xl: 'text-lg px-8 py-4 rounded-lg'
+    };
+    return sizeClasses[size] || sizeClasses.md;
+  }
+
+  /**
+   * Get Tailwind variant classes for the given variant.
+   * @param {string} variant - Button variant
+   * @returns {string} Tailwind classes
+   * @private
+   */
+  getTailwindVariantClasses(variant) {
+    const variantClasses = {
+      primary: 'bg-blue-600 hover:bg-blue-700 text-white border border-transparent focus:ring-blue-500',
+      secondary: 'bg-gray-200 hover:bg-gray-300 text-gray-900 border border-transparent focus:ring-gray-500',
+      outline: 'bg-transparent hover:bg-gray-50 text-gray-700 border border-gray-300 focus:ring-blue-500',
+      ghost: 'bg-transparent hover:bg-gray-100 text-gray-700 border border-transparent focus:ring-blue-500',
+      danger: 'bg-red-600 hover:bg-red-700 text-white border border-transparent focus:ring-red-500'
+    };
+    return variantClasses[variant] || variantClasses.primary;
+  }
+
+  isDisabled() {
+    const { disabled = false, loading = false } = this.props;
+    return disabled || loading || this.state.disabled;
+  }
+
+  isLoading() {
+    const { loading = false } = this.props;
+    return loading || this.state.loading;
   }
 
   render() {
@@ -56,53 +161,52 @@ export class Button extends Component {
       children,
       className = '',
       onClick,
+      useTailwind,
       ...otherProps
     } = this.props;
 
-    const isDisabled = disabled || loading || this.state.disabled;
-    const isLoading = loading || this.state.loading;
+    const isDisabled = this.isDisabled();
+    const isLoading = this.isLoading();
 
-    const baseClasses = [
-      'pydance-button',
-      `pydance-button--${variant}`,
-      `pydance-button--${size}`,
-      {
-        'pydance-button--disabled': isDisabled,
-        'pydance-button--loading': isLoading,
-        'pydance-button--full-width': fullWidth,
-        'pydance-button--rounded': rounded,
-        'pydance-button--icon-only': !children && icon
-      },
-      className
-    ].filter(Boolean).join(' ');
+    const cssClasses = this.getCSSClasses();
 
     return this.createElement('button', {
       type,
-      className: baseClasses,
+      className: cssClasses,
       disabled: isDisabled,
       onClick: this._handleClick.bind(this),
       'aria-disabled': isDisabled,
       ...otherProps
     },
       // Loading spinner
-      isLoading && this.createElement('span', { className: 'pydance-button__spinner' }),
+      isLoading && this.createElement('span', {
+        className: this.shouldUseTailwind()
+          ? 'inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin'
+          : 'pydance-button__spinner'
+      }),
 
       // Icon (left)
       icon && iconPosition === 'left' && !isLoading && this.createElement('span', {
-        className: 'pydance-button__icon pydance-button__icon--left'
+        className: this.shouldUseTailwind()
+          ? 'inline-flex items-center'
+          : 'pydance-button__icon pydance-button__icon--left'
       }, icon),
 
       // Content
       this.createElement('span', {
-        className: 'pydance-button__content',
-        style: isLoading ? { opacity: 0 } : {}
+        className: this.shouldUseTailwind()
+          ? (isLoading ? 'inline-flex items-center opacity-0' : 'inline-flex items-center')
+          : 'pydance-button__content',
+        style: !this.shouldUseTailwind() && isLoading ? { opacity: 0 } : {}
       },
         children
       ),
 
       // Icon (right)
       icon && iconPosition === 'right' && !isLoading && this.createElement('span', {
-        className: 'pydance-button__icon pydance-button__icon--right'
+        className: this.shouldUseTailwind()
+          ? 'inline-flex items-center'
+          : 'pydance-button__icon pydance-button__icon--right'
       }, icon)
     );
   }
